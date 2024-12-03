@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CaController;
 use App\Http\Controllers\Api\V1\NationaliteController;
 use App\Http\Controllers\Api\V1\PaysController;
@@ -23,4 +24,5 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('pays', PaysController::class);
     Route::apiResource('nationalites', NationaliteController::class);
     Route::apiResource('professions', ProfessionController::class);
+    Route::post('/login', [AuthController::class, 'login']);
 });
