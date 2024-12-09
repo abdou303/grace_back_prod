@@ -45,15 +45,15 @@ class AuthController extends Controller
             // throw ValidationException::withMessages(['email' => 'informations incorrectes']);
         }
         $token = $user->createToken('api-token')->plainTextToken;
-        /*return response()->json([
+        return response()->json([
             'message' => 'informations correctes',
             'success' => true,
             'token' => $token,
             'user' => $user->name,
-        ]);*/
+        ]);
         //return response()->json(['token' => $token]);
 
-        return response()->json([
+        /*return response()->json([
             'message' => 'informations correctes',
             'success' => true,
             'token' => $token,
@@ -64,7 +64,7 @@ class AuthController extends Controller
                 'company' => "JUSTICE", // Include company name
                 'group' => "GROUPE", // Include user group
             ],
-        ]);
+        ]);*/
     }
 
     public function logout(Request $request)
