@@ -5,14 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Partenaire extends Model
+class Groupe extends Model
 {
     use HasFactory;
-    public function requettes()
-    {
-
-        return $this->hasMany(Requette::class);
-    }
     public function users()
     {
         return $this->hasMany(User::class);
