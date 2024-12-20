@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Peine extends Model
 {
+    use HasFactory;
+
     public function affaire()
     {
 

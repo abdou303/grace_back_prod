@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Garant extends Model
 {
+    use HasFactory;
     public function dossiers()
     {
 
