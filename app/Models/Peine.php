@@ -18,6 +18,6 @@ class Peine extends Model
     public function prisons()
     {
 
-        return $this->belongsToMany(Prison::class)->withTimestamps();
+        return $this->belongsToMany(Prison::class,'peine_prison')->withTimestamps();
     }
 }

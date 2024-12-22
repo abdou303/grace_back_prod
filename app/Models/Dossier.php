@@ -12,7 +12,7 @@ class Dossier extends Model
     public function affaires()
     {
 
-        return $this->belongsToMany(Affaire::class)->withTimestamps();
+        return $this->belongsToMany(Affaire::class, 'dossier_affaire')->withTimestamps();
     }
 
     public function typedossier()
@@ -29,7 +29,7 @@ class Dossier extends Model
     public function garants()
     {
 
-        return $this->belongsToMany(Garant::class)->withTimestamps();
+        return $this->belongsToMany(Garant::class, 'dossier_garant')->withTimestamps();
     }
 
     public function requettes()

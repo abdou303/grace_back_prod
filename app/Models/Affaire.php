@@ -12,7 +12,7 @@ class Affaire extends Model
     public function dossiers()
     {
 
-        return $this->belongsToMany(Dossier::class)->withTimestamps();
+        return $this->belongsToMany(Dossier::class, 'dossier_affaire')->withTimestamps();
     }
 
     public function tribunal()
