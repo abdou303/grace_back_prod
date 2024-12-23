@@ -37,4 +37,19 @@ class Dossier extends Model
 
         return $this->hasMany(Requette::class);
     }
+    public function categoriedossier()
+    {
+
+        return $this->belongsTo(CategorieDossier::class);
+    }
+    public function naturedossier()
+    {
+
+        return $this->belongsTo(NatureDossier::class);
+    }
+    public function typemotifdossier()
+    {
+
+        return $this->belongsTo(TypeMotifDossier::class);
+    }
 }

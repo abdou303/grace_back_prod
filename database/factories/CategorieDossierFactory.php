@@ -5,9 +5,9 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\TypeDossier>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\CategorieDossier>
  */
-class TypeDossierFactory extends Factory
+class CategorieDossierFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -18,8 +18,11 @@ class TypeDossierFactory extends Factory
     {
         $types =
             [
-                'ملف عفو',
-                'ملف افراج مقيد بشرووط'
+                'عادية',
+                'الاحداث',
+                'المسنون',
+                'المرضى',
+                'الأجانب',
             ];
         return [
             'libelle' => fake()->unique()->randomElement($types),
