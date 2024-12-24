@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CaController;
+use App\Http\Controllers\Api\V1\DossierController;
 use App\Http\Controllers\Api\V1\NationaliteController;
 use App\Http\Controllers\Api\V1\PaysController;
 use App\Http\Controllers\Api\V1\PrisonController;
@@ -24,5 +25,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('pays', PaysController::class);
     Route::apiResource('nationalites', NationaliteController::class);
     Route::apiResource('professions', ProfessionController::class);
+    Route::apiResource('dossiers', DossierController::class);
+
     Route::post('/login', [AuthController::class, 'login']);
 });

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class NatureDossier extends Model
 {
     use HasFactory;
+    protected $table = 'naturesdossiers';
     public function dossiers()
     {
 

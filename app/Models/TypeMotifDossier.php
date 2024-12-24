@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class TypeMotifDossier extends Model
 {
     use HasFactory;
+    protected $table = 'typesmotifsdossiers';
     public function dossiers()
     {
 

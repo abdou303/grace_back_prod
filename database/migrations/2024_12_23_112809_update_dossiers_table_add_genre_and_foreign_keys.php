@@ -15,24 +15,29 @@ return new class extends Migration
             //
             $table->string('genre', 1)->default('M'); // Replace 'some_existing_column' with the column after which you want to add 'genre'
             // Add foreign key constraints
-            $table->unsignedBigInteger('typemotifdossiers_id')->nullable(); // Replace 'related_table_id' with the actual column
+            /* $table->unsignedBigInteger('typemotifdossiers_id')->nullable(); // Replace 'related_table_id' with the actual column
             $table->foreign('typemotifdossiers_id')
                 ->references('id')
-                ->on('type_motif_dossiers') // Replace 'related_table_name' with the referenced table name
+                ->on('typesmotifsdossiers') // Replace 'related_table_name' with the referenced table name
                 ->onDelete('cascade');
 
             $table->unsignedBigInteger('naturedossiers_id')->nullable(); // Replace 'related_table_id' with the actual column
             $table->foreign('naturedossiers_id')
                 ->references('id')
-                ->on('nature_dossiers') // Replace 'related_table_name' with the referenced table name
+                ->on('naturesdossiers') // Replace 'related_table_name' with the referenced table name
                 ->onDelete('cascade');
 
 
             $table->unsignedBigInteger('categoriedossiers_id')->nullable(); // Replace 'related_table_id' with the actual column
             $table->foreign('categoriedossiers_id')
                 ->references('id')
-                ->on('categorie_dossiers') // Replace 'related_table_name' with the referenced table name
+                ->on('categoriesdossiers') // Replace 'related_table_name' with the referenced table name
                 ->onDelete('cascade');
+       */
+
+            $table->foreignId('categoriedossiers_id')->constrained('categoriesdossiers')->onDelete('cascade');
+            $table->foreignId('naturedossiers_id')->constrained('naturesdossiers')->onDelete('cascade');
+            $table->foreignId('typemotifdossiers_id')->constrained('typesmotifsdossiers')->onDelete('cascade');
         });
     }
 

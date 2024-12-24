@@ -23,8 +23,7 @@ class TypeDossierFactory extends Factory
             ];
         return [
             'libelle' => fake()->unique()->randomElement($types),
-
-            'active' => fake()->randomElement([0, 1]),
+            'active' => fake()->randomElement([1, 1]),
         ];
     }
 }

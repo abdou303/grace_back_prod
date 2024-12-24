@@ -1,0 +1,79 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Models\Dossier;
+use Illuminate\Http\Request;
+
+class DossierController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        //
+
+        /*$dossiers = Dossier::with(['detenu', 'affaires', 'categoriedossier', 'naturedossier', 'typemotifdossier', 'typedossier'])->get()->map(function ($dossier) {
+            $dossier->affaires = $dossier->affaires->map(function ($affaire) {
+                return [
+                    'id' => $affaire->id,
+                    'numeromp' => $affaire->numeromp,
+                    'numero' => $affaire->numero,
+                    'code' => $affaire->code,
+                    'annee' => $affaire->annee,
+
+
+
+                ];
+            });
+            return $dossier;
+        });
+
+
+        return response()->json($dossiers);*/
+
+
+
+        $dossiers = Dossier::with(['detenu', 'affaires', 'categoriedossier', 'naturedossier', 'typemotifdossier', 'typedossier'])->get();
+
+
+        return response()->json($dossiers);
+    }
+
+
+
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+}
