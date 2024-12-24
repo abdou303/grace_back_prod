@@ -21,6 +21,23 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);*/
 
-        $this->call([ UserSeeder::class, GarantSeeder::class, RoleSeeder::class, GroupeSeeder::class,DetenuSeeder::class]);
+        $this->call([ 
+          GarantSeeder::class
+        , RoleSeeder::class
+        , GroupeSeeder::class
+        , DetenuSeeder::class
+        , CategorieDossierSeeder::class
+        , NatureDossierSeeder::class
+        , TypeMotifDossierSeeder::class
+        , TypeDossierSeeder::class
+        , DossierSeeder::class
+        , PeineSeeder::class
+        , AffaireSeeder::class
+        , DossierAffaireSeeder::class
+        , DossierGarantSeeder::class
+        , PeinePrisonSeeder::class
+        , UserSeeder::class
+
+    ]);
     }
 }
