@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\DossierResource;
 use App\Models\Dossier;
 use Illuminate\Http\Request;
 
@@ -39,7 +40,9 @@ class DossierController extends Controller
         $dossiers = Dossier::with(['detenu', 'affaires', 'categoriedossier', 'naturedossier', 'typemotifdossier', 'typedossier'])->get();
 
 
-        return response()->json($dossiers);
+        // return response()->json($dossiers);
+
+        return new DossierResource($dossiers);
     }
 
 
