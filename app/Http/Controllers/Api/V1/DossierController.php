@@ -16,24 +16,7 @@ class DossierController extends Controller
     {
         //
 
-        /*$dossiers = Dossier::with(['detenu', 'affaires', 'categoriedossier', 'naturedossier', 'typemotifdossier', 'typedossier'])->get()->map(function ($dossier) {
-            $dossier->affaires = $dossier->affaires->map(function ($affaire) {
-                return [
-                    'id' => $affaire->id,
-                    'numeromp' => $affaire->numeromp,
-                    'numero' => $affaire->numero,
-                    'code' => $affaire->code,
-                    'annee' => $affaire->annee,
-
-
-
-                ];
-            });
-            return $dossier;
-        });
-
-
-        return response()->json($dossiers);*/
+       
 
 
 
