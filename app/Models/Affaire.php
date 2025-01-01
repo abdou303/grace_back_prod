@@ -15,12 +15,15 @@ class Affaire extends Model
         return $this->belongsToMany(Dossier::class, 'dossier_affaire')->withTimestamps();
     }
 
-    public function tribunal()
+   /* public function tribunal()
     {
 
-        return $this->belongsTo(Tribunal::class)->withTimestamps();
+        return $this->belongsTo(Tribunal::class,'tribunal_id')->withTimestamps();
+    }*/
+    public function tribunal()
+    {
+        return $this->belongsTo(Tribunal::class, 'tribunal_id');
     }
-
     public function peine()
     {
 

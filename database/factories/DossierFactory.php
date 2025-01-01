@@ -27,6 +27,12 @@ class DossierFactory extends Factory
         $categoriedossierIds = CategorieDossier::pluck('id');
         $typemotifdossierIds = TypeMotifDossier::pluck('id');
         $genres = ["M", "F"];
+        $avis=["نعم","لا"];
+        $observations=["السجين يظهر تعاونا ملحوظا مع إدارة السجن",
+        "يُبدي السجين سلوكا عدوانيا تجاه السجناء الآخرين",
+        "السجين ملتزم بالقوانين والتعليمات داخل السجن",
+        "السجين يحتاج إلى متابعة نفسية بسبب التوتر",
+        "يُظهر السجين رغبة في تحسين سلوكه العام"];
 
 
 
@@ -34,10 +40,10 @@ class DossierFactory extends Factory
             //
             'numero' => fake()->numberBetween(1000, 9999) . '/' . fake()->year,
             'date_enregistrement' => fake()->date('Y-m-d'),
-            'observation' => fake()->sentence(3),
-            'avis_mp' => fake()->sentence(1),
-            'avis_dgapr' => fake()->sentence(1),
-            'avis_gouverneur' => fake()->sentence(1),
+            'observation' => fake()->randomElement($observations),
+            'avis_mp' => fake()->randomElement($avis),
+            'avis_dgapr' => fake()->randomElement($avis),
+            'avis_gouverneur' => fake()->randomElement($avis),
             'typedossier_id' => fake()->randomElement($typedossierIds),
             'detenu_id' => fake()->randomElement($detenuIds),
             'naturedossiers_id' => fake()->randomElement($naturedossierIds),

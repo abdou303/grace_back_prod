@@ -20,11 +20,21 @@ class DossierController extends Controller
 
 
 
-        $dossiers = Dossier::with(['detenu', 'affaires', 'categoriedossier', 'naturedossier', 'typemotifdossier', 'typedossier'])->get();
+        /*$dossiers = Dossier::with(['detenu', 'affaires', 'categoriedossier', 'naturedossier', 'typemotifdossier', 'typedossier'])->get();
 
 
         // return response()->json($dossiers);
 
+        return new DossierResource($dossiers);*/
+        $dossiers = Dossier::with([
+            'detenu',
+            'affaires', // Include tribunal relationship in affaires
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier'
+        ])->get();
+        
         return new DossierResource($dossiers);
     }
 

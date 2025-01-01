@@ -24,10 +24,15 @@ class PeineFactory extends Factory
         $endDate = (clone $startDate)->modify('+' . fake()->numberBetween(7, 130) . ' months');
 
         $faker = FakerFactory::create('ar_SA'); // Arabic locale
+        $observations=["السجين يظهر تعاونا ملحوظا مع إدارة السجن",
+        "يُبدي السجين سلوكا عدوانيا تجاه السجناء الآخرين",
+        "السجين ملتزم بالقوانين والتعليمات داخل السجن",
+        "السجين يحتاج إلى متابعة نفسية بسبب التوتر",
+        "يُظهر السجين رغبة في تحسين سلوكه العام"];
         return [
             'datedebut' => $startDate,
             'datefin' => $endDate,
-            'observation' => $faker->sentence(3)
+            'observation' => fake()->randomElement($observations),
         ];
     }
 }
