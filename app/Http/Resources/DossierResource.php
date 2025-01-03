@@ -14,8 +14,9 @@ class DossierResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        /**/
         return parent::toArray($request);
-       /* return [
+        /* return [
             'id' => $this->id,
             'numero' => $this->numero,
             'date_enregistrement' => $this->date_enregistrement,
@@ -23,28 +24,20 @@ class DossierResource extends JsonResource
             'avis_mp' => $this->avis_mp,
             'avis_dgapr' => $this->avis_dgapr,
             'avis_gouverneur' => $this->avis_gouverneur,
-            'detenu' => new DetenuResource($this->whenLoaded('detenu')),
-            'affaires' => $this->whenLoaded('affaires', function () {
-                return $this->affaires->map(function ($affaire) {
-                    return [
-                       
-                        
-                        'numeromp' => $affaire->numeromp,
-                        'numero' => $affaire->numero,
-                        'code' => $affaire->code,
-                        'annee' => $affaire->annee,
-                        'datejujement' => $affaire->datejujement,
-                        'conenujugement' => $affaire->conenujugement,
-                        'nbrannees' => $affaire->nbrannees,
-                        'nbrmois' => $affaire->nbrmois,
-                        'tribunal' => $affaire->tribunal ? $affaire->tribunal->libelle : null, // Include tribunal libelle
-                    ];
-                });
-            }),
-            'categoriedossier' => new CategoriedossierResource($this->whenLoaded('categoriedossier')),
-            'naturedossier' => new NaturedossierResource($this->whenLoaded('naturedossier')),
-            'typemotifdossier' => new TypemotifdossierResource($this->whenLoaded('typemotifdossier')),
-            'typedossier' => new TypedossierResource($this->whenLoaded('typedossier')),
+            'typedossier_id' => $this->typedossier_id,
+            'detenu_id' => $this->detenu_id,
+            'genre' => $this->genre,
+            'categoriedossiers_id' => $this->categoriedossiers_id,
+            'naturedossiers_id' => $this->naturedossiers_id,
+            'typemotifdossiers_id' => $this->typemotifdossiers_id,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'detenu' => new DetenuResource($this->detenu),
+            'affaires' => AffaireResource::collection($this->affaires),
+            'categoriedossier' => new CategorieDossierResource($this->categoriedossier),
+            'naturedossier' => new NatureDossierResource($this->naturedossier),
+            'typemotifdossier' => new TypeMotifDossierResource($this->typemotifdossier),
+            'typedossier' => new TypeDossierResource($this->typedossier),
         ];*/
     }
 }

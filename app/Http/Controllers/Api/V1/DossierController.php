@@ -16,7 +16,7 @@ class DossierController extends Controller
     {
         //
 
-       
+
 
 
 
@@ -34,7 +34,7 @@ class DossierController extends Controller
             'typemotifdossier',
             'typedossier'
         ])->get();
-        
+
         return new DossierResource($dossiers);
     }
 
