@@ -20,7 +20,8 @@ class DossierAffaireSeeder extends Seeder
 
         $affaireCount = Affaire::count();
         Dossier::all()->each(function ($dossier) use ($affaireCount) {
-            $take = random_int(1, $affaireCount);
+           // $take = random_int(1, $affaireCount);
+            $take = min(random_int(1, $affaireCount), 2);
             $dossierIds = Affaire::inRandomOrder()->take($take)->get()->pluck('id');
             $dossier->affaires()->sync($dossierIds);
         });

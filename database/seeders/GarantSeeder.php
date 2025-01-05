@@ -13,7 +13,7 @@ class GarantSeeder extends Seeder
     public function run(): void
     {
 
-        \App\Models\Garant::factory()->count(5)->create();
+        \App\Models\Garant::factory()->count(15)->create();
         // \App\Models\Detenu::factory()->count(15)->create();
     }
 }

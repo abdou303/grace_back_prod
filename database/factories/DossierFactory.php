@@ -26,7 +26,7 @@ class DossierFactory extends Factory
         $naturedossierIds = NatureDossier::pluck('id');
         $categoriedossierIds = CategorieDossier::pluck('id');
         $typemotifdossierIds = TypeMotifDossier::pluck('id');
-        $genres = ["M", "F"];
+        
         $avis=["نعم","لا"];
         $observations=["السجين يظهر تعاونا ملحوظا مع إدارة السجن",
         "يُبدي السجين سلوكا عدوانيا تجاه السجناء الآخرين",
@@ -49,7 +49,7 @@ class DossierFactory extends Factory
             'naturedossiers_id' => fake()->randomElement($naturedossierIds),
             'categoriedossiers_id' => fake()->randomElement($categoriedossierIds),
             'typemotifdossiers_id' => fake()->randomElement($typemotifdossierIds),
-            'genre' => fake()->randomElement($genres)
+           
 
 
 

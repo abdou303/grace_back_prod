@@ -14,6 +14,6 @@ class DetenuSeeder extends Seeder
     {
         //
         // \App\Models\Detenu::factory(20)->create();
-        \App\Models\Detenu::factory()->count(15)->create();
+        \App\Models\Detenu::factory()->count(50)->create();
     }
 }

@@ -15,8 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('nom', 500);
             $table->string('prenom', 500);
+            $table->string('nompere', 500);
+            $table->string('nommere', 500);
             $table->date('datenaissance');
             $table->string('cin', 30);
+            $table->string('genre', 1)->default('M');
             $table->longText('adresse');
             $table->foreignId('profession_id')->constrained('professions')->onDelete('cascade');
             $table->foreignId('nationalite_id')->constrained('nationalites')->onDelete('cascade');

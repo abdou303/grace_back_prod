@@ -22,16 +22,20 @@ class DetenuFactory extends Factory
         $professionIds = Profession::pluck('id');
         $nationaliteIds = Nationalite::pluck('id');
         $villeIds = Ville::pluck('id');
+        $genres = ["M", "F"];
 
         return [
             'nom' => fake()->firstName(),
             'prenom' => fake()->lastName(),
+            'nompere' => fake()->firstName('male') . ' ' . fake()->lastName(),
+            'nommere' => fake()->firstName('female') . ' ' . fake()->lastName(),
             'cin' => fake()->regexify('[A-Z]{2}[0-4]{4}'),
             'adresse' => fake()->address(),
             'datenaissance' => fake()->date('Y-m-d'),
             'profession_id' => fake()->randomElement($professionIds),
             'nationalite_id' => 99,
-            'ville_id' => fake()->randomElement($villeIds)
+            'ville_id' => fake()->randomElement($villeIds),
+            'genre' => fake()->randomElement($genres)
         ];
     }
 }

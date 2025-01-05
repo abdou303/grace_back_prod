@@ -13,6 +13,6 @@ class AffaireSeeder extends Seeder
     public function run(): void
     {
         //
-        \App\Models\Affaire::factory()->count(7)->create();
+        \App\Models\Affaire::factory()->count(15)->create();
     }
 }

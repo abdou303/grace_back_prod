@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('dossiers', function (Blueprint $table) {
             //
-            $table->string('genre', 1)->default('M'); // Replace 'some_existing_column' with the column after which you want to add 'genre'
+             // Replace 'some_existing_column' with the column after which you want to add 'genre'
             // Add foreign key constraints
             /* $table->unsignedBigInteger('typemotifdossiers_id')->nullable(); // Replace 'related_table_id' with the actual column
             $table->foreign('typemotifdossiers_id')
@@ -56,7 +56,7 @@ return new class extends Migration
             $table->dropForeign(['typemotifdossiers_id']);
             $table->dropColumn('typemotifdossiers_id');
 
-            $table->dropColumn('genre');
+            
         });
     }
 };

@@ -16,7 +16,8 @@ class DossierGarantSeeder extends Seeder
     {
         $garantCount = Garant::count();
         Dossier::all()->each(function ($dossier) use ($garantCount) {
-            $take = random_int(1, $garantCount);
+            //$take = random_int(1, $garantCount);
+            $take = min(random_int(1, $garantCount), 2);
             $dossierIds = Garant::inRandomOrder()->take($take)->get()->pluck('id');
             $dossier->garants()->sync($dossierIds);
         });

@@ -16,7 +16,8 @@ class PeinePrisonSeeder extends Seeder
     {
         $peineCount = Peine::count();
         Prison::all()->each(function ($prison) use ($peineCount) {
-            $take = random_int(1, $peineCount);
+           // $take = random_int(1, $peineCount);
+            $take = min(random_int(1, $peineCount), 2);            
             $prisonIds = Peine::inRandomOrder()->take($take)->get()->pluck('id');
             $prison->peines()->sync($prisonIds);
         });

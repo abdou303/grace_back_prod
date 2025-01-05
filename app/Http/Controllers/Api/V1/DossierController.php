@@ -28,7 +28,9 @@ class DossierController extends Controller
         return new DossierResource($dossiers);*/
         $dossiers = Dossier::with([
             'detenu',
-            'affaires', // Include tribunal relationship in affaires
+            'detenu.profession',
+            'affaires', 
+            'affaires.tribunal',
             'categoriedossier',
             'naturedossier',
             'typemotifdossier',
@@ -55,6 +57,8 @@ class DossierController extends Controller
     public function show(string $id)
     {
         //
+        $dossier = Dossier::with(['detenu','detenu.profession','affaires','affaires.tribunal', 'categoriedossier', 'naturedossier', 'typemotifdossier', 'typedossier'])->findOrFail($id);
+        return new DossierResource($dossier);
     }
 
     /**

@@ -13,7 +13,7 @@ class DossierSeeder extends Seeder
     public function run(): void
     {
         //
-        \App\Models\Dossier::factory()->count(15)->create();
+        \App\Models\Dossier::factory()->count(40)->create();
 
     }
 }
