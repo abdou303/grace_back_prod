@@ -9,6 +9,12 @@ use App\Http\Controllers\Api\V1\PrisonController;
 use App\Http\Controllers\Api\V1\ProfessionController;
 use App\Http\Controllers\Api\V1\TribunalController;
 use App\Http\Controllers\Api\V1\VilleController;
+use App\Http\Controllers\Api\V1\TypeRequetteController;
+use App\Http\Controllers\Api\V1\PartenaireController;
+
+
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +32,10 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('nationalites', NationaliteController::class);
     Route::apiResource('professions', ProfessionController::class);
     Route::apiResource('dossiers', DossierController::class);
+    Route::apiResource('typesrequettes', TypeRequetteController::class);
+    Route::apiResource('partenaires', PartenaireController::class);
+
+
 
     Route::post('/login', [AuthController::class, 'login']);
 });

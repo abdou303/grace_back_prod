@@ -25,4 +25,10 @@ class Requette extends Model
 
         return $this->belongsTo(Dossier::class);
     }
+
+    public function typerequette()
+    {
+
+        return $this->belongsTo(TypeRequette::class);
+    }
 }
