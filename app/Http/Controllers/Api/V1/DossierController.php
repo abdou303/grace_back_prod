@@ -29,7 +29,7 @@ class DossierController extends Controller
         $dossiers = Dossier::with([
             'detenu',
             'detenu.profession',
-            'affaires', 
+            'affaires',
             'affaires.tribunal',
             'categoriedossier',
             'naturedossier',
@@ -57,7 +57,17 @@ class DossierController extends Controller
     public function show(string $id)
     {
         //
-        $dossier = Dossier::with(['detenu','detenu.profession','affaires','affaires.tribunal', 'categoriedossier', 'naturedossier', 'typemotifdossier', 'typedossier'])->findOrFail($id);
+        $dossier = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'affaires',
+            'affaires.tribunal',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier'
+        ])->findOrFail($id);
         return new DossierResource($dossier);
     }
 
