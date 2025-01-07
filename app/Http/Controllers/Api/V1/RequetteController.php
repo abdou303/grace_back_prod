@@ -24,7 +24,7 @@ class RequetteController extends Controller
         //
 
         $validatedData = $request->validate([
-            'date' => 'required|date',
+            'date' => 'nullable|date',
             'partenaire' => 'nullable|string',
             'contenu' => 'required|string',
             'observations' => 'required|string',
