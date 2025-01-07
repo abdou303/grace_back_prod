@@ -19,6 +19,11 @@ class Requette extends Model
 
         return $this->belongsTo(Partenaire::class);
     }
+    public function tribunal()
+    {
+
+        return $this->belongsTo(Tribunal::class);
+    }
 
     public function dossier()
     {

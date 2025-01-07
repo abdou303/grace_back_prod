@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Partenaire;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -21,23 +22,25 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);*/
 
-        $this->call([ 
-          GarantSeeder::class
-        , RoleSeeder::class
-        , GroupeSeeder::class
-        , DetenuSeeder::class
-        , CategorieDossierSeeder::class
-        , NatureDossierSeeder::class
-        , TypeMotifDossierSeeder::class
-        , TypeDossierSeeder::class
-        , DossierSeeder::class
-        , PeineSeeder::class
-        , AffaireSeeder::class
-        , DossierAffaireSeeder::class
-        , DossierGarantSeeder::class
-        , PeinePrisonSeeder::class
-        , UserSeeder::class
+        $this->call([
+            GarantSeeder::class,
+            RoleSeeder::class,
+            GroupeSeeder::class,
+            PartenaireSeeder::class,
+            TypeRequetteSeeder::class,
+            DetenuSeeder::class,
+            CategorieDossierSeeder::class,
+            NatureDossierSeeder::class,
+            TypeMotifDossierSeeder::class,
+            TypeDossierSeeder::class,
+            DossierSeeder::class,
+            PeineSeeder::class,
+            AffaireSeeder::class,
+            DossierAffaireSeeder::class,
+            DossierGarantSeeder::class,
+            PeinePrisonSeeder::class,
+            UserSeeder::class
 
-    ]);
+        ]);
     }
 }
