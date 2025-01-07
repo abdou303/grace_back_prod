@@ -22,6 +22,24 @@ class RequetteController extends Controller
     public function store(Request $request)
     {
         //
+
+        $validatedData = $request->validate([
+            'date' => 'required|date',
+            'partenaire' => 'nullable|string',
+            'contenu' => 'required|string',
+            'observations' => 'required|string',
+            'dossier_id'=>'int',
+            'partenaire_id'=>'integer',
+            'tribunal_id'=>'integer',
+            'typerequette_id'=>'int'
+        ]);
+
+        $requette = Requette::create($validatedData);
+
+        return response()->json([
+            'message' => 'Request created successfully!',
+            'data' => $requette,
+        ], 201);
     }
 
     /**

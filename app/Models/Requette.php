@@ -8,6 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 class Requette extends Model
 {
     use HasFactory;
+    protected $fillable = [
+ 
+
+        'date',
+        'contenu',
+        'observations',
+        'dossier_id',
+        'partenaire_id',
+        'tribunal_id',
+        'created_at',
+        'updated_at',
+        'typerequette_id',
+    ];
     public function pjs()
     {
 
