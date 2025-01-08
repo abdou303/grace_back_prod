@@ -27,7 +27,7 @@ class RequetteController extends Controller
             'date' => 'nullable|date',
             'partenaire' => 'nullable|string',
             'contenu' => 'required|string',
-            'observations' => 'required|string',
+            'observations' => 'string',
             'dossier_id'=>'int',
             'partenaire_id'=>'integer',
             'tribunal_id'=>'integer',
