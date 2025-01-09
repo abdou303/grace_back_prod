@@ -22,16 +22,15 @@ class RequetteController extends Controller
     public function store(Request $request)
     {
         //
-
         $validatedData = $request->validate([
             'date' => 'nullable|date',
             'partenaire' => 'nullable|string',
             'contenu' => 'required|string',
-            'observations' => 'string',
-            'dossier_id'=>'int',
-            'partenaire_id'=>'integer',
-            'tribunal_id'=>'integer',
-            'typerequette_id'=>'int'
+            'observations' => 'required|string',
+            'dossier_id' => 'int',
+            'partenaire_id' => 'int',
+            'tribunal_id' => 'int',
+            'typerequette_id' => 'int'
         ]);
 
         $requette = Requette::create($validatedData);
@@ -45,7 +44,7 @@ class RequetteController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Requette $requette)
+    public function show(string $id)
     {
         //
     }
@@ -53,7 +52,7 @@ class RequetteController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Requette $requette)
+    public function update(Request $request, string $id)
     {
         //
     }
@@ -61,7 +60,7 @@ class RequetteController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Requette $requette)
+    public function destroy(string $id)
     {
         //
     }

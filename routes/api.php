@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\PartenaireController;
 use App\Http\Controllers\Api\V1\RequetteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use RequetteController as GlobalRequetteController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -32,6 +33,10 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('typesrequettes', TypeRequetteController::class);
     Route::apiResource('partenaires', PartenaireController::class);
     Route::apiResource('requettes', RequetteController::class);
+
+
+
+
 
 
 
