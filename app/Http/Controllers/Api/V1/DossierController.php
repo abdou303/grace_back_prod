@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DossierResource;
 use App\Models\Dossier;
+use App\Models\Requette;
 use Illuminate\Http\Request;
 
 class DossierController extends Controller
@@ -30,6 +31,7 @@ class DossierController extends Controller
             'detenu',
             'detenu.profession',
             'affaires',
+            'requettes',
             'affaires.tribunal',
             'categoriedossier',
             'naturedossier',
@@ -62,6 +64,7 @@ class DossierController extends Controller
             'detenu.profession',
             'detenu.nationalite',
             'affaires',
+            'requettes',
             'affaires.tribunal',
             'categoriedossier',
             'naturedossier',

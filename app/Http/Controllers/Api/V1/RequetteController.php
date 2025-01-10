@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\RequetteResource;
 use App\Models\Requette;
 use Illuminate\Http\Request;
 
@@ -14,6 +15,11 @@ class RequetteController extends Controller
     public function index()
     {
         //
+        $requettes = Requette::with([
+            'dossier'
+        ])->get();
+
+        return new RequetteResource($requettes);
     }
 
     /**
