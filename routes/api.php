@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\V1\VilleController;
 use App\Http\Controllers\Api\V1\TypeRequetteController;
 use App\Http\Controllers\Api\V1\PartenaireController;
 use App\Http\Controllers\Api\V1\RequetteController;
+use App\Http\Controllers\Api\V1\AvisController;
+use App\Http\Controllers\Api\V1\ComportementController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use RequetteController as GlobalRequetteController;
@@ -33,6 +35,10 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('typesrequettes', TypeRequetteController::class);
     Route::apiResource('partenaires', PartenaireController::class);
     Route::apiResource('requettes', RequetteController::class);
+    Route::apiResource('avis', AvisController::class);
+    Route::apiResource('comportements', ComportementController::class);
+    Route::get('/requettes/dossier/{dossier_id}', [RequetteController::class, 'getByDossier']);
+
 
 
 

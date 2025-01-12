@@ -22,6 +22,18 @@ class RequetteController extends Controller
         return new RequetteResource($requettes);
     }
 
+
+    public function getByDossier($dossier_id)
+    {
+        // Fetch Requettes by dossier_id
+        $requettes = Requette::where('dossier_id', $dossier_id)
+        ->with(['dossier', 'tribunal','typerequette'])
+        ->get();
+
+        // Return the response
+        return response()->json($requettes);
+    }
+
     /**
      * Store a newly created resource in storage.
      */

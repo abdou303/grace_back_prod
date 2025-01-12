@@ -33,6 +33,8 @@ class DatabaseSeeder extends Seeder
             NatureDossierSeeder::class,
             TypeMotifDossierSeeder::class,
             TypeDossierSeeder::class,
+            AvisSeeder::class,
+            ComportementSeeder::class,
             DossierSeeder::class,
             PeineSeeder::class,
             AffaireSeeder::class,

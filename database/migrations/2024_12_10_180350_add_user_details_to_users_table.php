@@ -21,13 +21,13 @@ return new class extends Migration
                         $table->foreign('tribunal_id')
                         ->references('id')
                         ->on('tribunaux')
-                        ->onDelete('set null'); // Set null if the company is deleted
+                        ->onDelete('set null'); // Set null if the tribunaux is deleted
                         $table->unsignedBigInteger('partenaire_id')->nullable();
                         // Foreign key constraint
                         $table->foreign('partenaire_id')
                         ->references('id')
                         ->on('partenaires')
-                        ->onDelete('set null'); // Set null if the company is deleted
+                        ->onDelete('set null'); // Set null if the partenaires is deleted
             
 
         });
