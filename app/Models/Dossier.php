@@ -40,16 +40,22 @@ class Dossier extends Model
     public function categoriedossier()
     {
 
-        return $this->belongsTo(CategorieDossier::class,'categoriedossiers_id');
+        return $this->belongsTo(CategorieDossier::class, 'categoriedossiers_id');
     }
     public function naturedossier()
     {
 
-        return $this->belongsTo(NatureDossier::class,'naturedossiers_id');
+        return $this->belongsTo(NatureDossier::class, 'naturedossiers_id');
     }
     public function typemotifdossier()
     {
 
-        return $this->belongsTo(TypeMotifDossier::class,'typemotifdossiers_id');
+        return $this->belongsTo(TypeMotifDossier::class, 'typemotifdossiers_id');
+    }
+
+    public function comportement()
+    {
+
+        return $this->belongsTo(Comportement::class, 'comportement_id');
     }
 }

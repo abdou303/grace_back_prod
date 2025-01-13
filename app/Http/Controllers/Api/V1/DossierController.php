@@ -30,6 +30,8 @@ class DossierController extends Controller
         $dossiers = Dossier::with([
             'detenu',
             'detenu.profession',
+            'detenu.nationalite',
+            'comportement',
             'affaires',
             'requettes',
             'affaires.tribunal',
@@ -63,6 +65,7 @@ class DossierController extends Controller
             'detenu',
             'detenu.profession',
             'detenu.nationalite',
+            'comportement',
             'affaires',
             'requettes',
             'affaires.tribunal',

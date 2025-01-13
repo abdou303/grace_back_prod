@@ -17,15 +17,16 @@ class AvisFactory extends Factory
     public function definition(): array
     {
         $avis =
-        [
-            'رأي 1',
-           'رأي 2',
-           'رأي 3',
-           'رأي 4'
+            [
+                'لايرى مانعا',
+                'الموافقة',
+                'الرفض',
+                'إسناد النظر',
+                'التحفظ'
+            ];
+        return [
+            'libelle' => fake()->unique()->randomElement($avis),
+            'active' => fake()->randomElement([1, 1]),
         ];
-    return [
-        'libelle' => fake()->unique()->randomElement($avis),
-        'active' => fake()->randomElement([1, 1]),
-    ];
     }
 }

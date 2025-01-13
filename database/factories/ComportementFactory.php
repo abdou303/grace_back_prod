@@ -16,16 +16,29 @@ class ComportementFactory extends Factory
      */
     public function definition(): array
     {
-        $comportements =
-        [
-            'سيرة 1',
-           'سيرة 2',
-           'سيرة 3',
-           'سيرة 4'
+        /* $comportements =
+            [
+                'عادية',
+                'حسنة',
+                'لابأس بها',
+                'سيئة'
+            ];
+        return [
+            'libelle' => fake()->unique()->randomElement($comportements),
+            'active' => fake()->randomElement([1, 1]),
+        ];*/
+
+        static $comportements = [
+            'عادية',
+            'حسنة',
+            'لابأس بها',
+            'سيئة',
         ];
-    return [
-        'libelle' => fake()->unique()->randomElement($comportements),
-        'active' => fake()->randomElement([1, 1]),
-    ];
+        $libelle = array_pop($comportements);
+
+        return [
+            'libelle' => $libelle,
+            'active' => fake()->randomElement([1, 1]), // Always returns 1 in this case
+        ];
     }
 }
