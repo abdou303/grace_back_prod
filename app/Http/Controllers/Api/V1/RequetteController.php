@@ -16,7 +16,7 @@ class RequetteController extends Controller
     {
         //
         $requettes = Requette::with([
-            'dossier'
+            'dossier', 'tribunal','typerequette'
         ])->get();
 
         return new RequetteResource($requettes);
