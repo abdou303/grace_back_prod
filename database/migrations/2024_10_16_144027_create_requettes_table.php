@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('requettes', function (Blueprint $table) {
             $table->id();
+            $table->string('numero');
             $table->date('date');
             $table->text('contenu');
             $table->text('observations');

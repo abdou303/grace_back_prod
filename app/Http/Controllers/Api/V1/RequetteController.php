@@ -16,7 +16,9 @@ class RequetteController extends Controller
     {
         //
         $requettes = Requette::with([
-            'dossier', 'tribunal','typerequette'
+            'dossier',
+            'tribunal',
+            'typerequette'
         ])->get();
 
         return new RequetteResource($requettes);
@@ -27,8 +29,8 @@ class RequetteController extends Controller
     {
         // Fetch Requettes by dossier_id
         $requettes = Requette::where('dossier_id', $dossier_id)
-        ->with(['dossier', 'tribunal','typerequette'])
-        ->get();
+            ->with(['dossier', 'tribunal', 'typerequette'])
+            ->get();
 
         // Return the response
         return response()->json($requettes);
@@ -50,11 +52,20 @@ class RequetteController extends Controller
             'tribunal_id' => 'int',
             'typerequette_id' => 'int'
         ]);
+        // Generate the "numero" value
+        $currentYear = now()->format('Y');
+        $lastRecord = Requette::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
 
+        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 4)) : 0;
+        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+        $numero = $currentYear . $newNumber;
+
+        // Add the generated "numero" to the validated data
+        $validatedData['numero'] = $numero;
         $requette = Requette::create($validatedData);
 
         return response()->json([
-            'message' => 'Request created successfully!',
+            'message' => 'تم تسجيل الطلب بنجاح',
             'data' => $requette,
         ], 201);
     }

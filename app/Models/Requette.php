@@ -9,9 +9,10 @@ class Requette extends Model
 {
     use HasFactory;
     protected $fillable = [
- 
+
 
         'date',
+        'numero',
         'contenu',
         'observations',
         'dossier_id',
