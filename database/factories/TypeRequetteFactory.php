@@ -27,7 +27,6 @@ class TypeRequetteFactory extends Factory
 
         return [
             'libelle' => fake()->unique()->randomElement($typesrequettes),
-
             'active' => fake()->randomElement([0, 1]),
         ];
     }
