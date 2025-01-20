@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('datenaissance');
             $table->string('cin', 30);
             $table->string('genre', 1)->default('M');
-            $table->longText('adresse');
+            $table->longText('adresse')->nullable();
             $table->foreignId('profession_id')->default(101)->constrained('professions')->onDelete('cascade');
             $table->foreignId('nationalite_id')->default(158)->constrained('nationalites')->onDelete('cascade');
             $table->foreignId('ville_id')->default(219)->constrained('villes')->onDelete('cascade');

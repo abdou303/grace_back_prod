@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Detenu extends Model
 {
     use HasFactory;
+    protected $fillable = [
+
+        'nom',
+        'prenom',
+        'nompere',
+        'nommere',
+        'cin',
+        'datenaissance'
+        
+    ];
 
     public function ville()
     {

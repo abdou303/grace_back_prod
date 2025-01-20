@@ -8,6 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 class Affaire extends Model
 {
     use HasFactory;
+    
+    protected $fillable=[
+        'numeromp',
+'numero',
+'code',
+'annee',
+'datejujement',
+'conenujugement',
+'nbrannees',
+'nbrmois',
+'peine_id',
+'tribunal_id',
+    ];
 
     public function dossiers()
     {

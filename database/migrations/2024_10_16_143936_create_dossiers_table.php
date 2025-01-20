@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('numero', 50);
             $table->date('date_enregistrement');
-            $table->text('observation')->nullable();;
-            $table->integer('avis_mp');
-            $table->integer('avis_dgapr');
-            $table->integer('avis_gouverneur');
+            $table->text('observation')->nullable();
+            $table->integer('avis_mp')->nullable();
+            $table->integer('avis_dgapr')->nullable();
+            $table->integer('avis_gouverneur')->nullable();
             /* $table->foreignId('avis_mp')->nullable()->constrained('avis')->onDelete('cascade');     
             $table->foreignId('avis_dgapr')->nullable()->constrained('avis')->onDelete('cascade');
             $table->foreignId('avis_gouverneur')->nullable()->constrained('avis')->onDelete('cascade');

@@ -14,9 +14,11 @@ use App\Http\Controllers\Api\V1\PartenaireController;
 use App\Http\Controllers\Api\V1\RequetteController;
 use App\Http\Controllers\Api\V1\AvisController;
 use App\Http\Controllers\Api\V1\ComportementController;
+use App\Http\Controllers\Api\V1\DossierImportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use RequetteController as GlobalRequetteController;
+
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -37,8 +39,12 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('requettes', RequetteController::class);
     Route::apiResource('avis', AvisController::class);
     Route::apiResource('comportements', ComportementController::class);
+    //Route::apiResource('imports', DossierImportController::class);
     Route::get('/requettes/dossier/{dossier_id}', [RequetteController::class, 'getByDossier']);
+    Route::post('/import-dossiers', [DossierImportController::class, 'import']);
 
+   
+    
 
 
 
@@ -50,3 +56,6 @@ Route::prefix('v1')->group(function () {
 
     Route::post('/login', [AuthController::class, 'login']);
 });
+
+
+

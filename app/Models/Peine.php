@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Peine extends Model
 {
     use HasFactory;
-
+    protected $fillable = ['datedebut','datefin'];
     public function affaire()
     {
 
