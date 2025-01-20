@@ -5,8 +5,7 @@ namespace App\Imports;
 use App\Models\Dossier;
 use App\Models\Detenu;
 use App\Models\Affaire;
-
-
+use App\Models\Peine;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -19,8 +18,8 @@ class DossierImport implements ToCollection
         $rows->shift();
         foreach ($rows as $row) {
 
-             // Find or create the detenu
-             $detenu = Detenu::create([
+            // Find or create the detenu
+            $detenu = Detenu::create([
                 'nom' => $row['nom'],
                 'prenom' => $row['prenom'],
                 'nompere' => $row['nompere'],
@@ -29,33 +28,58 @@ class DossierImport implements ToCollection
                 'datenaissance' => $row['datenaissance'],
                 'nompere' => $row['nompere'],
                 'nommere' => $row['nommere'],
-                
+
             ]);
 
-            // Create the post
-            $post = Post::create([
-                'title' => $row['post_title'],
-                'content' => $row['post_content'],
-                'user_id' => $user->id,
+            // Create the Comportement
+
+            // Create the Type Dossier 
+
+
+            // Create the Dossier
+            $dossier = Dossier::create([
+                'numero' => $row['numero'],
+                'date_enregistrement' =>  now(),
+                'avis_mp' =>  $row['avis_mp'],
+                'avis_dgapr' =>  $row['avis_dgapr'],
+                'avis_gouverneur' =>  $row['avis_gouverneur'],
+                'typedossier_id' => $row['typedossier_id'],
+                'detenu_id' => $detenu->id,
+
             ]);
 
-            // Attach categories
-            $categories = explode(',', $row['categories']);
-            foreach ($categories as $categoryName) {
-                $category = Category::firstOrCreate(['name' => trim($categoryName)]);
-                $post->categories()->attach($category->id);
-            }
+            // Create the Peine
+            $peine = Peine::create([
+                'datedebut' => $row['numero'],
+                'datefin' =>  now(),
+                'datefin' =>  $row['avis_gouverneur'],
+                'avis_mp' =>  $row['avis_mp'],
+                'avis_dgapr' =>  $row['avis_dgapr'],
+                'avis_gouverneur' =>  $row['avis_gouverneur'],
+                'typedossier_id' => $row['typedossier_id'],
+                'detenu_id' => $detenu->id,
 
-            // Add comments
-            if (!empty($row['comments'])) {
-                $comments = explode('|', $row['comments']);
-                foreach ($comments as $commentContent) {
-                    Comment::create([
-                        'content' => trim($commentContent),
-                        'post_id' => $post->id,
-                    ]);
-                }
-            }
+            ]);
+            // Handle the "Affaires" and attach them to the Dossier
+
+
+            $affaire = Affaire::firstOrCreate([
+                'numeromp' => $row['numeromp'],
+                'numero' => $row['numero'],
+                'code' => $row['code'],
+                'annee' => $row['annee'],
+                'datejujement' => $row['datejujement'],
+                'conenujugement' => $row['conenujugement'],
+                'nbrannees' => $row['nbrannees'],
+                'nbrmois' => $row['nbrmois'],
+                'nbrmois' => $row['nbrmois'],
+                'peine_id' => $peine->id,
+                'tribunal_id' => $row['tribunal_id'],
+
+            ]);
+
+            // Attach the Affaire to the Dossier
+            $dossier->affaires()->syncWithoutDetaching([$affaire->id]);
         }
     }
 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->date('datedebut');
             $table->date('datefin');
-            $table->longText('observation');
+            $table->longText('observation')->nullable();
             $table->timestamps();
         });
     }
