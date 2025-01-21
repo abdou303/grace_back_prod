@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Peine extends Model
 {
     use HasFactory;
-    protected $fillable = ['datedebut','datefin'];
+    protected $fillable = ['datedebut', 'datefin'];
     public function affaire()
     {
 
@@ -18,6 +18,6 @@ class Peine extends Model
     public function prisons()
     {
 
-        return $this->belongsToMany(Prison::class,'peine_prison')->withTimestamps();
+        return $this->belongsToMany(Prison::class, 'peine_prison')->withTimestamps();
     }
 }

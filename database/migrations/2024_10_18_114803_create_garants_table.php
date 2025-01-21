@@ -15,8 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('nom', 500);
             $table->string('prenom', 500);
-            $table->date('datenaissance');
-            $table->longText('adresse');
+            $table->date('datenaissance')->nullable();
+            $table->longText('adresse')->nullable();
+            $table->unsignedBigInteger('province_id')->nullable();
+            $table->foreign('province_id')->references('id')->on('provinces')->onDelete('cascade');
+            $table->unsignedBigInteger('tribunal_id')->nullable();
+            $table->foreign('tribunal_id')->references('id')->on('tribunaux')->onDelete('cascade');
             $table->timestamps();
         });
     }

@@ -23,18 +23,18 @@ class DatabaseSeeder extends Seeder
         ]);*/
 
         $this->call([
-            GarantSeeder::class,
+            //  GarantSeeder::class,
             RoleSeeder::class,
             GroupeSeeder::class,
             PartenaireSeeder::class,
             TypeRequetteSeeder::class,
-            DetenuSeeder::class,
-            DossierSeeder::class,
-            PeineSeeder::class,
-            AffaireSeeder::class,
-            DossierAffaireSeeder::class,
-            DossierGarantSeeder::class,
-            PeinePrisonSeeder::class,
+            // DetenuSeeder::class,
+            // DossierSeeder::class,
+            //PeineSeeder::class,
+            //  AffaireSeeder::class,
+            //  DossierAffaireSeeder::class,
+            //DossierGarantSeeder::class,
+            //  PeinePrisonSeeder::class,
             UserSeeder::class
 
         ]);

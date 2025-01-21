@@ -9,16 +9,16 @@ class Dossier extends Model
 {
     use HasFactory;
     protected $fillable = [
-'numero',
-'date_enregistrement',
-'avis_mp',
-'avis_dgapr',
-'avis_gouverneur',
-'typedossier_id',
-'detenu_id',
-'typemotifdossiers_id',
-'categoriedossiers_id',
-'naturedossiers_id'
+        'numero',
+        'date_enregistrement',
+        'avis_mp',
+        'avis_dgapr',
+        'avis_gouverneur',
+        'typedossier_id',
+        'detenu_id',
+        'typemotifdossiers_id',
+        'categoriedossiers_id',
+        'naturedossiers_id'
     ];
 
     public function affaires()

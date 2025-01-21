@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Prison extends Model
 {
     use HasFactory;
+    protected $fillable = ['id', 'libelle'];
 
     public function peines()
     {
 
-        return $this->belongsToMany(Peine::class,'peine_prison')->withTimestamps();
+        return $this->belongsToMany(Peine::class, 'peine_prison')->withTimestamps();
     }
 }
