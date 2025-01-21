@@ -32,4 +32,8 @@ class Tribunal extends Model
     {
         return $this->hasMany(User::class);
     }
+    public function garants()
+    {
+        return $this->hasMany(Garant::class);
+    }
 }

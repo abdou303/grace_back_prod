@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('nom', 500);
             $table->string('prenom', 500);
+            $table->string('qualite', 500)->nullable();
+            $table->string('genre', 1)->default('M');
             $table->date('datenaissance')->nullable();
             $table->longText('adresse')->nullable();
             $table->unsignedBigInteger('province_id')->nullable();

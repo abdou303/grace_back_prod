@@ -9,7 +9,7 @@ class Garant extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nom', 'prenom', 'adresse'];
+    protected $fillable = ['nom', 'prenom', 'adresse','genre','qualite','province_id','tribunal_id'];
     public function dossiers()
     {
 
@@ -20,5 +20,11 @@ class Garant extends Model
     {
 
         return $this->belongsTo(Province::class, 'province_id');
+    }
+
+    public function tribunal()
+    {
+
+        return $this->belongsTo(Tribunal::class, 'tribunal_id');
     }
 }

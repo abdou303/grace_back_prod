@@ -40,6 +40,6 @@ class Affaire extends Model
     public function peine()
     {
 
-        return $this->belongsTo(Peine::class)->withTimestamps();
+        return $this->belongsTo(Peine::class,'peine_id');
     }
 }

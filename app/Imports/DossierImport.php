@@ -63,7 +63,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                         //'datedebut' =>Carbon::createFromFormat('d/m/Y', $row['datedebut_peine'])->format('Y-m-d'),
                         'datefin' =>   $row['datefin_peine'],
                         //   'datefin' =>Carbon::createFromFormat('d/m/Y', $row['datefin_peine'])->format('Y-m-d'),
-
+                        'numerolocal' => $row['numero_detention_local'],
+                        'numeronational' => $row['numero_detention_national'],
                     ]);
 
                     // Attach the Prisons to the Peine
@@ -71,7 +72,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                 }
             }
 
-            if ($row['typedossier_id'] == 2) {
+            elseif ($row['typedossier_id'] == 2) {
 
                 $dossier = Dossier::create([
                     'numero' => $row['numero_dossier'],
@@ -92,6 +93,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                     'nom' => $row['nom_garant'],
                     'prenom' => $row['prenom_garant'],
                     'adresse' => $row['adresse_garant'],
+                    'qualite' => $row['qualite_garant'],
                     'province_id' => $row['garant_province_id'],
                     'tribunal_id' => $row['garant_tribunal_id'],
 
@@ -104,7 +106,10 @@ class DossierImport implements ToCollection, WithHeadingRow
                     'datedebut' => $row['datedebut_peine'],
                     //'datedebut' =>Carbon::createFromFormat('d/m/Y', $row['datedebut_peine'])->format('Y-m-d'),
                     'datefin' =>   $row['datefin_peine'],
-                    //   'datefin' =>Carbon::createFromFormat('d/m/Y', $row['datefin_peine'])->format('Y-m-d'),
+                    //'datefin' =>Carbon::createFromFormat('d/m/Y', $row['datefin_peine'])->format('Y-m-d'),
+                    'numerolocal' => $row['numero_detention_local'],
+                    'numeronational' => $row['numero_detention_national'],
+
 
                 ]);
 

@@ -13,8 +13,12 @@ return new class extends Migration
     {
         Schema::create('peines', function (Blueprint $table) {
             $table->id();
+            $table->string('numerolocal', 30);
+            $table->string('numeronational', 30);
             $table->date('datedebut');
-            $table->date('datefin');
+            $table->date('datefin')->nullable();
+            $table->date('datesortie')->nullable();
+            $table->date('dateprescription')->nullable();
             $table->longText('observation')->nullable();
             $table->timestamps();
         });
