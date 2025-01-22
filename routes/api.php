@@ -15,6 +15,10 @@ use App\Http\Controllers\Api\V1\RequetteController;
 use App\Http\Controllers\Api\V1\AvisController;
 use App\Http\Controllers\Api\V1\ComportementController;
 use App\Http\Controllers\Api\V1\DossierImportController;
+use App\Http\Controllers\Api\V1\NatureDossierController;
+use App\Http\Controllers\Api\V1\ProvinceController;
+use App\Http\Controllers\Api\V1\TypeDossierController;
+use App\Http\Controllers\Api\V1\TypeMotifDossierController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -39,12 +43,18 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('requettes', RequetteController::class);
     Route::apiResource('avis', AvisController::class);
     Route::apiResource('comportements', ComportementController::class);
+    Route::apiResource('provinces', ProvinceController::class);
+    Route::apiResource('typesdossiers', TypeDossierController::class);
+    Route::apiResource('naturesdossiers', NatureDossierController::class);
+    Route::apiResource('typesmotifsdossiers', TypeMotifDossierController::class);
+
+
     //Route::apiResource('imports', DossierImportController::class);
     Route::get('/requettes/dossier/{dossier_id}', [RequetteController::class, 'getByDossier']);
     Route::post('/import-dossiers', [DossierImportController::class, 'import']);
 
-   
-    
+
+
 
 
 
@@ -56,6 +66,3 @@ Route::prefix('v1')->group(function () {
 
     Route::post('/login', [AuthController::class, 'login']);
 });
-
-
-

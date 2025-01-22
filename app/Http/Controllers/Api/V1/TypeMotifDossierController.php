@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ProvinceResource;
-use App\Models\Province;
+use App\Http\Resources\TypeMotifDossierResource;
+use App\Models\TypeMotifDossier;
 use Illuminate\Http\Request;
 
-class ProvinceController extends Controller
+class TypeMotifDossierController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -15,7 +15,7 @@ class ProvinceController extends Controller
     public function index()
     {
         //
-        return ProvinceResource::collection(Province::all());
+        return TypeMotifDossierResource::collection(TypeMotifDossier::all());
     }
 
     /**
@@ -29,7 +29,7 @@ class ProvinceController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Province $province)
+    public function show(string $id)
     {
         //
     }
@@ -37,7 +37,7 @@ class ProvinceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Province $province)
+    public function update(Request $request, string $id)
     {
         //
     }
@@ -45,7 +45,7 @@ class ProvinceController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Province $province)
+    public function destroy(string $id)
     {
         //
     }
