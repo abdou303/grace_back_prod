@@ -11,6 +11,7 @@ class Affaire extends Model
 
     protected $fillable = [
         'numeromp',
+        'numeroaffaire',
         'numero',
         'code',
         'annee',

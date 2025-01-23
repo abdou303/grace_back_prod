@@ -228,10 +228,8 @@ GO
 SET IDENTITY_INSERT [dbo].[naturesdossiers] ON 
 
 INSERT [dbo].[naturesdossiers] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (1, N'معتقل', 1, CAST(N'2025-01-13T10:00:38.297' AS DateTime), CAST(N'2025-01-13T10:00:38.297' AS DateTime))
-INSERT [dbo].[naturesdossiers] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N'الحفظ', 1, CAST(N'2025-01-13T10:00:38.297' AS DateTime), CAST(N'2025-01-13T10:00:38.297' AS DateTime))
-INSERT [dbo].[naturesdossiers] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (3, N'سراح', 1, CAST(N'2025-01-13T10:00:38.297' AS DateTime), CAST(N'2025-01-13T10:00:38.297' AS DateTime))
-INSERT [dbo].[naturesdossiers] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (4, N'المؤبد', 1, CAST(N'2025-01-13T10:00:38.300' AS DateTime), CAST(N'2025-01-13T10:00:38.300' AS DateTime))
-INSERT [dbo].[naturesdossiers] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (5, N'الاعدام', 1, CAST(N'2025-01-13T10:00:38.300' AS DateTime), CAST(N'2025-01-13T10:00:38.300' AS DateTime))
+INSERT [dbo].[naturesdossiers] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N'سراح', 1, CAST(N'2025-01-13T10:00:38.297' AS DateTime), CAST(N'2025-01-13T10:00:38.297' AS DateTime))
+
 SET IDENTITY_INSERT [dbo].[naturesdossiers] OFF
 GO
 SET IDENTITY_INSERT [dbo].[pays] ON 

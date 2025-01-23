@@ -70,9 +70,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                     // Attach the Prisons to the Peine
                     $peine->prisons()->syncWithoutDetaching([$row['prison_id']]);
                 }
-            }
-
-            elseif ($row['typedossier_id'] == 2) {
+            } elseif ($row['typedossier_id'] == 2) {
 
                 $dossier = Dossier::create([
                     'numero' => $row['numero_dossier'],
@@ -158,10 +156,12 @@ class DossierImport implements ToCollection, WithHeadingRow
 
             $affaire = Affaire::firstOrCreate([
                 'numeromp' => $row['numeromp'],
-                'numero' => $row['numero'],
+                'numeroaffaire' => $row['numero_affaire'],
+                'numero' => $row['numero_affaire'],
+
                 'code' => $row['code'],
                 'annee' => $row['annee'],
-                'datejujement' => $row['datejujement'],
+                'datejujement' => $row['date_jujement'],
                 //'datejujement' =>Carbon::createFromFormat('d/m/Y', $row['datejujement'])->format('Y-m-d'),
                 'conenujugement' => $row['conenujugement'],
                 'nbrannees' => $row['nbrannees'],
