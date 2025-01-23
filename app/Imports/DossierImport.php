@@ -154,6 +154,7 @@ class DossierImport implements ToCollection, WithHeadingRow
             // Handle the "Affaires" and attach them to the Dossier
 */
 
+/*
             $affaire = Affaire::firstOrCreate([
                 'numeromp' => $row['numeromp'],
                 'numeroaffaire' => $row['numero_affaire'],
@@ -173,6 +174,22 @@ class DossierImport implements ToCollection, WithHeadingRow
 
             // Attach the Affaire to the Dossier
             $dossier->affaires()->syncWithoutDetaching([$affaire->id]);
+
+            */
+
+
+
+                        // Create or fetch Affaires and attach to the Dossier
+                        $affaireNumeros = array_map('trim', explode(':', $row['numeroaffaire']));
+                        $affaireDatesJugement = array_map('trim', explode(':', $row['datejujement']));
+                        $affaireIds = [];
+                        foreach ($affaireNumeros as $index => $numeroAffaire) {
+                                // Ensure there's a corresponding date for each numeroAffaire
+                                $dateJugement = $affaireDatesJugement[$index] ?? null;
+                            $affaire = Affaire::firstOrCreate(['numeroaffaire' => $numeroAffaire,'datejujement' => $dateJugement,'tribunal_id' => 119,'peine_id' => $peine->id,]);
+                            $affaireIds[] = $affaire->id;
+                        }
+                        $dossier->affaires()->sync($affaireIds);
         }
     }
 }
