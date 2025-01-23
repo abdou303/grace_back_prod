@@ -8,18 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class Affaire extends Model
 {
     use HasFactory;
-    
-    protected $fillable=[
+
+    protected $fillable = [
         'numeromp',
-'numero',
-'code',
-'annee',
-'datejujement',
-'conenujugement',
-'nbrannees',
-'nbrmois',
-'peine_id',
-'tribunal_id',
+        'numero',
+        'code',
+        'annee',
+        'datejujement',
+        'conenujugement',
+        'nbrannees',
+        'nbrmois',
+        'peine_id',
+        'tribunal_id',
     ];
 
     public function dossiers()
@@ -28,7 +28,7 @@ class Affaire extends Model
         return $this->belongsToMany(Dossier::class, 'dossier_affaire')->withTimestamps();
     }
 
-   /* public function tribunal()
+    /* public function tribunal()
     {
 
         return $this->belongsTo(Tribunal::class,'tribunal_id')->withTimestamps();
@@ -40,6 +40,6 @@ class Affaire extends Model
     public function peine()
     {
 
-        return $this->belongsTo(Peine::class,'peine_id');
+        return $this->belongsTo(Peine::class, 'peine_id');
     }
 }

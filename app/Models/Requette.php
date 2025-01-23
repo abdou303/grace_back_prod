@@ -50,4 +50,10 @@ class Requette extends Model
 
         return $this->belongsTo(TypeRequette::class);
     }
+
+    public function statutrequettes()
+    {
+
+        return $this->belongsToMany(StatutRequette::class, 'requette_statut_requette')->withTimestamps();
+    }
 }

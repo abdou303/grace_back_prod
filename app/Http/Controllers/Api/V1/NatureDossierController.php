@@ -15,7 +15,9 @@ class NatureDossierController extends Controller
     public function index()
     {
         //
-        return NatureDossierResource::collection(NatureDossier::all());
+        $naturedossier = NatureDossier::where('active', 1)->get();
+
+        return NatureDossierResource::collection($naturedossier);
     }
 
     /**

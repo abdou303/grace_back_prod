@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('numero', 50);
             $table->string('code', 50);
             $table->string('annee', 50);
+            $table->string('numeroaffaire', 50);
             $table->date('datejujement');
             $table->longText('conenujugement');
             $table->integer('nbrannees');
@@ -24,7 +25,7 @@ return new class extends Migration
             //$table->foreignId('peine_id')->constrained('peines')->onDelete('cascade');
             $table->unsignedBigInteger('peine_id')->nullable();
             $table->foreign('peine_id')->references('id')->on('peines')->onDelete('cascade');
-           // $table->foreignId('tribunal_id')->constrained('tribunaux')->onDelete('cascade');
+            // $table->foreignId('tribunal_id')->constrained('tribunaux')->onDelete('cascade');
             $table->unsignedBigInteger('tribunal_id')->nullable();
             $table->foreign('tribunal_id')->references('id')->on('tribunaux')->onDelete('cascade');
 

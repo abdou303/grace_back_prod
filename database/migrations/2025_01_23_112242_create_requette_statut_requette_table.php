@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('typesrequettes', function (Blueprint $table) {
+        Schema::create('requette_statut_requette', function (Blueprint $table) {
             $table->id();
-            $table->string('libelle', 500);
-            $table->integer('min_pjs')->default(1);
-            $table->boolean('active')->default(false);
+            $table->foreignId('requette_id')->constrained('requettes')->onDelete('cascade');
+            $table->foreignId('statut_requette_id')->constrained('statut_requettes')->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('typesrequettes');
+        Schema::dropIfExists('requette_statut_requette');
     }
 };
