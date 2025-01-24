@@ -7,22 +7,14 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
-    //
-    public function login(Request $request)
+
+    /*public function login(Request $request)
     {
-        /*  $credentials = $request->only('email', 'password');
-        if (Auth::attempt($credentials)) {
-            $token = $request->user()->createToken('auth_token')->plainTextToken;
-            return response()->json(['token' => $token]);
-        }
-
-        return response()->json(['message' => 'Invalid login details'], 401);*/
-
-        /**/
-
+     
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
@@ -51,20 +43,33 @@ class AuthController extends Controller
             'token' => $token,
             'user' => $user->name,
         ]);
-        //return response()->json(['token' => $token]);
 
-        /*return response()->json([
-            'message' => 'informations correctes',
-            'success' => true,
+    }*/
+
+    public function login(Request $request)
+    {
+        $credentials = $request->only('email', 'password');
+
+        if (!$token = JWTAuth::attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Get the authenticated user
+        $user = Auth::user();
+
+        // Customize the JWT payload by adding custom claims
+        $customClaims = [
+            'userId' => $user->id,
+            'name' => $user->name,
+            'isAdmin' => $user->is_admin,
+        ];
+
+        // Generate the token with custom claims
+        $token = JWTAuth::claims($customClaims)->fromUser($user);
+
+        return response()->json([
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'company' => "JUSTICE", // Include company name
-                'group' => "GROUPE", // Include user group
-            ],
-        ]);*/
+        ]);
     }
 
     public function logout(Request $request)
