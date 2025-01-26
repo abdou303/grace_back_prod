@@ -28,6 +28,8 @@ return new class extends Migration
             $table->foreign('avis_gouverneur')->references('id')->on('avis')->onDelete('set null');
             $table->foreign('comportement_id')->references('id')->on('comportements')->onDelete('set null');*/
             $table->foreignId('comportement_id')->default(4)->nullable()->constrained('comportements')->onDelete('cascade');
+            $table->unsignedBigInteger('objetdemande_id')->nullable();
+            $table->foreign('objetdemande_id')->references('id')->on('objetsdemandes')->onDelete('cascade');
             $table->foreignId('typedossier_id')->constrained('typesdossiers')->onDelete('cascade');
             $table->foreignId('detenu_id')->constrained('detenus')->onDelete('cascade');
             $table->timestamps();

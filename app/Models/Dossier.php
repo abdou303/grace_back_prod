@@ -65,6 +65,12 @@ class Dossier extends Model
         return $this->belongsTo(TypeMotifDossier::class, 'typemotifdossiers_id');
     }
 
+    public function objetdemande()
+    {
+
+        return $this->belongsTo(ObjetDemande::class, 'objetdemande_id');
+    }
+
     public function comportement()
     {
 

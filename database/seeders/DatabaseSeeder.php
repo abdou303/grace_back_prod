@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             GroupeSeeder::class,
             PartenaireSeeder::class,
             TypeRequetteSeeder::class,
+            ObjetDemandeSeeder::class,
             // DetenuSeeder::class,
             // DossierSeeder::class,
             //PeineSeeder::class,

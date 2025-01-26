@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class NatureDossierResource extends JsonResource
+class ObjetDemandeResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,14 +14,14 @@ class NatureDossierResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        //return parent::toArray($request);
-        return [
+     //   return parent::toArray($request);
 
-            'id' => $this->id,
-            'libelle' => $this->libelle,
-            'active' => $this->active,
+     return [
+
+        'id' => $this->id,
+        'libelle' => $this->libelle,        'active' => $this->active,
 
 
-        ];
+    ];
     }
 }

@@ -57,12 +57,19 @@ class AuthController extends Controller
         // Get the authenticated user
         $user = Auth::user();
 
-        // Customize the JWT payload by adding custom claims
-        $customClaims = [
-            'userId' => $user->id,
-            'name' => $user->name,
-            'isAdmin' => $user->is_admin,
-        ];
+    // Customize the JWT payload by adding custom claims
+    $customClaims = [
+        'userId'       => $user->id,
+        'name'         => $user->name,
+        'email'        => $user->email,
+        'username'     => $user->username,
+        'role_id'      => $user->role_id,
+        'groupe_id'    => $user->groupe_id,
+       'tribunal_id'  => $user->tribunal_id,
+        'tribunal_libelle' => $user->tribunal ? $user->tribunal->libelle : null, // Include tribunal label
+
+        'partenaire_id'=> $user->partenaire_id
+    ];
 
         // Generate the token with custom claims
         $token = JWTAuth::claims($customClaims)->fromUser($user);
