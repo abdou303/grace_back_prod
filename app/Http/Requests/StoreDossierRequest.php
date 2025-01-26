@@ -30,8 +30,7 @@ class StoreDossierRequest extends FormRequest
             'nompere' => '',
             'nommere' => '',
             'tribunal' => 'required|numeric',
-            'address' => 'required',
-            'phone' => 'required',
+
 
         ];
     }
