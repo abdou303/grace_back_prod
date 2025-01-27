@@ -24,12 +24,23 @@ class StoreDossierRequest extends FormRequest
         return [
             'nom' => 'required',
             'prenom' => 'required',
-            'cin' => 'min:4|max:12',
             'datenaissance' => '',
-            'genre' => 'required',
             'nompere' => '',
             'nommere' => '',
-            'tribunal' => 'required|numeric',
+            'cin' => 'min:4|max:12',
+            'genre' => 'required',
+            'nationalite' => 'required',
+            'affaires' => 'required|array|min:1|max:3',
+            'affaires.*.numeromp' => 'required',
+            'affaires.*.numero' => 'required|string',
+            'affaires.*.code' => 'required|string',
+            'affaires.*.annee' => 'required|string',
+            'affaires.*.tribunal' => 'required|numeric',
+            'copie_decision' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
+            'copie_cin' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
+            'copie_mp' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
+            'copie_non_recours' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
+            'copie_social' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
 
 
         ];

@@ -14,14 +14,41 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         //
-        User::factory()->create(
-        [
-            'name' => 'مستعمل 1',
-            'username' => 'carabat',
-            'email' => 'admin@example.com',
-            'tribunal_id' => 92,
+        /* User::factory()->create(
 
-            
-        ]);
+            [
+
+                [
+                    'name' => 'مستعمل 1',
+                    'username' => 'carabat',
+                    'email' => 'carabat@example.com',
+                    'tribunal_id' => 92,
+                ],
+                [
+                    'name' => ' مدير النظام',
+                    'username' => 'admin',
+                    'email' => 'admin@example.com',
+                ]
+            ]
+        );*/
+
+        $users = [
+            [
+                'name' => 'مستعمل 1',
+                'username' => 'carabat',
+                'email' => 'carabat@example.com',
+                'tribunal_id' => 92,
+            ],
+            [
+                'name' => 'مدير النظام',
+                'username' => 'admin',
+                'email' => 'admin@example.com',
+
+            ],
+        ];
+
+        foreach ($users as $user) {
+            User::factory()->create($user);
+        }
     }
 }
