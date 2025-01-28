@@ -35,7 +35,9 @@ Route::group(['middleware' => ['auth:api']], function () {
     });
 });
 
-
+Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+    Route::apiResource('dossiers', DossierController::class);
+});
 Route::prefix('v1')->group(function () {
 
     Route::apiResource('villes', VilleController::class);
@@ -45,7 +47,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('pays', PaysController::class);
     Route::apiResource('nationalites', NationaliteController::class);
     Route::apiResource('professions', ProfessionController::class);
-    Route::apiResource('dossiers', DossierController::class);
+    //Route::apiResource('dossiers', DossierController::class);
     Route::apiResource('typesrequettes', TypeRequetteController::class);
     Route::apiResource('partenaires', PartenaireController::class);
     Route::apiResource('requettes', RequetteController::class);

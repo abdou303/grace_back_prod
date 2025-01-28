@@ -40,6 +40,12 @@ class UserSeeder extends Seeder
                 'tribunal_id' => 92,
             ],
             [
+                'name' => 'مستعمل 1',
+                'username' => 'cacasa',
+                'email' => 'cacasa@example.com',
+                'tribunal_id' => 106,
+            ],
+            [
                 'name' => 'مدير النظام',
                 'username' => 'admin',
                 'email' => 'admin@example.com',
