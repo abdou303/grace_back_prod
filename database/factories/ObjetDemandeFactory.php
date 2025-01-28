@@ -16,17 +16,27 @@ class ObjetDemandeFactory extends Factory
      */
     public function definition(): array
     {
-  
-        $objets =
-        [
-            'من العقوبة الحبسية',
-            'من الغرامة',
-            'منهما معا',
+
+
+        $objets = [
+            ['id' => 1, 'libelle' => 'من العقوبة الحبسية'],
+            ['id' => 2, 'libelle' => 'من الغرامة'],
+            ['id' => 3, 'libelle' => 'من العقوبة الحبسية ومن الغرامة معا'],
 
         ];
-    return [
-        'libelle' => fake()->unique()->randomElement($objets),
-        'active' => fake()->randomElement([1, 1]),
-    ];
+        /* $objets =
+            [
+                'من العقوبة الحبسية',
+                'من الغرامة',
+                'من العقوبة الحبسية ومن الغرامة معا',
+
+            ];*/
+
+        $randomObjets = fake()->unique()->randomElement($objets);
+        return [
+            // 'id' => $randomObjets['id'],
+            'libelle' => $randomObjets['libelle'],
+            'active' => fake()->randomElement([1, 1]),
+        ];
     }
 }

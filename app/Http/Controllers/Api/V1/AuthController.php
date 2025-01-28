@@ -59,7 +59,7 @@ class AuthController extends Controller
 
         // Customize the JWT payload by adding custom claims
         $customClaims = [
-            'userId'       => $user->id,
+            'id'       => $user->id,
             'name'         => $user->name,
             'email'        => $user->email,
             'username'     => $user->username,

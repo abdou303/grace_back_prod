@@ -21,6 +21,16 @@ class TribunalController extends Controller
         //return TribunalResource::collection(Tribunal::all());
     }
 
+
+    public function getByCa($ca_id)
+    {
+        // Fetch Tribunaux by ca_id
+        $tribunaux = Tribunal::where('ca_id', $ca_id)->get();
+
+        // Return the response
+        return TribunalResource::collection($tribunaux);
+    }
+
     /**
      * Store a newly created resource in storage.
      */

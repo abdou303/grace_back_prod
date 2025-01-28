@@ -24,9 +24,9 @@ class StoreDossierRequest extends FormRequest
         return [
             'nom' => 'required',
             'prenom' => 'required',
-            'datenaissance' => '',
-            'nompere' => '',
-            'nommere' => '',
+            'datenaissance' => 'nullable',
+            'nompere' => 'nullable',
+            'nommere' => 'nullable',
             'cin' => 'min:4|max:12',
             'genre' => 'required',
             'nationalite' => 'required',

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\AvisController;
 use App\Http\Controllers\Api\V1\ComportementController;
 use App\Http\Controllers\Api\V1\DossierImportController;
 use App\Http\Controllers\Api\V1\NatureDossierController;
+use App\Http\Controllers\Api\V1\ObjetDemandeController;
 use App\Http\Controllers\Api\V1\ProvinceController;
 use App\Http\Controllers\Api\V1\TypeDossierController;
 use App\Http\Controllers\Api\V1\TypeMotifDossierController;
@@ -54,10 +55,15 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('typesdossiers', TypeDossierController::class);
     Route::apiResource('naturesdossiers', NatureDossierController::class);
     Route::apiResource('typesmotifsdossiers', TypeMotifDossierController::class);
+    Route::apiResource('objetsdemandes', ObjetDemandeController::class);
+
+
 
 
     //Route::apiResource('imports', DossierImportController::class);
     Route::get('/requettes/dossier/{dossier_id}', [RequetteController::class, 'getByDossier']);
+    Route::get('/tribunaux/ca/{ca_id}', [TribunalController::class, 'getByCa']);
+
     Route::post('/import-dossiers', [DossierImportController::class, 'import']);
 
 
