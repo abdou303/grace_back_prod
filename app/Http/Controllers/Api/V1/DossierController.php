@@ -8,8 +8,11 @@ use App\Http\Resources\DossierResource;
 use App\Models\Affaire;
 use App\Models\Detenu;
 use App\Models\Dossier;
+use App\Models\Pj;
 use App\Models\Requette;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
 
 class DossierController extends Controller
 {
@@ -41,8 +44,8 @@ class DossierController extends Controller
             'affaires',
             'requettes',
             'affaires.tribunal',
-           'affaires.peine',
-           'affaires.peine.prisons',
+            'affaires.peine',
+            'affaires.peine.prisons',
             'categoriedossier',
             'naturedossier',
             'typemotifdossier',
@@ -61,50 +64,115 @@ class DossierController extends Controller
     public function store(StoreDossierRequest $request)
     {
         //
-        
+
+
 
         $detenu = new Detenu();
-        $detenu->nom =$request->nom;
-        $detenu->prenom =$request->prenom;
-        $detenu->datenaissance =$request->datenaissance;
-        $detenu->nompere =$request->nompere;
-        $detenu->nommere =$request->nommere;
-        $detenu->cin =$request->cin;
-        $detenu->genre =$request->genre;
-        $detenu->nationalite =$request->nationalite;
+        $detenu->nom = $request->nom;
+        $detenu->prenom = $request->prenom;
+        $detenu->datenaissance = $request->datenaissance;
+        $detenu->nompere = $request->nompere;
+        $detenu->nommere = $request->nommere;
+        $detenu->cin = $request->cin;
+        $detenu->genre = $request->genre;
+        $detenu->nationalite_id = $request->nationalite;
         $detenu->save();
 
         $dossier = new Dossier();
-        $dossier->typedossier_id =$request->typedossier;
-        $dossier->naturedossiers_id =$request->naturedossiers;
-        $dossier->detenu_id =$detenu->id;
+        $dossier->typedossier_id = $request->typedossier;
+        $dossier->naturedossiers_id = $request->naturedossier;
+        $dossier->detenu_id = $detenu->id;
+
+
         $dossier->save();
         $dossier_id = $dossier->id;
 
 
-    // Handle the files
-    if ($request->hasFile('copie_decision')) {
-    $dossier->copie_decision = $request->file('copie_decision')->store('uploads', 'public');
-    }
-    $affaire = new Affaire();
-    if ($request->has('affaires')) {
-        $affaires = $request->affaires;
-        foreach ($affaires as $affaireData) {
-            
-            
 
-            $affaire->numeromp=$affaireData['numeromp'];
-            $affaire->numero=$affaireData['numero'];
-            $affaire->code=$affaireData['code'];
-            $affaire->annee=$affaireData['annee'];
-            $affaire->tribunal_id=$affaireData['tribunal'];
-            $affaire->datejujement=$affaireData['datejujement'];
-            $affaire->conenujugement=$affaireData['conenujugement'];
-            $affaire->save();
-            $dossier->affaires()->attach($affaire->id);
+        // Define file fields and corresponding typepj_id values
+        $fileMappings = [
+            'copie_decision' => 5,
+            'copie_cin' => 4,
+            'copie_mp' => 3,
+            'copie_non_recours' => 2,
+            'copie_social' => 1,
+        ];
+
+        // Handle file uploads
+        foreach ($fileMappings as $fieldName => $typepjId) {
+            if ($request->hasFile($fieldName)) {
+                $pj = new Pj();
+                $pj->contenu = $request->file($fieldName)->store('uploads', 'public');
+                $pj->dossier_id = $dossier->id;
+                $pj->observation = "observation";
+                $pj->typepj_id = $typepjId;
+                $pj->save();
+            }
         }
 
-    }
+
+
+
+
+
+        /*
+        $pj = new Pj();
+        // Handle the files
+        if ($request->hasFile('copie_decision')) {
+
+            $pj->contenu = $request->file('copie_decision')->store('uploads', 'public');
+            $pj->dossier_id = $dossier_id;
+            $pj->observation = "observation";
+            $pj->typepj_id = 5;
+            $pj->save();
+        }
+        if ($request->hasFile('copie_cin')) {
+            $dossier->copie_cin = $request->file('copie_cin')->store('uploads', 'public');
+            $pj->dossier_id = $dossier_id;
+            $pj->observation = "observation";
+            $pj->typepj_id = 4;
+            $pj->save();
+        }
+        if ($request->hasFile('copie_mp')) {
+            $dossier->copie_mp = $request->file('copie_mp')->store('uploads', 'public');
+            $pj->dossier_id = $dossier_id;
+            $pj->observation = "observation";
+            $pj->typepj_id = 3;
+            $pj->save();
+        }
+        if ($request->hasFile('copie_non_recours')) {
+            $dossier->copie_non_recours = $request->file('copie_non_recours')->store('uploads', 'public');
+            $pj->dossier_id = $dossier_id;
+            $pj->observation = "observation";
+            $pj->typepj_id = 2;
+            $pj->save();
+        }
+        if ($request->hasFile('copie_social')) {
+            $dossier->copie_social = $request->file('copie_social')->store('uploads', 'public');
+            $pj->dossier_id = $dossier_id;
+            $pj->observation = "observation";
+            $pj->typepj_id = 1;
+            $pj->save();
+        }*/
+        $affaire = new Affaire();
+        if ($request->has('affaires')) {
+            $affaires = $request->affaires;
+            foreach ($affaires as $affaireData) {
+
+
+
+                $affaire->numeromp = $affaireData['numeromp'];
+                $affaire->numero = $affaireData['numero'];
+                $affaire->code = $affaireData['code'];
+                $affaire->annee = $affaireData['annee'];
+                $affaire->numeroaffaire = "TR-AFFAIRE";
+                $affaire->tribunal_id = $affaireData['tribunal'];
+                $affaire->datejujement = $affaireData['datejujement'];
+                $affaire->conenujugement = $affaireData['conenujugement'];
+                $affaire->save();
+                $dossier->affaires()->attach($affaire->id);
+            }
+        }
     }
 
     /**

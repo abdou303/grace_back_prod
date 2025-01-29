@@ -16,7 +16,8 @@ class Tribunal extends Model
      * @var string
      */
     protected $table = 'tribunaux';
-    
+
+
     public function ca()
     {
 

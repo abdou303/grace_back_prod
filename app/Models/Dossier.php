@@ -76,4 +76,9 @@ class Dossier extends Model
 
         return $this->belongsTo(Comportement::class, 'comportement_id');
     }
+    public function pjs()
+    {
+
+        return $this->hasMany(Pj::class);
+    }
 }

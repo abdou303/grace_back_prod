@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pj extends Model
 {
+
+    public function dossier()
+    {
+
+        return $this->belongsTo(Dossier::class);
+    }
+
     public function requette()
     {
 

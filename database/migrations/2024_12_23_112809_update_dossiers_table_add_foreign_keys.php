@@ -12,16 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('dossiers', function (Blueprint $table) {
-            
+
             $table->unsignedBigInteger('categoriedossiers_id')->nullable();
             $table->foreign('categoriedossiers_id')->references('id')->on('categoriesdossiers')->onDelete('cascade');
 
             //$table->foreignId('categoriedossiers_id')->constrained('categoriesdossiers')->onDelete('cascade');
             $table->foreignId('naturedossiers_id')->constrained('naturesdossiers')->onDelete('cascade');
-            
+
             $table->unsignedBigInteger('typemotifdossiers_id')->nullable();
             $table->foreign('typemotifdossiers_id')->references('id')->on('typesmotifsdossiers')->onDelete('cascade');
-           // $table->foreignId('typemotifdossiers_id')->constrained('typesmotifsdossiers')->onDelete('cascade');
+            // $table->foreignId('typemotifdossiers_id')->constrained('typesmotifsdossiers')->onDelete('cascade');
         });
     }
 
@@ -39,8 +39,6 @@ return new class extends Migration
             $table->dropColumn('naturedossiers_id');
             $table->dropForeign(['typemotifdossiers_id']);
             $table->dropColumn('typemotifdossiers_id');
-
-            
         });
     }
 };
