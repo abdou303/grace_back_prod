@@ -1,3 +1,19 @@
+GO
+SET IDENTITY_INSERT [dbo].[objetsdemandes] ON 
+
+INSERT [dbo].[objetsdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (1, N'من الغرامة', 1, CAST(N'2025-01-30T11:15:31.757' AS DateTime), CAST(N'2025-01-30T11:15:31.757' AS DateTime))
+INSERT [dbo].[objetsdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N'من العقوبة الحبسية ومن الغرامة معا', 1, CAST(N'2025-01-30T11:15:31.760' AS DateTime), CAST(N'2025-01-30T11:15:31.760' AS DateTime))
+INSERT [dbo].[objetsdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (3, N'من العقوبة الحبسية', 1, CAST(N'2025-01-30T11:15:31.763' AS DateTime), CAST(N'2025-01-30T11:15:31.763' AS DateTime))
+SET IDENTITY_INSERT [dbo].[objetsdemandes] OFF
+GO
+SET IDENTITY_INSERT [dbo].[sourcesdemandes] ON 
+
+INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (1, N'الممثل القانوني (محامي)', 1, CAST(N'2025-01-30T11:15:31.767' AS DateTime), CAST(N'2025-01-30T11:15:31.767' AS DateTime))
+INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N' احد افراد العائلة', 1, CAST(N'2025-01-30T11:15:31.767' AS DateTime), CAST(N'2025-01-30T11:15:31.767' AS DateTime))
+INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (3, N' أحد الأصدقاء ', 1, CAST(N'2025-01-30T11:15:31.770' AS DateTime), CAST(N'2025-01-30T11:15:31.770' AS DateTime))
+INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (4, N' المعني بالأمر شخصيا (معتقل أو في حالة سراح)', 1, CAST(N'2025-01-30T11:15:31.777' AS DateTime), CAST(N'2025-01-30T11:15:31.777' AS DateTime))
+SET IDENTITY_INSERT [dbo].[sourcesdemandes] OFF
+GO
 SET IDENTITY_INSERT [dbo].[typespjs] ON 
 
 INSERT [dbo].[typespjs] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (1, N'البحث الاجتماعي', 1, CAST(N'2025-01-29T10:55:24.067' AS DateTime), CAST(N'2025-01-29T10:55:24.067' AS DateTime))

@@ -88,4 +88,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->belongsTo(Partenaire::class);
     }
+
+    public function dossiers()
+    {
+
+        return $this->hasMany(Dossier::class);
+    }
 }

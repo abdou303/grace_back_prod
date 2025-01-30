@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\DossierImportController;
 use App\Http\Controllers\Api\V1\NatureDossierController;
 use App\Http\Controllers\Api\V1\ObjetDemandeController;
 use App\Http\Controllers\Api\V1\ProvinceController;
+use App\Http\Controllers\Api\V1\SourceDemandeController;
 use App\Http\Controllers\Api\V1\TypeDossierController;
 use App\Http\Controllers\Api\V1\TypeMotifDossierController;
 use Illuminate\Http\Request;
@@ -58,6 +59,8 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('naturesdossiers', NatureDossierController::class);
     Route::apiResource('typesmotifsdossiers', TypeMotifDossierController::class);
     Route::apiResource('objetsdemandes', ObjetDemandeController::class);
+    Route::apiResource('sourcesdemandes', SourceDemandeController::class);
+
 
 
 
@@ -67,6 +70,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/tribunaux/ca/{ca_id}', [TribunalController::class, 'getByCa']);
 
     Route::post('/import-dossiers', [DossierImportController::class, 'import']);
+    Route::post('/dossiers/tribunal/{tr_id}', [DossierImportController::class, 'dossierByTr']);
+
 
 
 

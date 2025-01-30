@@ -19,6 +19,30 @@ class DossierController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function dossierByTr($tr_id)
+    {
+        $dossiers = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier'
+        ])->where('user_tribunal_id', $tr_id)->get();
+
+        return new DossierResource($dossiers);
+    }
     public function index()
     {
         //
@@ -79,9 +103,19 @@ class DossierController extends Controller
         $detenu->save();
 
         $dossier = new Dossier();
+
         $dossier->typedossier_id = $request->typedossier;
         $dossier->naturedossiers_id = $request->naturedossier;
+        $dossier->sourcedemande_id = $request->sourcedemande;
+        //$dossier->objetdemande_id = $request->objetdemande;
+        //$dossier->objetdemande_id = $request->objetdemande ?? null;
+        $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande)  ? (int) $request->objetdemande : null;
+        $dossier->user_id = $request->user_id;
+        $dossier->user_tribunal_id = $request->tribunal_user_id;
+        $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
         $dossier->detenu_id = $detenu->id;
+
+
 
 
         $dossier->save();
@@ -103,7 +137,7 @@ class DossierController extends Controller
             if ($request->hasFile($fieldName)) {
                 $pj = new Pj();
                 $pj->contenu = $request->file($fieldName)->store('uploads', 'public');
-                $pj->dossier_id = $dossier->id;
+                $pj->dossier_id = $dossier_id;
                 $pj->observation = "observation";
                 $pj->typepj_id = $typepjId;
                 $pj->save();

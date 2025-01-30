@@ -19,6 +19,8 @@ return new class extends Migration
             $table->integer('avis_mp')->nullable();
             $table->integer('avis_dgapr')->nullable();
             $table->integer('avis_gouverneur')->nullable();
+            $table->integer('user_tribunal_id')->nullable();
+            $table->string('user_tribunal_libelle', 500)->nullable();
             /* $table->foreignId('avis_mp')->nullable()->constrained('avis')->onDelete('cascade');     
             $table->foreignId('avis_dgapr')->nullable()->constrained('avis')->onDelete('cascade');
             $table->foreignId('avis_gouverneur')->nullable()->constrained('avis')->onDelete('cascade');
@@ -30,6 +32,13 @@ return new class extends Migration
             $table->foreignId('comportement_id')->default(4)->nullable()->constrained('comportements')->onDelete('cascade');
             $table->unsignedBigInteger('objetdemande_id')->nullable();
             $table->foreign('objetdemande_id')->references('id')->on('objetsdemandes')->onDelete('cascade');
+            $table->unsignedBigInteger('sourcedemande_id')->nullable();
+            $table->foreign('sourcedemande_id')->references('id')->on('sourcesdemandes')->onDelete('cascade');
+
+
+
+
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('typedossier_id')->constrained('typesdossiers')->onDelete('cascade');
             $table->foreignId('detenu_id')->constrained('detenus')->onDelete('cascade');
             $table->timestamps();

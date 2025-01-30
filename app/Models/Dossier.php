@@ -33,6 +33,14 @@ class Dossier extends Model
         return $this->belongsTo(TypeDossier::class);
     }
 
+
+    public function user()
+    {
+
+        return $this->belongsTo(User::class);
+    }
+
+
     public function detenu()
     {
 
@@ -70,6 +78,14 @@ class Dossier extends Model
 
         return $this->belongsTo(ObjetDemande::class, 'objetdemande_id');
     }
+
+
+    public function sourcedemande()
+    {
+
+        return $this->belongsTo(SourceDemande::class, 'sourcedemande_id');
+    }
+
 
     public function comportement()
     {
