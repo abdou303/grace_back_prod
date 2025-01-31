@@ -61,16 +61,12 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('objetsdemandes', ObjetDemandeController::class);
     Route::apiResource('sourcesdemandes', SourceDemandeController::class);
 
-
-
-
-
     //Route::apiResource('imports', DossierImportController::class);
     Route::get('/requettes/dossier/{dossier_id}', [RequetteController::class, 'getByDossier']);
     Route::get('/tribunaux/ca/{ca_id}', [TribunalController::class, 'getByCa']);
 
     Route::post('/import-dossiers', [DossierImportController::class, 'import']);
-    Route::post('/dossiers/tribunal/{tr_id}', [DossierImportController::class, 'dossierByTr']);
+    Route::get('/dossiers/tribunal/{tr_id}', [DossierController::class, 'dossierByTr']);
 
 
 

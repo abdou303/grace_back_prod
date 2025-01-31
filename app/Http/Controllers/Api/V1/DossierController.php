@@ -134,7 +134,12 @@ class DossierController extends Controller
 
         // Handle file uploads
         foreach ($fileMappings as $fieldName => $typepjId) {
+
+
+
             if ($request->hasFile($fieldName)) {
+
+
                 $pj = new Pj();
                 $pj->contenu = $request->file($fieldName)->store('uploads', 'public');
                 $pj->dossier_id = $dossier_id;

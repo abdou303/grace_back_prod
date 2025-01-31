@@ -45,16 +45,16 @@ class StoreDossierRequest extends FormRequest
             'affaires.*.tribunal' => 'required|numeric',
             'affaires.*.datejujement' => 'required|string',
             'affaires.*.conenujugement' => 'required|string',
-            /* 'copie_decision' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
+            'copie_decision' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
             'copie_cin' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
             'copie_mp' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
             'copie_non_recours' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
-            'copie_social' => 'nullable|file|mimes:jpg,png,pdf|max:2048',*/
-            'copie_decision' => 'nullable|string',
-            'copie_cin' => 'nullable|string',
-            'copie_mp' => 'nullable|string',
-            'copie_non_recours' => 'nullable|string',
-            'copie_social' => 'nullable|string',
+            'copie_social' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
+            /* 'copie_decision' => 'nullable',
+            'copie_cin' => 'nullable',
+            'copie_mp' => 'nullable',
+            'copie_non_recours' => 'nullable',
+            'copie_social' => 'nullable',*/
 
 
         ];
