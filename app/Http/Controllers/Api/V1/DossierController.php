@@ -10,6 +10,8 @@ use App\Models\Detenu;
 use App\Models\Dossier;
 use App\Models\Pj;
 use App\Models\Requette;
+use Illuminate\Support\Facades\Log; // Import Log facade
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -38,7 +40,8 @@ class DossierController extends Controller
             'categoriedossier',
             'naturedossier',
             'typemotifdossier',
-            'typedossier'
+            'typedossier',
+             'pjs'
         ])->where('user_tribunal_id', $tr_id)->get();
 
         return new DossierResource($dossiers);
@@ -73,7 +76,8 @@ class DossierController extends Controller
             'categoriedossier',
             'naturedossier',
             'typemotifdossier',
-            'typedossier'
+            'typedossier',
+            'pjs'
         ])->get();
 
         return new DossierResource($dossiers);
@@ -89,6 +93,14 @@ class DossierController extends Controller
     {
         //
 
+            // Log the full request for debugging
+    Log::info('Incoming Request Data:', $request->all());
+
+    // Check the request data in the browser console
+   /* return response()->json([
+        'message' => 'Request received',
+        'data' => $request->all()
+    ]);*/
 
 
         $detenu = new Detenu();
@@ -103,11 +115,17 @@ class DossierController extends Controller
         $detenu->save();
 
         $dossier = new Dossier();
+        $currentYear = now()->format('Y');
+        $lastRecord = Dossier::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
+
+        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 4)) : 0;
+        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+        $numero_dossier = $currentYear . $newNumber;
 
         $dossier->typedossier_id = $request->typedossier;
         $dossier->naturedossiers_id = $request->naturedossier;
         $dossier->sourcedemande_id = $request->sourcedemande;
-        //$dossier->objetdemande_id = $request->objetdemande;
+        $dossier->numero = $numero_dossier;
         //$dossier->objetdemande_id = $request->objetdemande ?? null;
         $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande)  ? (int) $request->objetdemande : null;
         $dossier->user_id = $request->user_id;
@@ -137,11 +155,18 @@ class DossierController extends Controller
 
 
 
+//echo "********".$fieldName."*************";
+
             if ($request->hasFile($fieldName)) {
 
+              //  echo "///////////////////".$fieldName."////////////////////";
+              $file = $request->file($fieldName);
 
+              $filename = $numero_dossier .$fieldName . '.' . $file->getClientOriginalExtension();
                 $pj = new Pj();
-                $pj->contenu = $request->file($fieldName)->store('uploads', 'public');
+               // $pj->contenu = $request->file($fieldName)->store('uploads', 'public');
+                $pj->contenu =  $file->storeAs('public/uploads', $filename);
+
                 $pj->dossier_id = $dossier_id;
                 $pj->observation = "observation";
                 $pj->typepj_id = $typepjId;
@@ -236,7 +261,8 @@ class DossierController extends Controller
             'categoriedossier',
             'naturedossier',
             'typemotifdossier',
-            'typedossier'
+            'typedossier',
+            'pjs'
         ])->findOrFail($id);
         return new DossierResource($dossier);
     }

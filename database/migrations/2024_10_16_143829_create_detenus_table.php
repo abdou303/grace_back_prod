@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('nom', 500);
             $table->string('prenom', 500);
-            $table->string('nompere', 500);
-            $table->string('nommere', 500);
-            $table->date('datenaissance');
-            $table->string('cin', 30);
+            $table->string('nompere', 500)->nullable();
+            $table->string('nommere', 500)->nullable();
+            $table->date('datenaissance')->nullable();
+            $table->string('cin', 30)->nullable();
             $table->string('genre', 1)->default('M');
             $table->longText('adresse')->nullable();
             $table->foreignId('profession_id')->default(100)->constrained('professions')->onDelete('cascade');
