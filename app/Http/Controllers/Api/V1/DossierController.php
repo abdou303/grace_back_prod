@@ -10,6 +10,7 @@ use App\Models\Detenu;
 use App\Models\Dossier;
 use App\Models\Pj;
 use App\Models\Requette;
+use App\Models\TypePj;
 use Illuminate\Support\Facades\Log; // Import Log facade
 
 use Illuminate\Http\Request;
@@ -41,7 +42,7 @@ class DossierController extends Controller
             'naturedossier',
             'typemotifdossier',
             'typedossier',
-             'pjs'
+            'pjs'
         ])->where('user_tribunal_id', $tr_id)->get();
 
         return new DossierResource($dossiers);
@@ -93,11 +94,11 @@ class DossierController extends Controller
     {
         //
 
-            // Log the full request for debugging
-    Log::info('Incoming Request Data:', $request->all());
+        // Log the full request for debugging
+        Log::info('Incoming Request Data:', $request->all());
 
-    // Check the request data in the browser console
-   /* return response()->json([
+        // Check the request data in the browser console
+        /* return response()->json([
         'message' => 'Request received',
         'data' => $request->all()
     ]);*/
@@ -149,26 +150,30 @@ class DossierController extends Controller
             'copie_non_recours' => 2,
             'copie_social' => 1,
         ];
-
+        // Fetch all TypePj records and create an associative array of id => label
+        $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
         // Handle file uploads
         foreach ($fileMappings as $fieldName => $typepjId) {
 
 
 
-//echo "********".$fieldName."*************";
+            //echo "********".$fieldName."*************";
 
             if ($request->hasFile($fieldName)) {
 
-              //  echo "///////////////////".$fieldName."////////////////////";
-              $file = $request->file($fieldName);
+                //  echo "///////////////////".$fieldName."////////////////////";
+                $file = $request->file($fieldName);
 
-              $filename = $numero_dossier .$fieldName . '.' . $file->getClientOriginalExtension();
+                $filename = $numero_dossier . $fieldName . '.' . $file->getClientOriginalExtension();
                 $pj = new Pj();
-               // $pj->contenu = $request->file($fieldName)->store('uploads', 'public');
+                // $pj->contenu = $request->file($fieldName)->store('uploads', 'public');
+                // $filePath = $file->storeAs('public/uploads', $filename);
+                //$pj->contenu = str_replace('public/', '', $filePath); // Save relative path
                 $pj->contenu =  $file->storeAs('public/uploads', $filename);
-
                 $pj->dossier_id = $dossier_id;
-                $pj->observation = "observation";
+                //$pj->observation = "observation";
+                // Assign observation dynamically from the database
+                $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
                 $pj->typepj_id = $typepjId;
                 $pj->save();
             }
