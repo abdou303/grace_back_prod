@@ -1,4 +1,19 @@
 GO
+SET IDENTITY_INSERT [dbo].[groupes] ON 
+
+INSERT [dbo].[groupes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (1, N'SUPERADMINS', 1, CAST(N'2025-02-04T14:40:58.453' AS DateTime), CAST(N'2025-02-04T14:40:58.453' AS DateTime))
+INSERT [dbo].[groupes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N'ADMINS', 1, CAST(N'2025-02-04T14:40:58.457' AS DateTime), CAST(N'2025-02-04T14:40:58.457' AS DateTime))
+INSERT [dbo].[groupes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (3, N'USERS', 1, CAST(N'2025-02-04T14:40:58.457' AS DateTime), CAST(N'2025-02-04T14:40:58.457' AS DateTime))
+SET IDENTITY_INSERT [dbo].[groupes] OFF
+GO
+SET IDENTITY_INSERT [dbo].[roles] ON 
+
+INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (1, N'TR', 1, CAST(N'2025-02-04T14:40:58.417' AS DateTime), CAST(N'2025-02-04T14:40:58.417' AS DateTime))
+INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N'DAPG', 1, CAST(N'2025-02-04T14:40:58.447' AS DateTime), CAST(N'2025-02-04T14:40:58.447' AS DateTime))
+INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (3, N'ADMIN', 1, CAST(N'2025-02-04T14:40:58.447' AS DateTime), CAST(N'2025-02-04T14:40:58.447' AS DateTime))
+SET IDENTITY_INSERT [dbo].[roles] OFF
+GO
+GO
 SET IDENTITY_INSERT [dbo].[objetsdemandes] ON 
 
 INSERT [dbo].[objetsdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (1, N'من الغرامة', 1, CAST(N'2025-01-30T11:15:31.757' AS DateTime), CAST(N'2025-01-30T11:15:31.757' AS DateTime))

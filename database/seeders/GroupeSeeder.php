@@ -12,7 +12,6 @@ class GroupeSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\Groupe::factory()->count(2)->create();
-
+        \App\Models\Groupe::factory()->count(3)->create();
     }
 }

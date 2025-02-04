@@ -9,6 +9,7 @@ use App\Models\Affaire;
 use App\Models\Detenu;
 use App\Models\Dossier;
 use App\Models\Pj;
+use App\Models\Prison;
 use App\Models\Requette;
 use App\Models\TypePj;
 use Illuminate\Support\Facades\Log; // Import Log facade
@@ -42,7 +43,9 @@ class DossierController extends Controller
             'naturedossier',
             'typemotifdossier',
             'typedossier',
-            'pjs'
+            'pjs',
+            'prison',
+            'objetdemande',
         ])->where('user_tribunal_id', $tr_id)->get();
 
         return new DossierResource($dossiers);
@@ -133,6 +136,10 @@ class DossierController extends Controller
         $dossier->user_tribunal_id = $request->tribunal_user_id;
         $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
         $dossier->detenu_id = $detenu->id;
+        //$dossier->prison_id =  $request->prison;
+        $dossier->prison_id = isset($request->prison) && is_numeric($request->prison)  ? (int) $request->prison : null;
+        $dossier->numero_detention =  $request->numerolocal;
+
 
 
 

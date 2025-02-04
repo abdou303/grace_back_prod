@@ -85,7 +85,11 @@ class Dossier extends Model
 
         return $this->belongsTo(SourceDemande::class, 'sourcedemande_id');
     }
+    public function prison()
+    {
 
+        return $this->belongsTo(Prison::class, 'prison_id');
+    }
 
     public function comportement()
     {

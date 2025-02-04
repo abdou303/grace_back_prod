@@ -25,8 +25,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             //  GarantSeeder::class,
-            RoleSeeder::class,
-            GroupeSeeder::class,
+            //RoleSeeder::class,
+            //GroupeSeeder::class,
             PartenaireSeeder::class,
             TypeRequetteSeeder::class,
             //ObjetDemandeSeeder::class,

@@ -55,6 +55,8 @@ class StoreDossierRequest extends FormRequest
             'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'copie_non_recours' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'prison' => 'nullable',
+            'numerolocal' => 'nullable|numeric',
 
 
         ];

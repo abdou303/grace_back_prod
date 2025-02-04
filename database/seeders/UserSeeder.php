@@ -38,17 +38,23 @@ class UserSeeder extends Seeder
                 'username' => 'carabat',
                 'email' => 'carabat@example.com',
                 'tribunal_id' => 92,
+                'role_id' => 1,
+                'groupe_id' => 3
             ],
             [
                 'name' => 'مستعمل 1',
                 'username' => 'cacasa',
                 'email' => 'cacasa@example.com',
                 'tribunal_id' => 106,
+                'role_id' => 1,
+                'groupe_id' => 3
             ],
             [
                 'name' => 'مدير النظام',
                 'username' => 'admin',
                 'email' => 'admin@example.com',
+                'role_id' => 3,
+                'groupe_id' => 1
 
             ],
         ];

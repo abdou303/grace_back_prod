@@ -17,13 +17,14 @@ class RoleFactory extends Factory
     public function definition(): array
     {
         $roles =
-        ['role1'
-        , 'role2'
-]; 
+            [
+                'DAPG',
+                'TR',
+                'ADMIN'
+            ];
         return [
             'libelle' => fake()->unique()->randomElement($roles),
-        
-            'active' => fake()->randomElement([0, 1]),
+            'active' => fake()->randomElement([1, 1]),
         ];
     }
 }

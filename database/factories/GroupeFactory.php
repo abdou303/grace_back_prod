@@ -18,13 +18,15 @@ class GroupeFactory extends Factory
     {
 
         $groupes =
-        ['groupe1'
-        , 'groupe2'
-]; 
+            [
+                'USERS',
+                'ADMINS',
+                'SUPERADMINS'
+            ];
         return [
             'libelle' => fake()->unique()->randomElement($groupes),
-        
-            'active' => fake()->randomElement([0, 1]),
+
+            'active' => fake()->randomElement([1, 1]),
         ];
     }
 }
