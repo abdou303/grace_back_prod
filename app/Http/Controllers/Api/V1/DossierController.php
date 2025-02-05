@@ -170,7 +170,7 @@ class DossierController extends Controller
         $detenu->nommere = $request->nommere;
         $detenu->cin = $request->cin;
         $detenu->genre = $request->genre;
-        $detenu->nationalite_id = $request->nationalite;
+       // $detenu->nationalite_id = $request->nationalite;
         $detenu->save();
 
         $dossier = new Dossier();
