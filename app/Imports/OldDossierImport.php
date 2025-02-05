@@ -43,41 +43,32 @@ class DossierImport implements ToCollection, WithHeadingRow
 
             // Create the Dossier
             if ($row['typedossier_id'] == 1) {
-                if ($row['naturedossiers_id'] == 1) {
 
+                $dossier = Dossier::create([
+                    'numero' => $row['numero_dossier'],
+                    //'date_enregistrement' =>  now(),
+                    'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
+                    'typedossier_id' => $row['typedossier_id'],
+                    'typemotifdossiers_id' => $row['typemotifdossiers_id'],
+                    'categoriedossiers_id' => $row['categoriedossiers_id'],
+                    'naturedossiers_id' => $row['naturedossiers_id'],
+                    'detenu_id' => $detenu->id,
 
+                ]);
 
-                    $dossier = Dossier::create([
-                        'numero' => $row['numero_dossier'],
-                        //'date_enregistrement' =>  now(),
-                        'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
-                        'typedossier_id' => $row['typedossier_id'],
-                        'typemotifdossiers_id' => $row['typemotifdossiers_id'],
-                        'categoriedossiers_id' => $row['categoriedossiers_id'],
-                        'naturedossiers_id' => $row['naturedossiers_id'],
-                        'detenu_id' => $detenu->id,
-                        'prison_id' => $row['prison_id'],
-                        'user_id' => $row['user_id'],
-                        'numero_detention' => $row['numero_detention_local'],
-
+                if ($row['naturedossiers_id'] == 1 || $row['naturedossiers_id'] == 4 || $row['naturedossiers_id'] == 5) {
+                    // Create the Peine
+                    $peine = Peine::create([
+                        'datedebut' => $row['datedebut_peine'],
+                        //'datedebut' =>Carbon::createFromFormat('d/m/Y', $row['datedebut_peine'])->format('Y-m-d'),
+                        'datefin' =>   $row['datefin_peine'],
+                        //   'datefin' =>Carbon::createFromFormat('d/m/Y', $row['datefin_peine'])->format('Y-m-d'),
+                        'numerolocal' => $row['numero_detention_local'],
+                        'numeronational' => $row['numero_detention_national'],
                     ]);
-                } else {
 
-
-                    $dossier = Dossier::create([
-                        'numero' => $row['numero_dossier'],
-                        //'date_enregistrement' =>  now(),
-                        'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
-                        'typedossier_id' => $row['typedossier_id'],
-                        'typemotifdossiers_id' => $row['typemotifdossiers_id'],
-                        'categoriedossiers_id' => $row['categoriedossiers_id'],
-                        'naturedossiers_id' => $row['naturedossiers_id'],
-                        'detenu_id' => $detenu->id,
-                        'objetdemande_id' => $row['objetdemande_id'],
-                        'user_id' => $row['user_id'],
-
-
-                    ]);
+                    // Attach the Prisons to the Peine
+                    $peine->prisons()->syncWithoutDetaching([$row['prison_id']]);
                 }
             } elseif ($row['typedossier_id'] == 2) {
 
@@ -93,9 +84,6 @@ class DossierImport implements ToCollection, WithHeadingRow
                     'categoriedossiers_id' => $row['categoriedossiers_id'],
                     'naturedossiers_id' => $row['naturedossiers_id'],
                     'detenu_id' => $detenu->id,
-                    'prison_id' => $row['prison_id'],
-                    'numero_detention' => $row['numero_detention_local'],
-                    'user_id' => $row['user_id'],
 
                 ]);
 
@@ -110,6 +98,21 @@ class DossierImport implements ToCollection, WithHeadingRow
                 ]);
 
                 $dossier->garants()->syncWithoutDetaching([$garant->id]);
+
+                // Create the Peine
+                $peine = Peine::create([
+                    'datedebut' => $row['datedebut_peine'],
+                    //'datedebut' =>Carbon::createFromFormat('d/m/Y', $row['datedebut_peine'])->format('Y-m-d'),
+                    'datefin' =>   $row['datefin_peine'],
+                    //'datefin' =>Carbon::createFromFormat('d/m/Y', $row['datefin_peine'])->format('Y-m-d'),
+                    'numerolocal' => $row['numero_detention_local'],
+                    'numeronational' => $row['numero_detention_national'],
+
+
+                ]);
+
+                // Attach the Prisons to the Peine
+                $peine->prisons()->syncWithoutDetaching([$row['prison_id']]);
             }
 
 
@@ -183,7 +186,7 @@ class DossierImport implements ToCollection, WithHeadingRow
             foreach ($affaireNumeros as $index => $numeroAffaire) {
                 // Ensure there's a corresponding date for each numeroAffaire
                 $dateJugement = $affaireDatesJugement[$index] ?? null;
-                $affaire = Affaire::firstOrCreate(['numeroaffaire' => $numeroAffaire, 'datejujement' => $dateJugement, 'tribunal_id' => 119]);
+                $affaire = Affaire::firstOrCreate(['numeroaffaire' => $numeroAffaire, 'datejujement' => $dateJugement, 'tribunal_id' => 119, 'peine_id' => $peine->id,]);
                 $affaireIds[] = $affaire->id;
             }
             $dossier->affaires()->sync($affaireIds);

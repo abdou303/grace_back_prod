@@ -29,7 +29,7 @@ class StoreDossierRequest extends FormRequest
             'nommere' => 'nullable',
             'cin' => 'min:4|max:12',
             'genre' => 'required',
-            'nationalite' => 'required',
+            'nationalite' => 'nullable',
             'typedossier' => 'required',
             'naturedossier' => 'required',
             'sourcedemande' => 'required',

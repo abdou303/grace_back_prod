@@ -18,7 +18,10 @@ class Dossier extends Model
         'detenu_id',
         'typemotifdossiers_id',
         'categoriedossiers_id',
-        'naturedossiers_id'
+        'naturedossiers_id',
+        'prison_id',
+        'user_id',
+        'numero_detention',
     ];
 
     public function affaires()

@@ -63,8 +63,9 @@ Route::prefix('v1')->group(function () {
 
     //Route::apiResource('imports', DossierImportController::class);
     Route::get('/requettes/dossier/{dossier_id}', [RequetteController::class, 'getByDossier']);
+    Route::get('/dossiers-tribunaux', [DossierController::class, 'dossiersTr']);
+    Route::get('/dossiers-dapg', [DossierController::class, 'dossiersDapg']);
     Route::get('/tribunaux/ca/{ca_id}', [TribunalController::class, 'getByCa']);
-
     Route::post('/import-dossiers', [DossierImportController::class, 'import']);
     Route::get('/dossiers/tribunal/{tr_id}', [DossierController::class, 'dossierByTr']);
 

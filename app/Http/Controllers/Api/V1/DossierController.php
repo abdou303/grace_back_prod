@@ -81,14 +81,69 @@ class DossierController extends Controller
             'naturedossier',
             'typemotifdossier',
             'typedossier',
-            'pjs'
+            'pjs',
+            'prison',
+            'objetdemande',
         ])->get();
 
         return new DossierResource($dossiers);
     }
 
+    public function dossiersTr()
+    {
 
+        $dossiers = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'prison',
+            'objetdemande',
+        ])->whereNotNull('user_tribunal_id')->get();
 
+        return new DossierResource($dossiers);
+    }
+
+    public function dossiersDapg()
+    {
+
+        $dossiers = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'prison',
+            'objetdemande',
+        ])->whereNull('user_tribunal_id')->get();
+
+        return new DossierResource($dossiers);
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -230,11 +285,11 @@ class DossierController extends Controller
             $pj->typepj_id = 1;
             $pj->save();
         }*/
-        $affaire = new Affaire();
+
         if ($request->has('affaires')) {
             $affaires = $request->affaires;
             foreach ($affaires as $affaireData) {
-
+                $affaire = new Affaire();
 
 
                 $affaire->numeromp = $affaireData['numeromp'];
