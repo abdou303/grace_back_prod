@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('libelle', 500);
             $table->integer('min_pjs')->default(1);
+            $table->string('code', 500)->nullable();
             $table->boolean('active')->default(false);
             $table->timestamps();
         });

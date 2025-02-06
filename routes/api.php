@@ -68,6 +68,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/tribunaux/ca/{ca_id}', [TribunalController::class, 'getByCa']);
     Route::post('/import-dossiers', [DossierImportController::class, 'import']);
     Route::get('/dossiers/tribunal/{tr_id}', [DossierController::class, 'dossierByTr']);
+    Route::get('/requettes/tribunal/{tr_id}', [RequetteController::class, 'requetteByTr']);
+
 
 
 
