@@ -29,7 +29,7 @@ class RequetteController extends Controller
     {
         // Fetch Requettes by dossier_id
         $requettes = Requette::where('dossier_id', $dossier_id)
-            ->with(['dossier', 'tribunal', 'typerequette', 'partenaire'])
+            ->with(['dossier', 'tribunal', 'typerequette', 'partenaire', 'dossier.naturedossier', 'dossier.typedossier'])
             ->get();
 
         // Return the response
