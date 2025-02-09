@@ -77,6 +77,11 @@ class RequetteController extends Controller
 
         $requettes = Requette::with([
             'dossier',
+            'dossier.detenu', 
+            'dossier.affaires', 
+            'dossier.naturedossier',
+            'dossier.typedossier',
+            'dossier.garants',
             'tribunal',
             'typerequette'
         ])->where('tribunal_id', $tr_id)->get();
