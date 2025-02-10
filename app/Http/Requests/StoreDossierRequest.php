@@ -30,6 +30,7 @@ class StoreDossierRequest extends FormRequest
             'cin' => 'min:4|max:12',
             'genre' => 'required',
             'nationalite' => 'nullable',
+            'numeromp' => 'required',
             'typedossier' => 'required',
             'naturedossier' => 'required',
             'sourcedemande' => 'required',
@@ -38,7 +39,7 @@ class StoreDossierRequest extends FormRequest
             'user_id' => 'required',
             'tribunal_user_id' => 'nullable',
             'affaires' => 'required|array|min:1|max:8',
-            'affaires.*.numeromp' => 'required',
+
             'affaires.*.numero' => 'required|string',
             'affaires.*.code' => 'required|string',
             'affaires.*.annee' => 'required|string',

@@ -153,7 +153,7 @@ class DossierController extends Controller
         //
 
         // Log the full request for debugging
-        Log::info('Incoming Request Data:', $request->all());
+        // Log::info('Incoming Request Data:', $request->all());
 
         // Check the request data in the browser console
         /* return response()->json([
@@ -170,7 +170,7 @@ class DossierController extends Controller
         $detenu->nommere = $request->nommere;
         $detenu->cin = $request->cin;
         $detenu->genre = $request->genre;
-       // $detenu->nationalite_id = $request->nationalite;
+        // $detenu->nationalite_id = $request->nationalite;
         $detenu->save();
 
         $dossier = new Dossier();
@@ -190,6 +190,9 @@ class DossierController extends Controller
         $dossier->user_id = $request->user_id;
         $dossier->user_tribunal_id = $request->tribunal_user_id;
         $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
+        $dossier->numeromp = $request->numeromp;
+
+
         $dossier->detenu_id = $detenu->id;
         //$dossier->prison_id =  $request->prison;
         $dossier->prison_id = isset($request->prison) && is_numeric($request->prison)  ? (int) $request->prison : null;
@@ -292,7 +295,7 @@ class DossierController extends Controller
                 $affaire = new Affaire();
 
 
-                $affaire->numeromp = $affaireData['numeromp'];
+                //$affaire->numeromp = $affaireData['numeromp'];
                 $affaire->numero = $affaireData['numero'];
                 $affaire->code = $affaireData['code'];
                 $affaire->annee = $affaireData['annee'];

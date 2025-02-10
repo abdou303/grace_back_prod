@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('dossiers', function (Blueprint $table) {
             $table->id();
             $table->string('numero', 50)->nullable();
+            $table->string('numeromp', 100)->nullable();
             $table->date('date_enregistrement')->nullable();
             $table->text('observation')->nullable();
             $table->integer('avis_mp')->nullable();
