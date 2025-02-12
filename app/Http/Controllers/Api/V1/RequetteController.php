@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RequetteResource;
 use App\Models\Requette;
+use App\Models\StatutRequette;
 use Illuminate\Http\Request;
 
 class RequetteController extends Controller
@@ -31,6 +32,10 @@ class RequetteController extends Controller
         $requettes = Requette::where('dossier_id', $dossier_id)
             ->with([
                 'dossier',
+                //'statutrequettes',
+                'statutrequettes' => function ($query) {
+                    $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+                },
                 'tribunal',
                 'typerequette',
                 'partenaire',
@@ -72,6 +77,9 @@ class RequetteController extends Controller
         // Add the generated "numero" to the validated data
         $validatedData['numero'] = $numero;
         $requette = Requette::create($validatedData);
+        $id_staut = StatutRequette::where('code', 'KO')->value('id');
+        $requette->statutrequettes()->attach($id_staut);
+
 
         return response()->json([
             'message' => 'تم تسجيل الطلب بنجاح',
