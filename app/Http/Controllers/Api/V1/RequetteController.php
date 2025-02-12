@@ -19,7 +19,10 @@ class RequetteController extends Controller
         $requettes = Requette::with([
             'dossier',
             'tribunal',
-            'typerequette'
+            'typerequette',
+            'statutrequettes' => function ($query) {
+                $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
         ])->get();
 
         return new RequetteResource($requettes);
