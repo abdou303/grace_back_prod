@@ -10,6 +10,20 @@ use Illuminate\Http\Request;
 
 class RequetteController extends Controller
 {
+
+
+
+    public function changeStatut(Request $request, Requette $requette)
+    {
+        $request->validate([
+            'statutRequette' => 'required|exists:statut_requettes,code',
+        ]);
+        $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
+        $requette->statutrequettes()->sync([$id_staut]);
+
+        return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -100,7 +114,9 @@ class RequetteController extends Controller
             'dossier.detenu',
             'dossier.affaires',
             'dossier.affaires.tribunal',
-
+            'statutrequettes' => function ($query) {
+                $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
             'dossier.naturedossier',
             'dossier.typedossier',
             'dossier.detenu.nationalite',

@@ -52,18 +52,7 @@ class DossierController extends Controller
     }
     public function index()
     {
-        //
 
-
-
-
-
-        /*$dossiers = Dossier::with(['detenu', 'affaires', 'categoriedossier', 'naturedossier', 'typemotifdossier', 'typedossier'])->get();
-
-
-        // return response()->json($dossiers);
-
-        return new DossierResource($dossiers);*/
         $dossiers = Dossier::with([
             'detenu',
             'detenu.profession',
@@ -150,16 +139,7 @@ class DossierController extends Controller
      */
     public function store(StoreDossierRequest $request)
     {
-        //
 
-        // Log the full request for debugging
-        // Log::info('Incoming Request Data:', $request->all());
-
-        // Check the request data in the browser console
-        /* return response()->json([
-        'message' => 'Request received',
-        'data' => $request->all()
-    ]);*/
 
 
         $detenu = new Detenu();
@@ -249,45 +229,7 @@ class DossierController extends Controller
 
 
 
-        /*
-        $pj = new Pj();
-        // Handle the files
-        if ($request->hasFile('copie_decision')) {
 
-            $pj->contenu = $request->file('copie_decision')->store('uploads', 'public');
-            $pj->dossier_id = $dossier_id;
-            $pj->observation = "observation";
-            $pj->typepj_id = 5;
-            $pj->save();
-        }
-        if ($request->hasFile('copie_cin')) {
-            $dossier->copie_cin = $request->file('copie_cin')->store('uploads', 'public');
-            $pj->dossier_id = $dossier_id;
-            $pj->observation = "observation";
-            $pj->typepj_id = 4;
-            $pj->save();
-        }
-        if ($request->hasFile('copie_mp')) {
-            $dossier->copie_mp = $request->file('copie_mp')->store('uploads', 'public');
-            $pj->dossier_id = $dossier_id;
-            $pj->observation = "observation";
-            $pj->typepj_id = 3;
-            $pj->save();
-        }
-        if ($request->hasFile('copie_non_recours')) {
-            $dossier->copie_non_recours = $request->file('copie_non_recours')->store('uploads', 'public');
-            $pj->dossier_id = $dossier_id;
-            $pj->observation = "observation";
-            $pj->typepj_id = 2;
-            $pj->save();
-        }
-        if ($request->hasFile('copie_social')) {
-            $dossier->copie_social = $request->file('copie_social')->store('uploads', 'public');
-            $pj->dossier_id = $dossier_id;
-            $pj->observation = "observation";
-            $pj->typepj_id = 1;
-            $pj->save();
-        }*/
 
         if ($request->has('affaires')) {
             $affaires = $request->affaires;
