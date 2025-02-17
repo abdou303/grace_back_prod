@@ -84,12 +84,19 @@ class RequetteController extends Controller
             'typerequette_id' => 'int'
         ]);
         // Generate the "numero" value
-        $currentYear = now()->format('Y');
+        /*$currentYear = now()->format('Y');
         $lastRecord = Requette::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
 
         $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 4)) : 0;
         $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
-        $numero = $currentYear . $newNumber;
+        $numero = $currentYear . $newNumber;*/
+        //$numero =   "R-" . $currentYear . $newNumber;
+        $currentYear = now()->format('Y');
+        $lastRecord = Requette::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
+
+        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0; // Adjusted substring index
+        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+        $numero = 'R-' . $currentYear . $newNumber;
 
         // Add the generated "numero" to the validated data
         $validatedData['numero'] = $numero;
