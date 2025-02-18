@@ -11,6 +11,7 @@ use App\Models\Dossier;
 use App\Models\Pj;
 use App\Models\Prison;
 use App\Models\Requette;
+use App\Models\StatutRequette;
 use App\Models\TypePj;
 use Illuminate\Support\Facades\Log; // Import Log facade
 
@@ -23,6 +24,35 @@ class DossierController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+
+    public function dossierApresReponseRequette(Request $request, Requette $requette, Dossier $dossier)
+    {
+        $request->validate([
+            'statutRequette' => 'required|exists:statut_requettes,code',
+            'numeromp' => 'required',
+            'copie_decision' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_non_recours' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
+
+        $dossier->numeromp = $request->numeromp;
+        $dossier->copie_decision = $request->copie_decision;
+        $dossier->copie_cin = $request->copie_cin;
+        $dossier->copie_mp = $request->copie_mp;
+        $dossier->copie_non_recours = $request->copie_non_recours;
+        $dossier->copie_social = $request->copie_social;
+
+        $dossier->save();
+
+
+        $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
+        $requette->statutrequettes()->sync([$id_staut]);
+
+        return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
+    }
 
     public function dossierByTr($tr_id)
     {

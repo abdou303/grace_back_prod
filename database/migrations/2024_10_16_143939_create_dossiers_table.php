@@ -23,25 +23,13 @@ return new class extends Migration
             $table->integer('user_tribunal_id')->nullable();
             $table->string('user_tribunal_libelle', 500)->nullable();
             $table->integer('numero_detention')->default(0)->nullable();
-
-            /* $table->foreignId('avis_mp')->nullable()->constrained('avis')->onDelete('cascade');     
-            $table->foreignId('avis_dgapr')->nullable()->constrained('avis')->onDelete('cascade');
-            $table->foreignId('avis_gouverneur')->nullable()->constrained('avis')->onDelete('cascade');
-            $table->foreignId('comportement_id')->nullable()->constrained('comportements')->onDelete('cascade');
-            $table->foreign('avis_mp')->references('id')->on('avis')->onDelete('set null');
-            $table->foreign('avis_dgapr')->references('id')->on('avis')->onDelete('set null');
-            $table->foreign('avis_gouverneur')->references('id')->on('avis')->onDelete('set null');
-            $table->foreign('comportement_id')->references('id')->on('comportements')->onDelete('set null');*/
             $table->foreignId('comportement_id')->default(4)->nullable()->constrained('comportements')->onDelete('cascade');
             $table->unsignedBigInteger('objetdemande_id')->nullable();
             $table->foreign('objetdemande_id')->references('id')->on('objetsdemandes')->onDelete('cascade');
             $table->unsignedBigInteger('sourcedemande_id')->nullable();
             $table->foreign('sourcedemande_id')->references('id')->on('sourcesdemandes')->onDelete('cascade');
-
             $table->unsignedBigInteger('prison_id')->nullable();
             $table->foreign('prison_id')->references('id')->on('prisons')->onDelete('cascade');
-
-
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('typedossier_id')->constrained('typesdossiers')->onDelete('cascade');
             $table->foreignId('detenu_id')->constrained('detenus')->onDelete('cascade');
