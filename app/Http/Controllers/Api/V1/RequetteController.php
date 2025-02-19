@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateRequetteRequest;
 use App\Http\Resources\RequetteResource;
 use App\Models\Pj;
 use App\Models\Requette;
 use App\Models\StatutRequette;
 use App\Models\TypePj;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class RequetteController extends Controller
@@ -16,32 +18,19 @@ class RequetteController extends Controller
 
 
 
-    public function addReponseRequette(Request $request)
+    public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
     {
-        $request->validate([
-            'statutRequette' => 'required|exists:statut_requettes,code',
-            'numeromp' => 'required',
-            'copie_decision' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_non_recours' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-        ]);
 
         // Find the Requette
-        $requette = Requette::findOrFail($request->id_requette);
+        $requette = Requette::findOrFail($requette_id);
         // Get the related Dossier
         $dossier = $requette->dossier;
 
         if (!$dossier) {
             return response()->json(['message' => 'Dossier not found'], 404);
         }
+
         $dossier->numeromp = $request->numeromp;
-        /*$dossier->copie_decision = $request->copie_decision;
-        $dossier->copie_cin = $request->copie_cin;
-        $dossier->copie_mp = $request->copie_mp;
-        $dossier->copie_non_recours = $request->copie_non_recours;
-        $dossier->copie_social = $request->copie_social;*/
         $dossier->save();
 
 
@@ -69,6 +58,8 @@ class RequetteController extends Controller
                 $pj = new Pj();
                 $pj->contenu =  $file->storeAs('public/uploads', $filename);
                 $pj->dossier_id = $dossier->id;
+                $pj->requette_id = $requette->id;
+
                 $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
                 $pj->typepj_id = $typepjId;
                 $pj->save();
@@ -80,6 +71,8 @@ class RequetteController extends Controller
 
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
     }
+
+
     public function changeStatut(Request $request, Requette $requette)
     {
         $request->validate([

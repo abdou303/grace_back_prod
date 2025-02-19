@@ -22,6 +22,7 @@ class Dossier extends Model
         'prison_id',
         'user_id',
         'numero_detention',
+
     ];
 
     public function affaires()
