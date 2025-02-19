@@ -92,6 +92,15 @@ class RequetteController extends Controller
         //
         $requettes = Requette::with([
             'dossier',
+            'dossier.detenu',
+            'dossier.detenu.profession',
+            'dossier.detenu.nationalite',
+            'dossier.affaires',
+            'dossier.typedossier',
+            'dossier.naturedossier',
+            'dossier.affaires.tribunal',
+
+            'dossier.pjs',
             'tribunal',
             'typerequette',
             'statutrequettes' => function ($query) {
