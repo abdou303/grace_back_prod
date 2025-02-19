@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\RequetteResource;
+use App\Models\Pj;
 use App\Models\Requette;
 use App\Models\StatutRequette;
+use App\Models\TypePj;
 use Illuminate\Http\Request;
 
 class RequetteController extends Controller
@@ -13,6 +15,71 @@ class RequetteController extends Controller
 
 
 
+
+    public function addReponseRequette(Request $request)
+    {
+        $request->validate([
+            'statutRequette' => 'required|exists:statut_requettes,code',
+            'numeromp' => 'required',
+            'copie_decision' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_non_recours' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
+
+        // Find the Requette
+        $requette = Requette::findOrFail($request->id_requette);
+        // Get the related Dossier
+        $dossier = $requette->dossier;
+
+        if (!$dossier) {
+            return response()->json(['message' => 'Dossier not found'], 404);
+        }
+        $dossier->numeromp = $request->numeromp;
+        /*$dossier->copie_decision = $request->copie_decision;
+        $dossier->copie_cin = $request->copie_cin;
+        $dossier->copie_mp = $request->copie_mp;
+        $dossier->copie_non_recours = $request->copie_non_recours;
+        $dossier->copie_social = $request->copie_social;*/
+        $dossier->save();
+
+
+        // Define file fields and corresponding typepj_id values
+        $fileMappings = [
+            'copie_decision' => 5,
+            'copie_cin' => 4,
+            'copie_mp' => 3,
+            'copie_non_recours' => 2,
+            'copie_social' => 1,
+        ];
+        // Fetch all TypePj records and create an associative array of id => label
+        $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
+        foreach ($fileMappings as $fieldName => $typepjId) {
+
+
+
+            //echo "********".$fieldName."*************";
+
+            if ($request->hasFile($fieldName)) {
+
+                $file = $request->file($fieldName);
+
+                $filename = $dossier->numero_dossier . $fieldName . '.' . $file->getClientOriginalExtension();
+                $pj = new Pj();
+                $pj->contenu =  $file->storeAs('public/uploads', $filename);
+                $pj->dossier_id = $dossier->id;
+                $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
+                $pj->typepj_id = $typepjId;
+                $pj->save();
+            }
+        }
+
+        $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
+        $requette->statutrequettes()->sync([$id_staut]);
+
+        return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
+    }
     public function changeStatut(Request $request, Requette $requette)
     {
         $request->validate([
