@@ -99,7 +99,7 @@ class RequetteController extends Controller
             'dossier.typedossier',
             'dossier.naturedossier',
             'dossier.affaires.tribunal',
-
+            'dossier.prison',
             'dossier.pjs',
             'tribunal',
             'typerequette',
