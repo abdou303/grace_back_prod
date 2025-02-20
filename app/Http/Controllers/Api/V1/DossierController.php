@@ -304,7 +304,8 @@ class DossierController extends Controller
             'naturedossier',
             'typemotifdossier',
             'typedossier',
-            'pjs'
+            'pjs',
+            'pjs.requette'
         ])->findOrFail($id);
         return new DossierResource($dossier);
     }
