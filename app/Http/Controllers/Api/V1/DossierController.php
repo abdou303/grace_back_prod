@@ -157,6 +157,7 @@ class DossierController extends Controller
             'typemotifdossier',
             'typedossier',
             'pjs',
+            'pjs.requette',
             'prison',
             'objetdemande',
         ])->whereNull('user_tribunal_id')->get();
