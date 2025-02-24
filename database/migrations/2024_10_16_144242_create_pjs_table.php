@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->longText('contenu');
             $table->longText('observation');
-            //$table->foreignId('requette_id')->constrained('requettes')->onDelete('cascade');
             $table->foreignId('typepj_id')->constrained('typespjs')->onDelete('cascade');
             $table->unsignedBigInteger('requette_id')->nullable();
             $table->foreign('requette_id')->references('id')->on('requettes');
