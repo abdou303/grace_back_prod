@@ -48,7 +48,10 @@ class DossierImport implements ToCollection, WithHeadingRow
 
 
                     $dossier = Dossier::create([
-                        'numero' => $row['numero_dossier'],
+                        'numero_dapg' => $row['numero_dossier'],
+                        'date_sortie' => $row['datefin_peine'],
+
+
                         //'date_enregistrement' =>  now(),
                         'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
                         'typedossier_id' => $row['typedossier_id'],
@@ -65,7 +68,8 @@ class DossierImport implements ToCollection, WithHeadingRow
 
 
                     $dossier = Dossier::create([
-                        'numero' => $row['numero_dossier'],
+                        'numero_dapg' => $row['numero_dossier'],
+                        'date_sortie' => $row['datefin_peine'],
                         //'date_enregistrement' =>  now(),
                         'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
                         'typedossier_id' => $row['typedossier_id'],
@@ -82,7 +86,8 @@ class DossierImport implements ToCollection, WithHeadingRow
             } elseif ($row['typedossier_id'] == 2) {
 
                 $dossier = Dossier::create([
-                    'numero' => $row['numero_dossier'],
+                    'numero_dapg' => $row['numero_dossier'],
+                    'date_sortie' => $row['datefin_peine'],
                     //'date_enregistrement' =>  now(),
                     'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
                     'avis_mp' =>  $row['avis_mp'],
@@ -183,7 +188,7 @@ class DossierImport implements ToCollection, WithHeadingRow
             foreach ($affaireNumeros as $index => $numeroAffaire) {
                 // Ensure there's a corresponding date for each numeroAffaire
                 $dateJugement = $affaireDatesJugement[$index] ?? null;
-                $affaire = Affaire::firstOrCreate(['numeroaffaire' => $numeroAffaire, 'datejujement' => $dateJugement, 'tribunal_id' => 119]);
+                $affaire = Affaire::firstOrCreate(['numeroaffaire' => $numeroAffaire, 'datejujement' => $dateJugement, 'tribunal_id' => 92]);
                 $affaireIds[] = $affaire->id;
             }
             $dossier->affaires()->sync($affaireIds);
