@@ -28,7 +28,11 @@ class Affaire extends Model
 
         return $this->belongsToMany(Dossier::class, 'dossier_affaire')->withTimestamps();
     }
+    public function pjs()
+    {
 
+        return $this->hasMany(Pj::class);
+    }
     /* public function tribunal()
     {
 

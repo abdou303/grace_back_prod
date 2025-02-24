@@ -20,6 +20,12 @@ class Pj extends Model
         return $this->belongsTo(Requette::class);
     }
 
+    public function affaire()
+    {
+
+        return $this->belongsTo(Affaire::class);
+    }
+
     public function typepj()
     {
 

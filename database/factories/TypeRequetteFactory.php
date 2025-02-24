@@ -26,8 +26,9 @@ class TypeRequetteFactory extends Factory
             ];*/
 
         $typesrequettes = [
-            ['code' => 'NEW-GRACE-DOSSIER-ND', 'libelle' => 'طلب تهيئ ملف العفو سراح', 'min_pjs' => 5],
-            ['code' => 'NEW-GRACE-DOSSIER-DT', 'libelle' => 'طلب تهيئ ملف العفو معتقلين', 'min_pjs' => 4],
+            /* ['code' => 'NEW-GRACE-DOSSIER-ND', 'libelle' => 'طلب تهيئ ملف العفو سراح', 'min_pjs' => 5],
+            ['code' => 'NEW-GRACE-DOSSIER-DT', 'libelle' => 'طلب تهيئ ملف العفو معتقلين', 'min_pjs' => 4],*/
+            ['code' => 'NEW-GRACE-DOSSIER', 'libelle' => 'طلب تهيئ ملف العفو ', 'min_pjs' => 4],
             ['code' => 'NEW-LC-DOSSIER', 'libelle' => 'طلب تهيئ ملف الافراج المقيد بشروط ', 'min_pjs' => 4],
             ['code' => 'COMPLIMENT-DOSSIER', 'libelle' => 'استكمال تجهيز الملف ', 'min_pjs' => 1],
         ];

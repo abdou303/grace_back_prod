@@ -19,6 +19,8 @@ return new class extends Migration
             $table->foreignId('typepj_id')->constrained('typespjs')->onDelete('cascade');
             $table->unsignedBigInteger('requette_id')->nullable();
             $table->foreign('requette_id')->references('id')->on('requettes');
+            $table->unsignedBigInteger('affaire_id')->nullable();
+            $table->foreign('affaire_id')->references('id')->on('affaires');
             $table->unsignedBigInteger('dossier_id')->nullable();
             $table->foreign('dossier_id')->references('id')->on('dossiers');
 

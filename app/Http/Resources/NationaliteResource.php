@@ -20,8 +20,7 @@ class NationaliteResource extends JsonResource
 
             'id' => $this->id,
             'libelle' => $this->libelle,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+
 
         ];
     }
