@@ -20,7 +20,7 @@ class UpdateRequetteRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    /*public function rules(): array
     {
         //Log::info('Request Data:', $this->all());
 
@@ -32,6 +32,25 @@ class UpdateRequetteRequest extends FormRequest
             'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'copie_non_recours' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ];
+    }*/
+    public function rules(): array
+    {
+        return [
+            'statutRequette' => 'required|exists:statut_requettes,code',
+            'numeromp' => 'required',
+
+            // Validate single file fields
+            'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+
+            // Validate multiple files for different affaires
+            'copie_decision' => 'nullable|array',
+            'copie_decision.*' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
+
+            'copie_non_recours' => 'nullable|array',
+            'copie_non_recours.*' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
         ];
     }
 }
