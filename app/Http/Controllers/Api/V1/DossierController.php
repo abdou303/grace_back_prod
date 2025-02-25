@@ -158,6 +158,8 @@ class DossierController extends Controller
             'typedossier',
             'pjs',
             'pjs.requette',
+            'pjs.affaire',
+
             'prison',
             'objetdemande',
         ])->whereNull('user_tribunal_id')->get();
@@ -306,7 +308,8 @@ class DossierController extends Controller
             'typemotifdossier',
             'typedossier',
             'pjs',
-            'pjs.requette'
+            'pjs.requette',
+            'pjs.affaire',
         ])->findOrFail($id);
         return new DossierResource($dossier);
     }

@@ -62,16 +62,17 @@ class RequetteController extends Controller
                         $pj->affaire_id = $affaireId; // Save affaire_id from dynamic file key
                         $pj->save();
                     }
-                } //else {}
-                // Single file upload (for cases where there's just one file)
-                $filename = $dossier->numero_dossier . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
-                $pj = new Pj();
-                $pj->contenu = $files->storeAs('public/uploads', $filename);
-                $pj->dossier_id = $dossier->id;
-                $pj->requette_id = $requette->id;
-                $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
-                $pj->typepj_id = $typepjId;
-                $pj->save();
+                } else {
+                    // Single file upload (for cases where there's just one file)
+                    $filename = $dossier->numero_dossier . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
+                    $pj = new Pj();
+                    $pj->contenu = $files->storeAs('public/uploads', $filename);
+                    $pj->dossier_id = $dossier->id;
+                    $pj->requette_id = $requette->id;
+                    $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
+                    $pj->typepj_id = $typepjId;
+                    $pj->save();
+                }
             }
         }
 
@@ -81,7 +82,6 @@ class RequetteController extends Controller
 
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
     }
-
     /*
     public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
     {
@@ -165,6 +165,7 @@ class RequetteController extends Controller
             'dossier.affaires.tribunal',
             'dossier.prison',
             'dossier.pjs',
+            'dossier.pjs.affaire',
             'tribunal',
             'typerequette',
             'statutrequettes' => function ($query) {
