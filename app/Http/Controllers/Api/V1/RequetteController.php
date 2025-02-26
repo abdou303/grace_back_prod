@@ -78,7 +78,7 @@ class RequetteController extends Controller
 
         // Update StatutRequette
         $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
-        $requette->statutrequettes()->sync([$id_staut]);
+        $requette->statutrequettes()->attach([$id_staut]);
 
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
     }
@@ -143,7 +143,7 @@ class RequetteController extends Controller
             'statutRequette' => 'required|exists:statut_requettes,code',
         ]);
         $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
-        $requette->statutrequettes()->sync([$id_staut]);
+        $requette->statutrequettes()->attach([$id_staut]);
 
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
     }
@@ -164,6 +164,7 @@ class RequetteController extends Controller
             'dossier.naturedossier',
             'dossier.affaires.tribunal',
             'dossier.prison',
+            'dossier.requettes',
             'dossier.pjs',
             'dossier.pjs.affaire',
             'tribunal',

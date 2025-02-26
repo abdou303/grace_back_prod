@@ -49,7 +49,7 @@ class DossierController extends Controller
 
 
         $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
-        $requette->statutrequettes()->sync([$id_staut]);
+        $requette->statutrequettes()->attach([$id_staut]);
 
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
     }
@@ -159,7 +159,6 @@ class DossierController extends Controller
             'pjs',
             'pjs.requette',
             'pjs.affaire',
-
             'prison',
             'objetdemande',
         ])->whereNull('user_tribunal_id')->get();
