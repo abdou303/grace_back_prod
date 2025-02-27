@@ -52,7 +52,7 @@ class RequetteController extends Controller
                 if (is_array($files)) {
                     foreach ($files as $affaireId => $file) {
                         // Process the file for each affaire
-                        $filename = $dossier->numero_dossier . "_" . $affaireId . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
+                        $filename = $requette->numero . "_" . $dossier->id . "_" . $affaireId . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
                         $pj = new Pj();
                         $pj->contenu = $file->storeAs('public/uploads', $filename);
                         $pj->dossier_id = $dossier->id;
@@ -64,7 +64,7 @@ class RequetteController extends Controller
                     }
                 } else {
                     // Single file upload (for cases where there's just one file)
-                    $filename = $dossier->numero_dossier . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
+                    $filename = $requette->numero . "_" . $dossier->id . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
                     $pj = new Pj();
                     $pj->contenu = $files->storeAs('public/uploads', $filename);
                     $pj->dossier_id = $dossier->id;
