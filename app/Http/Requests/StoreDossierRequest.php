@@ -39,25 +39,26 @@ class StoreDossierRequest extends FormRequest
             'user_id' => 'required',
             'tribunal_user_id' => 'nullable',
             'affaires' => 'required|array|min:1|max:8',
-
             'affaires.*.numero' => 'required|string',
             'affaires.*.code' => 'required|string',
             'affaires.*.annee' => 'required|string',
             'affaires.*.tribunal' => 'required|numeric',
             'affaires.*.datejujement' => 'required|string',
             'affaires.*.conenujugement' => 'required|string',
+            'affaires.*.copie_decision' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
+            'affaires.*.copie_non_recours' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
+            'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'prison' => 'nullable',
+            'numerolocal' => 'nullable|numeric',
             /* 'copie_decision' => 'nullable',
             'copie_cin' => 'nullable',
             'copie_mp' => 'nullable',
             'copie_non_recours' => 'nullable',
             'copie_social' => 'nullable',*/
-            'copie_decision' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_non_recours' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'prison' => 'nullable',
-            'numerolocal' => 'nullable|numeric',
+            /*'copie_decision' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_non_recours' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',*/
 
 
         ];

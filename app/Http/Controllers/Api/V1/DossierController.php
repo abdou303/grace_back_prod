@@ -234,22 +234,14 @@ class DossierController extends Controller
 
 
 
-            //echo "********".$fieldName."*************";
 
             if ($request->hasFile($fieldName)) {
 
-                //  echo "///////////////////".$fieldName."////////////////////";
                 $file = $request->file($fieldName);
-
                 $filename = $numero_dossier . $fieldName . '.' . $file->getClientOriginalExtension();
                 $pj = new Pj();
-                // $pj->contenu = $request->file($fieldName)->store('uploads', 'public');
-                // $filePath = $file->storeAs('public/uploads', $filename);
-                //$pj->contenu = str_replace('public/', '', $filePath); // Save relative path
                 $pj->contenu =  $file->storeAs('public/uploads', $filename);
                 $pj->dossier_id = $dossier_id;
-                //$pj->observation = "observation";
-                // Assign observation dynamically from the database
                 $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
                 $pj->typepj_id = $typepjId;
                 $pj->save();
@@ -279,6 +271,28 @@ class DossierController extends Controller
                 $affaire->conenujugement = $affaireData['conenujugement'];
                 $affaire->save();
                 $dossier->affaires()->attach($affaire->id);
+
+                // Handle file uploads for this affaire
+                foreach (['copie_decision' => 5, 'copie_non_recours' => 2] as $fieldName => $typepjId) {
+                    if (isset($affaireData[$fieldName]) && $affaireData[$fieldName] instanceof \Illuminate\Http\UploadedFile) {
+                        $file = $affaireData[$fieldName];
+
+                        // Generate a unique filename
+                        $filename = $dossier->numero . "_" . $affaire->id . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
+
+                        // Save the file in storage
+                        $filePath = $file->storeAs('public/uploads', $filename);
+
+                        // Insert into Pj table with affaire_id
+                        $pj = new Pj();
+                        $pj->contenu = $filePath;
+                        $pj->dossier_id = $dossier->id;
+                        $pj->affaire_id = $affaire->id; // Assign correct affaire_id
+                        $pj->typepj_id = $typepjId;
+                        $pj->observation = ($typepjId == 5) ? 'Copie Decision' : 'Copie Non Recours';
+                        $pj->save();
+                    }
+                }
             }
         }
     }
