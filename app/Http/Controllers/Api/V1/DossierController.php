@@ -273,7 +273,18 @@ class DossierController extends Controller
                 $dossier->affaires()->attach($affaire->id);
 
                 // Handle file uploads for this affaire
-                foreach (['copie_decision' => 5, 'copie_non_recours' => 2] as $fieldName => $typepjId) {
+                $fileMappings = [
+                    'copie_decision' => 5,
+                    'copie_cin' => 4,
+                    'copie_mp' => 3,
+                    'copie_non_recours' => 2,
+                    'copie_social' => 1,
+                ];
+                // Fetch all TypePj records and create an associative array of id => label
+                $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
+
+                // foreach (['copie_decision' => 5, 'copie_non_recours' => 2] as $fieldName => $typepjId) {
+                foreach ($fileMappings as $fieldName => $typepjId) {
                     if (isset($affaireData[$fieldName]) && $affaireData[$fieldName] instanceof \Illuminate\Http\UploadedFile) {
                         $file = $affaireData[$fieldName];
 
@@ -289,7 +300,8 @@ class DossierController extends Controller
                         $pj->dossier_id = $dossier->id;
                         $pj->affaire_id = $affaire->id; // Assign correct affaire_id
                         $pj->typepj_id = $typepjId;
-                        $pj->observation = ($typepjId == 5) ? 'Copie Decision' : 'Copie Non Recours';
+                        //$pj->observation = ($typepjId == 5) ? 'Copie Decision' : 'Copie Non Recours';
+                        $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
                         $pj->save();
                     }
                 }
