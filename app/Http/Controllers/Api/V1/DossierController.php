@@ -131,6 +131,7 @@ class DossierController extends Controller
             'pjs',
             'prison',
             'objetdemande',
+            'sourcedemande',
         ])->whereNotNull('user_tribunal_id')->get();
 
         return new DossierResource($dossiers);
@@ -330,6 +331,7 @@ class DossierController extends Controller
             'affaires.peine.prisons',
             'categoriedossier',
             'naturedossier',
+            'sourcedemande',
             'typemotifdossier',
             'typedossier',
             'pjs',
