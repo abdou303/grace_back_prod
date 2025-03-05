@@ -129,10 +129,13 @@ class DossierController extends Controller
             'typemotifdossier',
             'typedossier',
             'pjs',
+            'pjs.requette',
+            'pjs.affaire',
             'prison',
             'objetdemande',
             'sourcedemande',
-        ])->whereNotNull('user_tribunal_id')->get();
+        ])->whereNotNull('user_tribunal_id')->orderBy('id', 'desc')
+            ->get();
 
         return new DossierResource($dossiers);
     }
