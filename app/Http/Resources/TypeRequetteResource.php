@@ -14,15 +14,16 @@ class TypeRequetteResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-       // return parent::toArray($request);
-       return [
+        // return parent::toArray($request);
+        return [
 
-        'id' => $this->id,
-        'libelle' => $this->libelle,
-        'active' => $this->active,
-        'created_at' => $this->created_at,
-        'updated_at' => $this->updated_at,
+            'id' => $this->id,
+            'libelle' => $this->libelle,
+            'code' => $this->code,
+            'active' => $this->active,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
 
-    ];
+        ];
     }
 }
