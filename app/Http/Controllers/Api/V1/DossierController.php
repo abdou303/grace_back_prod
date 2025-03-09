@@ -186,16 +186,18 @@ class DossierController extends Controller
         $detenu->nommere = $request->nommere;
         $detenu->cin = $request->cin;
         $detenu->genre = $request->genre;
-        // $detenu->nationalite_id = $request->nationalite;
+        $detenu->nationalite_id = $request->nationalite;
         $detenu->save();
 
         $dossier = new Dossier();
         $currentYear = now()->format('Y');
         $lastRecord = Dossier::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
 
-        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 4)) : 0;
+        //$lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 4)) : 0;
+        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0;
+
         $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
-        $numero_dossier = $currentYear . $newNumber;
+        $numero_dossier = 'D-' . $currentYear . $newNumber;
 
         $dossier->typedossier_id = $request->typedossier;
         $dossier->naturedossiers_id = $request->naturedossier;
