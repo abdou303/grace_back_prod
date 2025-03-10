@@ -12,6 +12,6 @@ class TypeRequetteSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\TypeRequette::factory()->count(4)->create();
+        \App\Models\TypeRequette::factory()->count(22)->create();
     }
 }

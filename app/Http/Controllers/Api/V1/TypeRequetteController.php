@@ -15,7 +15,10 @@ class TypeRequetteController extends Controller
     public function index()
     {
         //
-        return TypeRequetteResource::collection(TypeRequette::all());
+        // return TypeRequetteResource::collection(TypeRequette::all());
+        return TypeRequetteResource::collection(
+            TypeRequette::orderBy('cat', 'asc')->get()
+        );
     }
 
     /**

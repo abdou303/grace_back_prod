@@ -313,6 +313,10 @@ class DossierController extends Controller
                 }
             }
         }
+        return response()->json([
+            'message' => 'تم تسجيل الطلب بنجاح',
+            'data' => $dossier,
+        ], 201);
     }
 
     /**
