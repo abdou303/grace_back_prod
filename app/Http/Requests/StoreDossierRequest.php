@@ -44,7 +44,7 @@ class StoreDossierRequest extends FormRequest
             'affaires.*.annee' => 'required|string',
             'affaires.*.tribunal' => 'required|numeric',
             'affaires.*.datejujement' => 'required|string',
-            'affaires.*.conenujugement' => 'required|string',
+            'affaires.*.conenujugement' => 'nullable|string',
             'affaires.*.copie_decision' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
             'affaires.*.copie_non_recours' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
             'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',

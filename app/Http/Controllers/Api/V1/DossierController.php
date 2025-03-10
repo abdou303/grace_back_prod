@@ -187,6 +187,8 @@ class DossierController extends Controller
         $detenu->cin = $request->cin;
         $detenu->genre = $request->genre;
         $detenu->nationalite_id = $request->nationalite;
+        $detenu->adresse = $request->adresse ?? null;
+
         $detenu->save();
 
         $dossier = new Dossier();
