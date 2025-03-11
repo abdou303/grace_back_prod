@@ -76,7 +76,8 @@ class DossierController extends Controller
             'pjs',
             'prison',
             'objetdemande',
-        ])->where('user_tribunal_id', $tr_id)->get();
+            'sourcedemande',
+        ])->where('user_tribunal_id', $tr_id)->orderBy('id', 'desc')->get();
 
         return new DossierResource($dossiers);
     }
@@ -165,7 +166,7 @@ class DossierController extends Controller
             'pjs.affaire',
             'prison',
             'objetdemande',
-        ])->whereNull('user_tribunal_id')->get();
+        ])->whereNull('user_tribunal_id')->orderBy('id', 'desc')->get();
 
         return new DossierResource($dossiers);
     }
