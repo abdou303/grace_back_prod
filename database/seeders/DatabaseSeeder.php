@@ -27,8 +27,8 @@ class DatabaseSeeder extends Seeder
             //  GarantSeeder::class,
             //RoleSeeder::class,
             //GroupeSeeder::class,
-            PartenaireSeeder::class,
-            TypeRequetteSeeder::class,
+            //PartenaireSeeder::class,
+            //TypeRequetteSeeder::class,
             //ObjetDemandeSeeder::class,
             //SourceDemandeSeeder::class,
             // DetenuSeeder::class,
@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
             //  DossierAffaireSeeder::class,
             //DossierGarantSeeder::class,
             //  PeinePrisonSeeder::class,
-            StatutRequetteSeeder::class,
+            // StatutRequetteSeeder::class,
             UserSeeder::class
 
         ]);

@@ -1100,3 +1100,40 @@ INSERT [dbo].[provinces] ([id], [libelle], [active], [created_at], [updated_at])
 INSERT [dbo].[provinces] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (75, N'إقليم  وادي الذهب', 1, NULL, NULL)
 SET IDENTITY_INSERT [dbo].[provinces] OFF
 GO
+SET IDENTITY_INSERT [dbo].[typesrequettes] ON 
+
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (1, N'حول نتيجة الخبرة المنجزة', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.700' AS DateTime), CAST(N'2025-03-11T21:31:49.700' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (2, N'طلب نسخة حكم أو قرار', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.703' AS DateTime), CAST(N'2025-03-11T21:31:49.703' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (3, N'طلب تهيئ ملف الافراج المقيد بشروط ', 4, N'طلب تهيئ ملف', N'CAT-1', 1, CAST(N'2025-03-11T21:31:49.707' AS DateTime), CAST(N'2025-03-11T21:31:49.707' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (4, N'التأكد من استمرارية العلاقة الزوجية', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.710' AS DateTime), CAST(N'2025-03-11T21:31:49.710' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (5, N'حول التأكد من أداء الغرامة', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.713' AS DateTime), CAST(N'2025-03-11T21:31:49.713' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (6, N'حول مآل حكم غيابي', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.717' AS DateTime), CAST(N'2025-03-11T21:31:49.717' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (7, N'حول التأكد من التقادم', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.717' AS DateTime), CAST(N'2025-03-11T21:31:49.717' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (8, N'حول التأكد من أداء التعويضات المدنية', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.720' AS DateTime), CAST(N'2025-03-11T21:31:49.720' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (9, N'طلب تهيئ ملف العفو ', 4, N'طلب تهيئ ملف', N'CAT-1', 1, CAST(N'2025-03-11T21:31:49.723' AS DateTime), CAST(N'2025-03-11T21:31:49.723' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (10, N'حول تصحيح خطأ مادي', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.723' AS DateTime), CAST(N'2025-03-11T21:31:49.723' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (11, N'حول البحث الاجتماعي', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.727' AS DateTime), CAST(N'2025-03-11T21:31:49.727' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (12, N'حول التأكد من وجود تنازل', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.727' AS DateTime), CAST(N'2025-03-11T21:31:49.727' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (13, N'حول مآل النقض', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.730' AS DateTime), CAST(N'2025-03-11T21:31:49.730' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (14, N'البطاقة الوطنية للتعريف - سراح', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.730' AS DateTime), CAST(N'2025-03-11T21:31:49.730' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (15, N'حول المدة التي قضاها رهن الاعتقال', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.737' AS DateTime), CAST(N'2025-03-11T21:31:49.737' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (16, N'حول القضية موضوع البحث', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.737' AS DateTime), CAST(N'2025-03-11T21:31:49.737' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (17, N'حول نسخة قرار بعد النقض و الاحالة', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.740' AS DateTime), CAST(N'2025-03-11T21:31:49.740' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (18, N'حول تصحيح البطاقة الوطنية', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.740' AS DateTime), CAST(N'2025-03-11T21:31:49.740' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (19, N'حول الوضع المادي', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.743' AS DateTime), CAST(N'2025-03-11T21:31:49.743' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (20, N'حول ارجاع المبالغ', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.747' AS DateTime), CAST(N'2025-03-11T21:31:49.747' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (21, N'مآل الملف بمحكمة النقض', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.747' AS DateTime), CAST(N'2025-03-11T21:31:49.747' AS DateTime))
+INSERT [dbo].[typesrequettes] ([id], [libelle], [min_pjs], [code], [cat], [active], [created_at], [updated_at]) VALUES (22, N'حول طلب العفو', 1, N'استكمال تجهيز الملف', N'CAT-2', 1, CAST(N'2025-03-11T21:31:49.753' AS DateTime), CAST(N'2025-03-11T21:31:49.753' AS DateTime))
+SET IDENTITY_INSERT [dbo].[typesrequettes] OFF
+GO
+GO
+SET IDENTITY_INSERT [dbo].[statut_requettes] ON 
+
+INSERT [dbo].[statut_requettes] ([id], [libelle], [code], [active], [created_at], [updated_at]) VALUES (1, N'لم يتم الاطلاع عليه', N'KO', 1, CAST(N'2025-03-11T21:31:49.803' AS DateTime), CAST(N'2025-03-11T21:31:49.803' AS DateTime))
+INSERT [dbo].[statut_requettes] ([id], [libelle], [code], [active], [created_at], [updated_at]) VALUES (2, N'منجز', N'OK', 1, CAST(N'2025-03-11T21:31:49.807' AS DateTime), CAST(N'2025-03-11T21:31:49.807' AS DateTime))
+INSERT [dbo].[statut_requettes] ([id], [libelle], [code], [active], [created_at], [updated_at]) VALUES (3, N'تم الاطلاع عليه', N'VU', 1, CAST(N'2025-03-11T21:31:49.810' AS DateTime), CAST(N'2025-03-11T21:31:49.810' AS DateTime))
+INSERT [dbo].[statut_requettes] ([id], [libelle], [code], [active], [created_at], [updated_at]) VALUES (4, N'في طور المعالجة', N'TR', 1, CAST(N'2025-03-11T21:31:49.813' AS DateTime), CAST(N'2025-03-11T21:31:49.813' AS DateTime))
+SET IDENTITY_INSERT [dbo].[statut_requettes] OFF
+GO
+ALTER TABLE [dbo].[statut_requettes] ADD  DEFAULT ('0') FOR [active]
+GO
