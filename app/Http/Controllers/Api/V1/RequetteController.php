@@ -31,7 +31,17 @@ class RequetteController extends Controller
         $dossier->save();
 
         // Define file fields and corresponding typepj_id values
+        /*if ($requette->cat == 'CAT-1') {
+        
+        } else {
+            $fileMappings = [
+                'copie_cat2' => 6,
+
+            ];
+        }*/
+
         $fileMappings = [
+            'copie_cat2' => 6,
             'copie_decision' => 5,
             'copie_cin' => 4,
             'copie_mp' => 3,
@@ -39,12 +49,23 @@ class RequetteController extends Controller
             'copie_social' => 1,
         ];
 
+
         // Fetch all TypePj records and create an associative array of id => label
         $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
+
 
         // Loop over file mappings and handle file uploads
         foreach ($fileMappings as $fieldName => $typepjId) {
             // Check if there are files for this field
+
+
+            $insertedObservation = "";
+            if ($requette->typerequette->cat == "CAT-1") {
+                $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
+            } else {
+                $insertedObservation = $requette->typerequette->libelle ?? 'أخرى';
+            }
+
             if ($request->hasFile($fieldName)) {
                 $files = $request->file($fieldName);
 
@@ -57,7 +78,10 @@ class RequetteController extends Controller
                         $pj->contenu = $file->storeAs('public/uploads', $filename);
                         $pj->dossier_id = $dossier->id;
                         $pj->requette_id = $requette->id;
-                        $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
+                        //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
+                        $pj->observation = $insertedObservation;
+
+
                         $pj->typepj_id = $typepjId;
                         $pj->affaire_id = $affaireId; // Save affaire_id from dynamic file key
                         $pj->save();
@@ -69,7 +93,9 @@ class RequetteController extends Controller
                     $pj->contenu = $files->storeAs('public/uploads', $filename);
                     $pj->dossier_id = $dossier->id;
                     $pj->requette_id = $requette->id;
-                    $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
+                    //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
+                    $pj->observation = $insertedObservation;
+
                     $pj->typepj_id = $typepjId;
                     $pj->save();
                 }

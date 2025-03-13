@@ -44,6 +44,8 @@ class UpdateRequetteRequest extends FormRequest
             'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_cat2' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+
 
             // Validate multiple files for different affaires
             'copie_decision' => 'nullable|array',
