@@ -36,6 +36,7 @@ INSERT [dbo].[typespjs] ([id], [libelle], [active], [created_at], [updated_at]) 
 INSERT [dbo].[typespjs] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (3, N'ملتمس النيابة العامة', 1, CAST(N'2025-01-29T10:55:24.113' AS DateTime), CAST(N'2025-01-29T10:55:24.113' AS DateTime))
 INSERT [dbo].[typespjs] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (4, N'نسخة من بطاقة التعريف الوطنية', 1, CAST(N'2025-01-29T10:55:24.117' AS DateTime), CAST(N'2025-01-29T10:55:24.117' AS DateTime))
 INSERT [dbo].[typespjs] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (5, N'نسخة من المقرر القضائي ', 1, CAST(N'2025-01-29T10:55:24.117' AS DateTime), CAST(N'2025-01-29T10:55:24.117' AS DateTime))
+INSERT [dbo].[typespjs] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (6, N'استكمال ملف العفو ', 1, CAST(N'2025-01-29T10:55:24.117' AS DateTime), CAST(N'2025-01-29T10:55:24.117' AS DateTime))
 SET IDENTITY_INSERT [dbo].[typespjs] OFF
 GO
 GO
