@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('numero_dapg', 50)->nullable();
             $table->string('numero', 50)->nullable();
             $table->string('numeromp', 100)->nullable();
+            $table->string('etat', 10)->nullable();
             $table->date('date_enregistrement')->nullable();
             $table->date('date_sortie')->nullable();
             $table->text('observation')->nullable();

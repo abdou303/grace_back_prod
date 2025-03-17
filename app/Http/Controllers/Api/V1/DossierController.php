@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDossierRequest;
+use App\Http\Requests\UpdateDossierRequest;
 use App\Http\Resources\DossierResource;
 use App\Models\Affaire;
 use App\Models\Detenu;
@@ -206,6 +207,8 @@ class DossierController extends Controller
         $dossier->naturedossiers_id = $request->naturedossier;
         $dossier->sourcedemande_id = $request->sourcedemande;
         $dossier->numero = $numero_dossier;
+        $dossier->etat = 'NT';
+
         //$dossier->objetdemande_id = $request->objetdemande ?? null;
         $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande)  ? (int) $request->objetdemande : null;
         $dossier->user_id = $request->user_id;
@@ -321,7 +324,140 @@ class DossierController extends Controller
             'data' => $dossier,
         ], 201);
     }
+    /******************************************************** */
+    public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id)
+    {
 
+        // Find the Dossier
+        $dossier = Dossier::findOrFail($dossier_id);
+        // Get the related Detenu
+        $detenu = $dossier->detenu;
+
+        if (!$detenu) {
+            return response()->json(['message' => 'Detenu not found'], 404);
+        }
+
+        // $detenu = new Detenu();
+        $detenu->nom = $request->nom;
+        $detenu->prenom = $request->prenom;
+        $detenu->datenaissance = $request->datenaissance;
+        $detenu->nompere = $request->nompere;
+        $detenu->nommere = $request->nommere;
+        $detenu->cin = $request->cin;
+        $detenu->genre = $request->genre;
+        $detenu->nationalite_id = $request->nationalite;
+        $detenu->adresse = $request->adresse ?? null;
+
+        $detenu->save();
+
+        //$dossier = new Dossier();
+        /*   $currentYear = now()->format('Y');
+        $lastRecord = Dossier::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
+
+        //$lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 4)) : 0;
+        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0;
+
+        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+        $numero_dossier = 'D-' . $currentYear . $newNumber;*/
+
+        $dossier->typedossier_id = $request->typedossier;
+        $dossier->naturedossiers_id = $request->naturedossier;
+        $dossier->sourcedemande_id = $request->sourcedemande;
+        //$dossier->numero = $numero_dossier;
+        $dossier->etat = 'OK';
+
+        //$dossier->objetdemande_id = $request->objetdemande ?? null;
+        $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande)  ? (int) $request->objetdemande : null;
+        $dossier->user_id = $request->user_id;
+        $dossier->user_tribunal_id = $request->tribunal_user_id;
+        $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
+        $dossier->numeromp = $request->numeromp;
+
+
+        //$dossier->detenu_id = $detenu->id;
+        //$dossier->prison_id =  $request->prison;
+        $dossier->prison_id = isset($request->prison) && is_numeric($request->prison)  ? (int) $request->prison : null;
+        $dossier->numero_detention =  $request->numerolocal;
+
+
+
+
+
+        $dossier->save();
+        $dossier_id = $dossier->id;
+
+
+
+        // Define file fields and corresponding typepj_id values
+        $fileMappings = [
+            'copie_decision' => 5,
+            'copie_cin' => 4,
+            'copie_mp' => 3,
+            'copie_non_recours' => 2,
+            'copie_social' => 1,
+        ];
+        // Fetch all TypePj records and create an associative array of id => label
+        $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
+        // Handle file uploads
+        // Loop over file mappings and handle file uploads
+        foreach ($fileMappings as $fieldName => $typepjId) {
+            // Check if there are files for this field
+
+
+
+            $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
+
+
+            if ($request->hasFile($fieldName)) {
+                $files = $request->file($fieldName);
+
+                // If files are an array (for multiple affaires)
+                if (is_array($files)) {
+                    foreach ($files as $affaireId => $file) {
+                        // Process the file for each affaire
+                        $filename = $dossier->numero . "_" . $dossier->id . "_" . $affaireId . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
+                        $pj = new Pj();
+                        $pj->contenu = $file->storeAs('public/uploads', $filename);
+                        $pj->dossier_id = $dossier->id;
+                        // $pj->requette_id = $requette->id;
+                        //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
+                        $pj->observation = $insertedObservation;
+
+
+                        $pj->typepj_id = $typepjId;
+                        $pj->affaire_id = $affaireId; // Save affaire_id from dynamic file key
+                        $pj->save();
+                    }
+                } else {
+                    // Single file upload (for cases where there's just one file)
+                    $filename = $dossier->numero . "_" . $dossier->id . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
+                    $pj = new Pj();
+                    $pj->contenu = $files->storeAs('public/uploads', $filename);
+                    $pj->dossier_id = $dossier->id;
+                    //$pj->requette_id = $requette->id;
+                    //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
+                    $pj->observation = $insertedObservation;
+
+                    $pj->typepj_id = $typepjId;
+                    $pj->save();
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+
+        return response()->json([
+            'message' => 'تم تسجيل الطلب بنجاح',
+            'data' => $dossier,
+        ], 201);
+    }
+    /******************************************************** */
     /**
      * Display the specified resource.
      */

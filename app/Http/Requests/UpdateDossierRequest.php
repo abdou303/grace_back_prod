@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreDossierRequest extends FormRequest
+class UpdateDossierRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,8 +25,6 @@ class StoreDossierRequest extends FormRequest
             'nom' => 'required',
             'prenom' => 'required',
             'datenaissance' => 'nullable',
-            //  'adresse' => 'nullable',
-
             'nompere' => 'nullable',
             'nommere' => 'nullable',
             'cin' => 'min:4|max:12',
@@ -54,15 +52,6 @@ class StoreDossierRequest extends FormRequest
             'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'prison' => 'nullable',
             'numerolocal' => 'nullable|numeric',
-            /* 'copie_decision' => 'nullable',
-            'copie_cin' => 'nullable',
-            'copie_mp' => 'nullable',
-            'copie_non_recours' => 'nullable',
-            'copie_social' => 'nullable',*/
-            /*'copie_decision' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_non_recours' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',*/
-
-
         ];
     }
 }

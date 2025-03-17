@@ -71,6 +71,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/requettes/tribunal/{tr_id}', [RequetteController::class, 'requetteByTr']);
     Route::put('/requettes/{requette}/change-statut', [RequetteController::class, 'changeStatut']);
     Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
+    Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
+
 
 
 
