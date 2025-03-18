@@ -38,7 +38,7 @@ class UpdateDossierRequest extends FormRequest
             'tribunal_user_libelle' => 'nullable',
             'user_id' => 'required',
             'tribunal_user_id' => 'nullable',
-            'affaires' => 'required|array|min:1|max:8',
+            /* 'affaires' => 'required|array|min:1|max:8',
             'affaires.*.numero' => 'required|string',
             'affaires.*.code' => 'required|string',
             'affaires.*.annee' => 'required|string',
@@ -46,7 +46,12 @@ class UpdateDossierRequest extends FormRequest
             'affaires.*.datejujement' => 'required|string',
             'affaires.*.conenujugement' => 'nullable|string',
             'affaires.*.copie_decision' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
-            'affaires.*.copie_non_recours' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
+            'affaires.*.copie_non_recours' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid*/
+
+            'copie_decision' => 'nullable|array',
+            'copie_decision.*' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
+            'copie_non_recours' => 'nullable|array',
+            'copie_non_recours.*' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
             'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
