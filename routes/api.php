@@ -15,12 +15,15 @@ use App\Http\Controllers\Api\V1\RequetteController;
 use App\Http\Controllers\Api\V1\AvisController;
 use App\Http\Controllers\Api\V1\ComportementController;
 use App\Http\Controllers\Api\V1\DossierImportController;
+use App\Http\Controllers\Api\V1\FichePdfController;
 use App\Http\Controllers\Api\V1\NatureDossierController;
 use App\Http\Controllers\Api\V1\ObjetDemandeController;
 use App\Http\Controllers\Api\V1\ProvinceController;
 use App\Http\Controllers\Api\V1\SourceDemandeController;
 use App\Http\Controllers\Api\V1\TypeDossierController;
 use App\Http\Controllers\Api\V1\TypeMotifDossierController;
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -72,6 +75,9 @@ Route::prefix('v1')->group(function () {
     Route::put('/requettes/{requette}/change-statut', [RequetteController::class, 'changeStatut']);
     Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
     Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
+    Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
+
+
 
 
 
