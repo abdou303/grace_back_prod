@@ -8,8 +8,14 @@
         @font-face {
             font-family: 'Amiri';
 
-            src: url("{{ storage_path('fonts/Amiri-Regular.ttf') }}") format('truetype');
+            src: url("{{ storage_path('fonts/DroidKufi-Regular.ttf') }}") format('truetype');
 
+        }
+
+        h1 {
+            font-family: "Amiri" !important;
+            text-align: center;
+            font-weight: bold;
         }
 
         body {
@@ -33,9 +39,10 @@
 </head>
 
 <body>
-    <h1>تقرير الملف #{{ $dossier->id }}</h1>
+    <h1>تقرير الملف #{{ $dossier->id }}
+    </h1>
     <p>رقم الملف: {{ $dossier->numero }}</p>
-    <p>السجن: {{ $dossier->prison->libelle }}</p>
+
     <p>السجين: {{ $dossier->detenu->nom }} {{ $dossier->detenu->prenom }}</p>
     <p>تاريخ التسجيل: {{ $dossier->date_enregistrement }}</p>
 

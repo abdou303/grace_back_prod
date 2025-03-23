@@ -19,46 +19,52 @@ use Illuminate\Http\Request;
 
 class FichePdfController extends Controller
 {
-    public function generatePdf()
+    public function generatePdf($dossierId)
     {
         try {
-            // Define custom font directory
+            // Define font directories
             $defaultConfig = (new ConfigVariables())->getDefaults();
             $fontDirs = array_merge($defaultConfig['fontDir'], [
                 storage_path('fonts/')
             ]);
 
+            // Define font data
             $defaultFontConfig = (new FontVariables())->getDefaults();
             $fontData = array_merge($defaultFontConfig['fontdata'], [
-                'amiri' => [  // Define the font family name
-                    'R' => 'Changa-Regular.ttf',
-
+                'changa' => [
+                    'R' => 'almohannadbold.ttf', // Ensure filename matches exactly
                 ],
             ]);
 
-            // Create a new Mpdf instance with the custom font
+            // Create mPDF instance
             $mpdf = new Mpdf([
                 'mode' => 'utf-8',
                 'format' => 'A4',
-                'default_font' => 'amiri', // Apply the custom Arabic font
+                'default_font' => 'changa', // Use the registered font
                 'fontDir' => $fontDirs,
                 'fontdata' => $fontData,
             ]);
 
-            // Set text direction to RTL
-            //$mpdf->SetDirectionality('rtl');
+            // Enable RTL and Arabic shaping
+            $mpdf->autoScriptToLang = true;
+            $mpdf->autoLangToFont = true;
 
-            // Example HTML content
-            $html = '
-                <style>
-                    body { font-family: "amiri"; font-size: 16px; }
-                    h1 { font-family: "amiri"; text-align: center; font-weight: bold; }
-                </style>
-                <h1>مرحبا بالعالم</h1>
-                <p>هذا هو نص تجريبي باللغة العربية</p>
-            ';
+            $dossier = \App\Models\Dossier::with(['detenu', 'prison', 'affaires', 'requettes'])->findOrFail($dossierId);
 
-            // Write HTML to PDF
+            // Load the view as HTML
+            $html = view('pdf.dossier', compact('dossier'))->render();
+
+            // Arabic content
+            /* $html = '
+            <style>
+                body { font-family: "changa"; font-size: 16px; direction: rtl; text-align: right; }
+                h1 { font-family: "changa"; font-weight: bold; }
+            </style>
+            <h1>مرحبا بالعالم</h1>
+            <p>هذا هو نص تجريبي باللغة العربية</p>
+        ';*/
+
+            // Write to PDF
             $mpdf->WriteHTML($html);
 
             return response()->streamDownload(function () use ($mpdf) {
