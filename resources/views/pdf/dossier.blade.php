@@ -6,20 +6,20 @@
     <title>تقرير الملف</title>
     <style>
         @font-face {
-            font-family: 'Amiri';
+            /*font-family: 'Amiri';
 
-            src: url("{{ storage_path('fonts/DroidKufi-Regular.ttf') }}") format('truetype');
+            src: url("{{ storage_path('fonts/DroidKufi-Regular.ttf') }}") format('truetype');*/
 
         }
 
         h1 {
-            font-family: "Amiri" !important;
+            /*font-family: "Amiri" !important;*/
             text-align: center;
             font-weight: bold;
         }
 
         body {
-            font-family: 'Amiri', sans-serif;
+            /* font-family: 'Amiri', sans-serif;*/
             direction: rtl;
             text-align: right;
         }
@@ -39,7 +39,7 @@
 </head>
 
 <body>
-    <h1>تقرير الملف #{{ $dossier->id }}
+    <h1 style="font-family: changa; direction: rtl; text-align: right;">تقرير الملف #{{ $dossier->id }}
     </h1>
     <p>رقم الملف: {{ $dossier->numero }}</p>
 
