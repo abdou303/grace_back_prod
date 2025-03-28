@@ -24,26 +24,43 @@ class FichePdfController extends Controller
         try {
             $dossier = \App\Models\Dossier::with(['detenu', 'prison', 'affaires', 'requettes'])->findOrFail($dossierId);
             // Load the view as HTML
-            // $html = view('pdf.dossier', compact('dossier'))->render();
-            $html = mb_convert_encoding(view('pdf.dossier', compact('dossier'))->render(), 'UTF-8', 'auto');
+            $html = view('pdf.dossier', compact('dossier'))->render();
+
+
 
 
             $defaultConfig = (new ConfigVariables())->getDefaults();
             $defaultFontConfig = (new FontVariables())->getDefaults();
 
             $mpdf = new Mpdf([
+
+
+                /*    'mode' => 'utf-8',
+
                 'tempDir' => storage_path('temp'),
                 'fontDir' => array_merge($defaultConfig['fontDir'], [
                     storage_path('fonts'),
                 ]),
                 'fontdata' => array_merge($defaultFontConfig['fontdata'], [
                     'changa' => [
-                        'R' => '29lt-bukra.ttf',
+                        'R' => "ae-almohanad.ttf",
+                        'B' => "AL-Mohanad-Long-KAF.ttf",
+
+                        'useKashida' => 75,
 
                     ]
                 ]),
-                'default_font' => 'chadejavusansnga', // Set as default Arabic font
+                'default_font' => 'changa', // Set as default Arabic font
+*/
+
+                'default_font' => 'kfgqpcuthmantahanaskh'
+
+
+
             ]);
+
+            //$html = '<p style="font-family: almohanad; font-size: 20px;">تقرير</p>';
+
 
 
 
