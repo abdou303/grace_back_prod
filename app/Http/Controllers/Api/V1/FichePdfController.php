@@ -23,52 +23,27 @@ class FichePdfController extends Controller
     {
         try {
             $dossier = \App\Models\Dossier::with(['detenu', 'prison', 'affaires', 'requettes'])->findOrFail($dossierId);
+
             // Load the view as HTML
             $html = view('pdf.dossier', compact('dossier'))->render();
 
-
-
-
-            $defaultConfig = (new ConfigVariables())->getDefaults();
-            $defaultFontConfig = (new FontVariables())->getDefaults();
-
+            // Configure mPDF
             $mpdf = new Mpdf([
-
-
-                /*    'mode' => 'utf-8',
-
-                'tempDir' => storage_path('temp'),
-                'fontDir' => array_merge($defaultConfig['fontDir'], [
-                    storage_path('fonts'),
-                ]),
-                'fontdata' => array_merge($defaultFontConfig['fontdata'], [
-                    'changa' => [
-                        'R' => "ae-almohanad.ttf",
-                        'B' => "AL-Mohanad-Long-KAF.ttf",
-
-                        'useKashida' => 75,
-
-                    ]
-                ]),
-                'default_font' => 'changa', // Set as default Arabic font
-*/
-
-                'default_font' => 'kfgqpcuthmantahanaskh'
-
-
-
+                'default_font' => 'kfgqpcuthmantahanaskh',
             ]);
 
-            //$html = '<p style="font-family: almohanad; font-size: 20px;">تقرير</p>';
-
-
-
-
-            // Write HTML and output PDF
+            // Write HTML into PDF
             $mpdf->WriteHTML($html);
-            return response()->streamDownload(function () use ($mpdf) {
-                echo $mpdf->Output('', 'S');
-            }, 'example.pdf');
+
+            // Set filename dynamically
+            $filename = $dossier->numero . '.pdf';
+
+            // Open PDF in new tab
+            return response($mpdf->Output($filename, 'I'))
+                ->header('Content-Type', 'application/pdf')
+                ->header('Access-Control-Allow-Origin', 'http://localhost:4200')
+                ->header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+                ->header('Access-Control-Allow-Headers', 'Content-Type');
         } catch (MpdfException $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

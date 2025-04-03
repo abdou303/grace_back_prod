@@ -38,27 +38,42 @@
             padding: 8px;
             text-align: right;
         }
+
+        /* Style for the inline data */
+        .inline-data {
+            display: grid;
+            grid-template-columns: repeat(4, 2fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .inline-data p {
+            margin: 0;
+        }
     </style>
 </head>
 
 <body>
+    <img src="{{ asset('images/logo_justice.svg') }}" alt="" style="max-width: 200px; height: auto; ">
 
     <h1 style="font-family: xbriyaz"> {{ $dossier->typedossier->libelle }} عدد: {{ $dossier->numero }}</h1>
-    <p>تاريخ التسجيل: {{ $dossier->created_at }}</p>
-    <p>المصدر: {{ $dossier->user_tribunal_libelle }}</p>
-    <p>مقدم الطلب: {{ $dossier->sourcedemande->libelle }}</p>
+    <div class="inline-data">
 
-    <p>رقم النيابة العامة: {{ $dossier->numeromp }}</p>
+        <p>تاريخ التسجيل: {{ $dossier->created_at }}</p>
+        <p>المصدر: {{ $dossier->user_tribunal_libelle }}</p>
+        <p>مقدم الطلب: {{ $dossier->sourcedemande->libelle }}</p>
 
-    <h3>معلومات حول المتابع:</h3>
-    <p>الاسم الكامل: {{ $dossier->detenu->nom }} {{ $dossier->detenu->prenom }}</p>
-    <p>رقم البطاقة الوطنية للتعريف: {{ $dossier->detenu->cin }} </p>
-    <p>اسم الاب: {{ $dossier->detenu->nompere }} </p>
-    <p>اسم الام: {{ $dossier->detenu->nommere }} </p>
-    <p>تاريخ الازدياد: {{ $dossier->detenu->datenaissance }} </p>
-    <p>الجنسية: {{ $dossier->detenu->nationalite->libelle }} </p>
+        <p>رقم النيابة العامة: {{ $dossier->numeromp }}</p>
 
+        <h3>معلومات حول المتابع:</h3>
+        <p>الاسم الكامل: {{ $dossier->detenu->nom }} {{ $dossier->detenu->prenom }}</p>
+        <p>رقم البطاقة الوطنية للتعريف: {{ $dossier->detenu->cin }} </p>
+        <p>اسم الاب: {{ $dossier->detenu->nompere }} </p>
+        <p>اسم الام: {{ $dossier->detenu->nommere }} </p>
+        <p>تاريخ الازدياد: {{ $dossier->detenu->datenaissance }} </p>
+        <p>الجنسية: {{ $dossier->detenu->nationalite->libelle }} </p>
 
+    </div>
 
 
 
