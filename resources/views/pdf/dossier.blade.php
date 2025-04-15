@@ -50,30 +50,86 @@
         .inline-data p {
             margin: 0;
         }
+
+        .row {
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .column {
+            float: right;
+            width: 32%;
+            margin-left: 2%;
+        }
+
+        .column p {
+            margin: 0;
+        }
     </style>
+
+
 </head>
 
 <body>
-    <img src="{{ asset('images/logo_justice.svg') }}" alt="" style="max-width: 200px; height: auto; ">
+    <div style="text-align: center; padding: 10px;">
+
+        <img src="{{ public_path('images/logo_justice.svg') }}" width="160px">
+    </div>
+
+
+
 
     <h1 style="font-family: xbriyaz"> {{ $dossier->typedossier->libelle }} عدد: {{ $dossier->numero }}</h1>
-    <div class="inline-data">
 
-        <p>تاريخ التسجيل: {{ $dossier->created_at }}</p>
-        <p>المصدر: {{ $dossier->user_tribunal_libelle }}</p>
-        <p>مقدم الطلب: {{ $dossier->sourcedemande->libelle }}</p>
 
-        <p>رقم النيابة العامة: {{ $dossier->numeromp }}</p>
 
-        <h3>معلومات حول المتابع:</h3>
-        <p>الاسم الكامل: {{ $dossier->detenu->nom }} {{ $dossier->detenu->prenom }}</p>
-        <p>رقم البطاقة الوطنية للتعريف: {{ $dossier->detenu->cin }} </p>
-        <p>اسم الاب: {{ $dossier->detenu->nompere }} </p>
-        <p>اسم الام: {{ $dossier->detenu->nommere }} </p>
-        <p>تاريخ الازدياد: {{ $dossier->detenu->datenaissance }} </p>
-        <p>الجنسية: {{ $dossier->detenu->nationalite->libelle }} </p>
 
+    <p>رقم النيابة العامة: {{ $dossier->numeromp }}</p>
+    <div class="row">
+        <div class="column">
+            <p>تاريخ التسجيل: {{ $dossier->created_at }}</p>
+        </div>
+        <div class="column">
+            <p>المصدر: {{ $dossier->user_tribunal_libelle }}</p>
+        </div>
+        <div class="column">
+            <p>مقدم الطلب: {{ $dossier->sourcedemande->libelle }}</p>
+        </div>
     </div>
+    <h3>معلومات حول المتابع:</h3>
+    <div class="row">
+        <div class="column">
+
+            <p>الاسم الكامل: {{ $dossier->detenu->nom }} {{ $dossier->detenu->prenom }}</p>
+        </div>
+        <div class="column">
+
+            <p>رقم البطاقة الوطنية للتعريف: {{ $dossier->detenu->cin }} </p>
+        </div>
+        <div class="column">
+
+            <p>اسم الاب: {{ $dossier->detenu->nompere }} </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="column">
+
+            <p>اسم الام: {{ $dossier->detenu->nommere }} </p>
+        </div>
+        <div class="column">
+
+            <p>تاريخ الازدياد: {{ $dossier->detenu->datenaissance }} </p>
+        </div>
+        <div class="column">
+
+            <p>الجنسية: {{ $dossier->detenu->nationalite->libelle }} </p>
+        </div>
+    </div>
+
+
+
 
 
 

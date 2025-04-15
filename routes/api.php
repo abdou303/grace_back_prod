@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AffaireController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CaController;
 use App\Http\Controllers\Api\V1\DossierController;
@@ -52,6 +53,7 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('nationalites', NationaliteController::class);
     Route::apiResource('professions', ProfessionController::class);
     Route::apiResource('dossiers', DossierController::class);
+    Route::apiResource('affaires', AffaireController::class);
     Route::apiResource('typesrequettes', TypeRequetteController::class);
     Route::apiResource('partenaires', PartenaireController::class);
     Route::apiResource('requettes', RequetteController::class);
