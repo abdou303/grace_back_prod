@@ -16,11 +16,14 @@ class Requette extends Model
         'contenu',
         'observations',
         'dossier_id',
+        'user_id',
         'partenaire_id',
         'tribunal_id',
         'created_at',
         'updated_at',
         'typerequette_id',
+        'date_importation',
+        'etat'
     ];
     public function pjs()
     {

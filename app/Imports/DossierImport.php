@@ -8,6 +8,7 @@ use App\Models\Affaire;
 use App\Models\Garant;
 use App\Models\Peine;
 use App\Models\Prison;
+use App\Models\Requette;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Illuminate\Support\Collection;
@@ -50,9 +51,6 @@ class DossierImport implements ToCollection, WithHeadingRow
                     $dossier = Dossier::create([
                         'numero_dapg' => $row['numero_dossier'],
                         'date_sortie' => $row['datefin_peine'],
-
-
-                        //'date_enregistrement' =>  now(),
                         'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
                         'typedossier_id' => $row['typedossier_id'],
                         'typemotifdossiers_id' => $row['typemotifdossiers_id'],
@@ -70,7 +68,6 @@ class DossierImport implements ToCollection, WithHeadingRow
                     $dossier = Dossier::create([
                         'numero_dapg' => $row['numero_dossier'],
                         'date_sortie' => $row['datefin_peine'],
-                        //'date_enregistrement' =>  now(),
                         'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
                         'typedossier_id' => $row['typedossier_id'],
                         'typemotifdossiers_id' => $row['typemotifdossiers_id'],
@@ -104,7 +101,7 @@ class DossierImport implements ToCollection, WithHeadingRow
 
                 ]);
 
-                $garant = Garant::create([
+                /*$garant = Garant::create([
                     'nom' => $row['nom_garant'],
                     'prenom' => $row['prenom_garant'],
                     'adresse' => $row['adresse_garant'],
@@ -114,72 +111,8 @@ class DossierImport implements ToCollection, WithHeadingRow
 
                 ]);
 
-                $dossier->garants()->syncWithoutDetaching([$garant->id]);
+                $dossier->garants()->syncWithoutDetaching([$garant->id]);*/
             }
-
-
-
-
-
-
-
-
-
-
-            /********************************************************************** */
-
-            /*
-
-            $dossier = Dossier::create([
-                'numero' => $row['numero_dossier'],
-                //'date_enregistrement' =>  now(),
-                'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
-                'avis_mp' =>  $row['avis_mp'],
-                'avis_dgapr' =>  $row['avis_dgapr'],
-                'avis_gouverneur' =>  $row['avis_gouverneur'],
-                'typedossier_id' => $row['typedossier_id'],
-                'typemotifdossiers_id' => $row['typemotifdossiers_id'],
-                'categoriedossiers_id' => $row['categoriedossiers_id'],
-                'naturedossiers_id' => $row['naturedossiers_id'],
-                'detenu_id' => $detenu->id,
-
-            ]);
-
-            // Create the Peine
-            $peine = Peine::create([
-                'datedebut' => $row['datedebut_peine'],
-                //'datedebut' =>Carbon::createFromFormat('d/m/Y', $row['datedebut_peine'])->format('Y-m-d'),
-                'datefin' =>   $row['datefin_peine'],
-                //   'datefin' =>Carbon::createFromFormat('d/m/Y', $row['datefin_peine'])->format('Y-m-d'),
-
-            ]);
-            // Handle the "Affaires" and attach them to the Dossier
-*/
-
-            /*
-            $affaire = Affaire::firstOrCreate([
-                'numeromp' => $row['numeromp'],
-                'numeroaffaire' => $row['numero_affaire'],
-                'numero' => $row['numero_affaire'],
-
-                'code' => $row['code'],
-                'annee' => $row['annee'],
-                'datejujement' => $row['date_jujement'],
-                //'datejujement' =>Carbon::createFromFormat('d/m/Y', $row['datejujement'])->format('Y-m-d'),
-                'conenujugement' => $row['conenujugement'],
-                'nbrannees' => $row['nbrannees'],
-                'nbrmois' => $row['nbrmois'],
-                'peine_id' => $peine->id,
-                'tribunal_id' => 119,
-
-            ]);
-
-            // Attach the Affaire to the Dossier
-            $dossier->affaires()->syncWithoutDetaching([$affaire->id]);
-
-            */
-
-
 
             // Create or fetch Affaires and attach to the Dossier
             $affaireNumeros = array_map('trim', explode(':', $row['numeroaffaire']));
@@ -192,6 +125,20 @@ class DossierImport implements ToCollection, WithHeadingRow
                 $affaireIds[] = $affaire->id;
             }
             $dossier->affaires()->sync($affaireIds);
+
+
+            /** Generer les Requettes predéfinées  */
+
+            $requette = Requette::create([
+
+                'date_importation' => now()->format('Y-m-d H:i:s.v'),
+                'etat' => "NT",
+                'observations' => $row['observation_requette'],
+                'typerequette_id' => $row['type_requette'],
+                'tribunal_id' => $row['tribunal_requette'],
+                'dossier_id' => $dossier->id
+
+            ]);
         }
     }
 }

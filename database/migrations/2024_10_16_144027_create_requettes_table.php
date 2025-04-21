@@ -13,18 +13,18 @@ return new class extends Migration
     {
         Schema::create('requettes', function (Blueprint $table) {
             $table->id();
-            $table->string('numero');
-            $table->date('date');
-            $table->text('contenu');
-            $table->text('observations');
+            $table->string('numero')->nullable();
+            $table->date('date')->nullable();
+            $table->date('date_importation')->nullable();
+            $table->string('etat', 10)->nullable();
+            $table->text('contenu')->nullable();
+            $table->text('observations')->nullable();
             $table->foreignId('dossier_id')->constrained('dossiers')->onDelete('cascade');
-            //$table->foreignId('partenaire_id')->constrained('partenaires')->onDelete('cascade');
             $table->unsignedBigInteger('partenaire_id')->nullable();
-            $table->foreign('partenaire_id')->references('id')->on('partenaires')->onDelete('set null'); // Set null if the company is deleted
-            $table->unsignedBigInteger('tribunal_id')->nullable()->after('username');
-            $table->foreign('tribunal_id')->references('id')->on('tribunaux')->onDelete('set null'); // Set null if the company is deleted
-
-
+            $table->foreign('partenaire_id')->references('id')->on('partenaires')->onDelete('set null');
+            $table->unsignedBigInteger('tribunal_id')->nullable();
+            $table->foreign('tribunal_id')->references('id')->on('tribunaux')->onDelete('set null');
+            $table->foreignId('user_id')->nullable()->constrained('users');
             $table->timestamps();
         });
     }

@@ -240,9 +240,10 @@ class RequetteController extends Controller
             'contenu' => 'required|string',
             'observations' => 'required|string',
             'dossier_id' => 'int',
+            'user_id' => 'int',
             'partenaire_id' => 'int',
             'tribunal_id' => 'int',
-            'typerequette_id' => 'int'
+            'typerequette_id' => 'int',
         ]);
         // Generate the "numero" value
         /*$currentYear = now()->format('Y');
