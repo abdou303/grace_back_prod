@@ -74,6 +74,8 @@ Route::prefix('v1')->group(function () {
     Route::post('/import-dossiers', [DossierImportController::class, 'import']);
     Route::get('/dossiers/tribunal/{tr_id}', [DossierController::class, 'dossierByTr']);
     Route::get('/requettes/tribunal/{tr_id}', [RequetteController::class, 'requetteByTr']);
+    Route::get('/nt-requettes', [RequetteController::class, 'getNTRequettes']);
+    Route::get('/tr-requettes', [RequetteController::class, 'getTRRequettes']);
     Route::put('/requettes/{requette}/change-statut', [RequetteController::class, 'changeStatut']);
     Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
     Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);

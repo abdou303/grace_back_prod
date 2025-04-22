@@ -293,10 +293,64 @@ class RequetteController extends Controller
             'dossier.garants',
             'tribunal',
             'typerequette'
-        ])->where('tribunal_id', $tr_id)->get();
+        ])->where('tribunal_id', $tr_id)->where('etat', 'TR')->get();
 
         return new RequetteResource($requettes);
     }
+
+
+    public function getNTRequettes()
+    {
+        //
+        $requettes = Requette::where('etat', 'NT')->with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.detenu.profession',
+            'dossier.detenu.nationalite',
+            'dossier.affaires',
+            'dossier.typedossier',
+            'dossier.naturedossier',
+            'dossier.affaires.tribunal',
+            'dossier.prison',
+            'dossier.requettes',
+            'dossier.pjs',
+            'dossier.pjs.affaire',
+            'tribunal',
+            'typerequette',
+            'statutrequettes' => function ($query) {
+                $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+        ])->get();
+
+        return new RequetteResource($requettes);
+    }
+
+    public function getTRRequettes()
+    {
+        //
+        $requettes = Requette::where('etat', 'TR')->with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.detenu.profession',
+            'dossier.detenu.nationalite',
+            'dossier.affaires',
+            'dossier.typedossier',
+            'dossier.naturedossier',
+            'dossier.affaires.tribunal',
+            'dossier.prison',
+            'dossier.requettes',
+            'dossier.pjs',
+            'dossier.pjs.affaire',
+            'tribunal',
+            'typerequette',
+            'statutrequettes' => function ($query) {
+                $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+        ])->get();
+
+        return new RequetteResource($requettes);
+    }
+
     /**
      * Display the specified resource.
      */
