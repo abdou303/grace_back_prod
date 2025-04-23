@@ -174,6 +174,54 @@ class RequetteController extends Controller
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
     }
 
+
+    public function confirmRequette(Request $request, Requette $requette)
+    {
+        $data = $request->validate([
+            'date' => 'nullable',
+            'observations' => 'nullable|string',
+            'dossier_id' => 'required|int',
+            'user_id' => 'required|int',
+            'tribunal_id' => 'required|int',
+            'typerequette_id' => 'required|int',
+        ]);
+
+
+        /*
+        $currentYear = now()->format('Y');
+        $lastRecord = Requette::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
+
+        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0; // Adjusted substring index
+        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+        $numero = 'R-' . $currentYear . $newNumber;
+        */
+        $currentYear = now()->format('Y');
+
+        // Find the last numero starting with the current year
+        $lastNumero = Requette::where('numero', 'like', "R-$currentYear%")
+            ->orderBy('numero', 'desc')
+            ->value('numero');
+
+        if ($lastNumero) {
+            // Extract numeric part after "R-YYYY"
+            $lastNumber = intval(substr($lastNumero, 6));
+        } else {
+            $lastNumber = 0;
+        }
+
+        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+        $numero = 'R-' . $currentYear . $newNumber;
+
+        // Add the generated "numero" to the validated data
+        $requette->fill($data);
+        $requette->numero = $numero;
+        $requette->etat = "TR";
+        $requette->save();
+        $id_staut = StatutRequette::where('code', 'KO')->value('id');
+        $requette->statutrequettes()->attach($id_staut);
+        return new RequetteResource($requette);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -236,6 +284,7 @@ class RequetteController extends Controller
         //
         $validatedData = $request->validate([
             'date' => 'nullable|date',
+            'etat' => 'nullable',
             'partenaire' => 'nullable|string',
             'contenu' => 'required|string',
             'observations' => 'required|string',
@@ -253,13 +302,28 @@ class RequetteController extends Controller
         $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
         $numero = $currentYear . $newNumber;*/
         //$numero =   "R-" . $currentYear . $newNumber;
-        $currentYear = now()->format('Y');
+        /*$currentYear = now()->format('Y');
         $lastRecord = Requette::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
 
         $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0; // Adjusted substring index
         $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
-        $numero = 'R-' . $currentYear . $newNumber;
+        $numero = 'R-' . $currentYear . $newNumber;*/
+        $currentYear = now()->format('Y');
 
+        // Find the last numero starting with the current year
+        $lastNumero = Requette::where('numero', 'like', "R-$currentYear%")
+            ->orderBy('numero', 'desc')
+            ->value('numero');
+
+        if ($lastNumero) {
+            // Extract numeric part after "R-YYYY"
+            $lastNumber = intval(substr($lastNumero, 6));
+        } else {
+            $lastNumber = 0;
+        }
+
+        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+        $numero = 'R-' . $currentYear . $newNumber;
         // Add the generated "numero" to the validated data
         $validatedData['numero'] = $numero;
         $requette = Requette::create($validatedData);
