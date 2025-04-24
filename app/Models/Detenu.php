@@ -15,8 +15,9 @@ class Detenu extends Model
         'nompere',
         'nommere',
         'cin',
-        'datenaissance'
-        
+        'datenaissance',
+        'genre'
+
     ];
 
     public function ville()

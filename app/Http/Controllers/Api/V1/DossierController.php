@@ -494,7 +494,37 @@ class DossierController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $dossier = Dossier::with(['detenu', 'affaires', 'prison'])->findOrFail($id);
+
+        // Validate incoming request (add rules as needed)
+        $validated = $request->validate([
+
+            'numero_detention' => 'nullable|string',
+            'detenu.nom' => 'nullable|string',
+            'detenu.prenom' => 'nullable|string',
+            'detenu.nompere' => 'nullable|string',
+            'detenu.nommere' => 'nullable|string',
+            'detenu.cin' => 'nullable|string',
+            'detenu.genre' => 'nullable|string',
+
+        ]);
+
+        // Update main dossier fields
+
+        $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
+        $dossier->save();
+
+        // Update detenu fields
+        if (isset($validated['detenu'])) {
+            $dossier->detenu->update($validated['detenu']);
+        }
+
+
+
+        return response()->json([
+            'message' => 'Dossier updated successfully',
+            'data' => $dossier->load(['detenu', 'affaires', 'prison']),
+        ]);
     }
 
     /**
