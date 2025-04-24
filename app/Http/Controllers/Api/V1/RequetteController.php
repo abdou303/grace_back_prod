@@ -326,6 +326,9 @@ class RequetteController extends Controller
         $numero = 'R-' . $currentYear . $newNumber;
         // Add the generated "numero" to the validated data
         $validatedData['numero'] = $numero;
+        $validatedData['etat_tribunal'] = "NT";
+
+
         $requette = Requette::create($validatedData);
         $id_staut = StatutRequette::where('code', 'KO')->value('id');
         $requette->statutrequettes()->attach($id_staut);

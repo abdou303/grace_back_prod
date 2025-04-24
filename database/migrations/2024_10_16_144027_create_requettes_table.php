@@ -17,6 +17,7 @@ return new class extends Migration
             $table->date('date')->nullable();
             $table->date('date_importation')->nullable();
             $table->string('etat', 10)->nullable();
+            $table->string('etat_tribunal', 10)->nullable();
             $table->text('contenu')->nullable();
             $table->text('observations')->nullable();
             $table->foreignId('dossier_id')->constrained('dossiers')->onDelete('cascade');

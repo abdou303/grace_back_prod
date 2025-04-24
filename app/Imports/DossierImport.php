@@ -31,6 +31,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                 Requette::create([
                     'date_importation' => now()->format('Y-m-d H:i:s.v'),
                     'etat' => "NT",
+                    'etat_tribunal' => "NT",
                     'observations' => $row['observation_requette'],
                     'typerequette_id' => $row['type_requette'],
                     'tribunal_id' => $row['tribunal_requette'],
@@ -136,11 +137,17 @@ class DossierImport implements ToCollection, WithHeadingRow
                 // Create or fetch Affaires and attach to the Dossier
                 $affaireNumeros = array_map('trim', explode(':', $row['numeroaffaire']));
                 $affaireDatesJugement = array_map('trim', explode(':', $row['datejujement']));
+                $affaireConenuJugement = array_map('trim', explode(':', $row['conenujugement']));
+
+
+
                 $affaireIds = [];
                 foreach ($affaireNumeros as $index => $numeroAffaire) {
                     // Ensure there's a corresponding date for each numeroAffaire
                     $dateJugement = $affaireDatesJugement[$index] ?? null;
-                    $affaire = Affaire::firstOrCreate(['numeroaffaire' => $numeroAffaire, 'datejujement' => $dateJugement, 'tribunal_id' => 92]);
+                    $contenuJugement = $affaireConenuJugement[$index] ?? null;
+
+                    $affaire = Affaire::firstOrCreate(['numeroaffaire' => $numeroAffaire, 'datejujement' => $dateJugement, 'conenujugement' => $contenuJugement, 'tribunal_id' => 92]);
                     $affaireIds[] = $affaire->id;
                 }
                 $dossier->affaires()->sync($affaireIds);
@@ -152,6 +159,7 @@ class DossierImport implements ToCollection, WithHeadingRow
 
                     'date_importation' => now()->format('Y-m-d H:i:s.v'),
                     'etat' => "NT",
+                    'etat_tribunal' => "NT",
                     'observations' => $row['observation_requette'],
                     'typerequette_id' => $row['type_requette'],
                     'tribunal_id' => $row['tribunal_requette'],
