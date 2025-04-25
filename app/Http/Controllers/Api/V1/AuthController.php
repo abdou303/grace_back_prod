@@ -46,9 +46,11 @@ class AuthController extends Controller
 
     }*/
 
-    public function login(Request $request)
+    /*  public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
+
+
 
         if (!$token = JWTAuth::attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -78,7 +80,44 @@ class AuthController extends Controller
             'token' => $token,
         ]);
     }
+*/
 
+    public function login(Request $request)
+    {
+        $request->validate([
+            'username' => 'string',
+            'password' => 'required|string',
+        ]);
+
+        $credentials = $request->only('username', 'password');
+
+        // Override default identifier from 'email' to 'username'
+        if (! $token = auth('api')->attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = auth('api')->user();
+
+        $customClaims = [
+            'id'       => $user->id,
+            'name'     => $user->name,
+            'email'    => $user->email,
+            'username' => $user->username,
+            'role_id'  => $user->role_id,
+            'groupe_id' => $user->groupe_id,
+            'tribunal_id' => $user->tribunal_id,
+            'tribunal_libelle' => $user->tribunal?->libelle,
+            'tribunal_ca' => $user->tribunal?->ca_id,
+            'partenaire_id' => $user->partenaire_id,
+        ];
+
+        // Recreate token with custom claims
+        $token = JWTAuth::claims($customClaims)->fromUser($user);
+
+        return response()->json([
+            'token' => $token,
+        ]);
+    }
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
