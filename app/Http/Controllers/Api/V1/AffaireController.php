@@ -42,11 +42,13 @@ class AffaireController extends Controller
         $affaire = Affaire::findOrFail($id);
 
         $request->validate([
-            'numero' => 'required|number',
-            'code' => 'required|number',
-            'annee' => 'required|number',
+            'numero' => 'required|string',
+            'code' => 'required|string',
+            'annee' => 'required|string',
             'datejujement' => 'required|date',
             'conenujugement' => 'required|string',
+            'tribunal_id' => 'required|integer|exists:tribunaux,id',
+
         ]);
 
         $affaire->update([
@@ -55,6 +57,8 @@ class AffaireController extends Controller
             'annee' => $request->annee,
             'datejujement' => $request->datejujement,
             'conenujugement' => $request->conenujugement,
+            'tribunal_id' => $request->tribunal_id
+
         ]);
 
         return response()->json($affaire);
