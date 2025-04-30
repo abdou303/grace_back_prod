@@ -50,6 +50,22 @@ class UserSeeder extends Seeder
                 'groupe_id' => 3
             ],
             [
+                'name' => 'وزارة العدل',
+                'username' => 'dapg',
+                'email' => 'dapg@example.com',
+                'role_id' => 3,
+                'groupe_id' => 2
+
+            ],
+            [
+                'name' => 'مستعمل وزارة العدل',
+                'username' => 'dapg_user',
+                'email' => 'dapg_user@example.com',
+                'role_id' => 2,
+                'groupe_id' => 3
+
+            ],
+            [
                 'name' => 'مدير النظام',
                 'username' => 'admin',
                 'email' => 'admin@example.com',

@@ -48,7 +48,7 @@ class UpdateRequetteRequest extends FormRequest
 
 
             // Validate multiple files for different affaires
-            'copie_decision' => 'nullable|array',
+            'copie_decision' => 'nullable|nullable|array',
             'copie_decision.*' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
 
             'copie_non_recours' => 'nullable|array',
