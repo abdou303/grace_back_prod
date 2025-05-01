@@ -104,6 +104,11 @@ class RequetteController extends Controller
 
         // Update StatutRequette
         $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
+        if ($request->statutRequette == 'OK') {
+
+            $requette->etat_tribunal = 'TR';
+            $requette->save();
+        }
         $requette->statutrequettes()->attach([$id_staut]);
 
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
@@ -338,6 +343,35 @@ class RequetteController extends Controller
             'message' => 'تم تسجيل الطلب بنجاح',
             'data' => $requette,
         ], 201);
+    }
+
+
+    public function requetteNTByTr($tr_id)
+    {
+
+
+
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.affaires',
+            'dossier.affaires.tribunal',
+            'statutrequettes' => function ($query) {
+                $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+            'dossier.naturedossier',
+            'dossier.typedossier',
+            'dossier.detenu.nationalite',
+            'dossier.prison',
+            'dossier.garants',
+            'tribunal',
+            'typerequette'
+        ])->where('tribunal_id', $tr_id)->where('etat', 'TR')->where(function ($query) {
+            $query->where('etat_tribunal', '!=', 'TR')
+                ->orWhereNull('etat_tribunal');
+        })->get();
+
+        return new RequetteResource($requettes);
     }
 
     public function requetteByTr($tr_id)

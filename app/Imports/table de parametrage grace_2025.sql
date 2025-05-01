@@ -1136,5 +1136,3 @@ INSERT [dbo].[statut_requettes] ([id], [libelle], [code], [active], [created_at]
 INSERT [dbo].[statut_requettes] ([id], [libelle], [code], [active], [created_at], [updated_at]) VALUES (4, N'في طور المعالجة', N'TR', 1, CAST(N'2025-03-11T21:31:49.813' AS DateTime), CAST(N'2025-03-11T21:31:49.813' AS DateTime))
 SET IDENTITY_INSERT [dbo].[statut_requettes] OFF
 GO
-ALTER TABLE [dbo].[statut_requettes] ADD  DEFAULT ('0') FOR [active]
-GO
