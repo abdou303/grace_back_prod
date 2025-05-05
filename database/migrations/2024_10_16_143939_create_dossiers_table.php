@@ -17,7 +17,11 @@ return new class extends Migration
             $table->string('numero', 50)->nullable();
             $table->string('numeromp', 100)->nullable();
             $table->string('etat', 10)->nullable();
-            $table->date('date_enregistrement')->nullable();
+            $table->string('tr_tribunal', 10)->nullable();
+            $table->dateTime('date_tr_tribunal')->nullable();
+            $table->string('tr_dapg', 10)->nullable();
+            $table->dateTime('date_tr_dapg')->nullable();
+            $table->dateTime('date_enregistrement')->nullable();
             $table->date('date_sortie')->nullable();
             $table->text('observation')->nullable();
             $table->integer('avis_mp')->nullable();

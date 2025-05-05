@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\HandleCors;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //Par moi le 03.04.2025
 
         // $middleware->append(App\Http\Middleware\CorsMiddleware::class);
+        // other middleware if any...
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

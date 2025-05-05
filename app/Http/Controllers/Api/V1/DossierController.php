@@ -350,15 +350,7 @@ class DossierController extends Controller
 
         $detenu->save();
 
-        //$dossier = new Dossier();
-        /*   $currentYear = now()->format('Y');
-        $lastRecord = Dossier::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
 
-        //$lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 4)) : 0;
-        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0;
-
-        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
-        $numero_dossier = 'D-' . $currentYear . $newNumber;*/
 
         $dossier->typedossier_id = $request->typedossier;
         $dossier->naturedossiers_id = $request->naturedossier;
@@ -396,14 +388,8 @@ class DossierController extends Controller
             'copie_non_recours' => 2,
             'copie_social' => 1,
         ];
-        // Fetch all TypePj records and create an associative array of id => label
         $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
-        // Handle file uploads
-        // Loop over file mappings and handle file uploads
-        foreach ($fileMappings as $fieldName => $typepjId) {
-            // Check if there are files for this field
-
-
+        /*foreach ($fileMappings as $fieldName => $typepjId) {
 
             $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
 
@@ -442,8 +428,58 @@ class DossierController extends Controller
                     $pj->save();
                 }
             }
-        }
+        }*/
 
+        foreach ($fileMappings as $fieldName => $typepjId) {
+            $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
+
+            if ($request->hasFile($fieldName)) {
+                $files = $request->file($fieldName);
+
+                if (is_array($files)) {
+                    foreach ($files as $affaireId => $file) {
+                        $filename = $dossier->numero . "_" . $dossier->id . "_" . $affaireId . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
+                        $path = $file->storeAs('public/uploads', $filename);
+
+                        // Try to find existing PJ
+                        $pj = Pj::where('dossier_id', $dossier->id)
+                            ->where('affaire_id', $affaireId)
+                            ->where('typepj_id', $typepjId)
+                            ->first();
+
+                        if (!$pj) {
+                            $pj = new Pj();
+                            $pj->dossier_id = $dossier->id;
+                            $pj->affaire_id = $affaireId;
+                            $pj->typepj_id = $typepjId;
+                        }
+
+                        $pj->contenu = $path;
+                        $pj->observation = $insertedObservation;
+                        $pj->save();
+                    }
+                } else {
+                    $filename = $dossier->numero . "_" . $dossier->id . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
+                    $path = $files->storeAs('public/uploads', $filename);
+
+                    // Try to find existing PJ
+                    $pj = Pj::where('dossier_id', $dossier->id)
+                        ->whereNull('affaire_id')
+                        ->where('typepj_id', $typepjId)
+                        ->first();
+
+                    if (!$pj) {
+                        $pj = new Pj();
+                        $pj->dossier_id = $dossier->id;
+                        $pj->typepj_id = $typepjId;
+                    }
+
+                    $pj->contenu = $path;
+                    $pj->observation = $insertedObservation;
+                    $pj->save();
+                }
+            }
+        }
 
 
 

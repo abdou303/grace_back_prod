@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('requettes', function (Blueprint $table) {
             $table->id();
             $table->string('numero')->nullable();
-            $table->date('date')->nullable();
-            $table->date('date_importation')->nullable();
+            $table->dateTime('date')->nullable();
+            $table->dateTime('date_importation')->nullable();
             $table->string('etat', 10)->nullable();
             $table->string('etat_tribunal', 10)->nullable();
             $table->text('contenu')->nullable();
