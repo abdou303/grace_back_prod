@@ -227,6 +227,7 @@ class RequetteController extends Controller
         return new RequetteResource($requette);
     }
 
+
     /**
      * Display a listing of the resource.
      */

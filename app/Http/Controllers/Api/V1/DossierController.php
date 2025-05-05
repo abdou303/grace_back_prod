@@ -542,12 +542,19 @@ class DossierController extends Controller
             'detenu.nommere' => 'nullable|string',
             'detenu.cin' => 'nullable|string',
             'detenu.genre' => 'nullable|string',
+            'tr_tribunal' => 'nullable|string',
+            'user_id' => 'required|number',
+
 
         ]);
 
         // Update main dossier fields
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
+        $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
+        $dossier->user_id = $validated['user_id'] ?? $dossier->user_id;
+
+
         $dossier->save();
 
         // Update detenu fields

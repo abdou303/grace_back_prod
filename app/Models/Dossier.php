@@ -23,7 +23,11 @@ class Dossier extends Model
         'user_id',
         'numero_detention',
         'numero_dapg',
-        'date_sortie'
+        'date_sortie',
+        'tr_tribunal',
+        'date_tr_tribunal',
+        'tr_dapg',
+        'date_tr_dapg'
 
     ];
 
