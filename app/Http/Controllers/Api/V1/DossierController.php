@@ -543,7 +543,7 @@ class DossierController extends Controller
             'detenu.cin' => 'nullable|string',
             'detenu.genre' => 'nullable|string',
             'tr_tribunal' => 'nullable|string',
-            'user_id' => 'required|number',
+            'user_id' => 'required|int',
 
 
         ]);
@@ -569,6 +569,15 @@ class DossierController extends Controller
             'data' => $dossier->load(['detenu', 'affaires', 'prison']),
         ]);
     }
+
+
+
+    public function getPjs($dossierId)
+    {
+        $dossier = Dossier::with('pjs')->findOrFail($dossierId);
+        return response()->json($dossier->pjs);
+    }
+
 
     /**
      * Remove the specified resource from storage.

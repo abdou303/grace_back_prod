@@ -84,6 +84,8 @@ Route::prefix('v1')->group(function () {
     Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
     Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
     Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
+    Route::get('/dossiers/{id}/pjs', [DossierController::class, 'getPjs']);
+
 
 
 
