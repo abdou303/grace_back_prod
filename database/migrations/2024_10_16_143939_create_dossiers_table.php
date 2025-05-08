@@ -22,8 +22,10 @@ return new class extends Migration
             $table->string('tr_dapg', 10)->nullable();
             $table->dateTime('date_tr_dapg')->nullable();
             $table->dateTime('date_enregistrement')->nullable();
-            $table->date('date_sortie')->nullable();
+            $table->dateTime('date_sortie')->nullable();
             $table->text('observation')->nullable();
+            $table->string('has_antecedent', 10)->nullable();
+            $table->integer('antecedant_id')->nullable();
             $table->integer('avis_mp')->nullable();
             $table->integer('avis_dgapr')->nullable();
             $table->integer('avis_gouverneur')->nullable();

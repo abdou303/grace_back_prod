@@ -27,7 +27,9 @@ class Dossier extends Model
         'tr_tribunal',
         'date_tr_tribunal',
         'tr_dapg',
-        'date_tr_dapg'
+        'date_tr_dapg',
+        'has_antecedent',
+        'antecedant_id',
 
     ];
 
