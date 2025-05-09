@@ -73,8 +73,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                             'date_sortie' => $row['datefin_peine'],
                             'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
                             'typedossier_id' => $row['typedossier_id'],
-                            'typemotifdossiers_id' => $row['typemotifdossiers_id'],
-                            'categoriedossiers_id' => $row['categoriedossiers_id'],
+                            /*'typemotifdossiers_id' => $row['typemotifdossiers_id'],
+                            'categoriedossiers_id' => $row['categoriedossiers_id'],*/
                             'naturedossiers_id' => $row['naturedossiers_id'],
                             'detenu_id' => $detenu->id,
                             'prison_id' => $row['prison_id'],
@@ -90,8 +90,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                             'date_sortie' => $row['datefin_peine'],
                             'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
                             'typedossier_id' => $row['typedossier_id'],
-                            'typemotifdossiers_id' => $row['typemotifdossiers_id'],
-                            'categoriedossiers_id' => $row['categoriedossiers_id'],
+                            /*'typemotifdossiers_id' => $row['typemotifdossiers_id'],
+                            'categoriedossiers_id' => $row['categoriedossiers_id'],*/
                             'naturedossiers_id' => $row['naturedossiers_id'],
                             'detenu_id' => $detenu->id,
                             'objetdemande_id' => $row['objetdemande_id'],
@@ -107,12 +107,12 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'date_sortie' => $row['datefin_peine'],
                         //'date_enregistrement' =>  now(),
                         'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
-                        'avis_mp' =>  $row['avis_mp'],
+                        /*'avis_mp' =>  $row['avis_mp'],
                         'avis_dgapr' =>  $row['avis_dgapr'],
-                        'avis_gouverneur' =>  $row['avis_gouverneur'],
+                        'avis_gouverneur' =>  $row['avis_gouverneur'],*/
                         'typedossier_id' => $row['typedossier_id'],
-                        'typemotifdossiers_id' => $row['typemotifdossiers_id'],
-                        'categoriedossiers_id' => $row['categoriedossiers_id'],
+                        /* 'typemotifdossiers_id' => $row['typemotifdossiers_id'],
+                        'categoriedossiers_id' => $row['categoriedossiers_id'],*/
                         'naturedossiers_id' => $row['naturedossiers_id'],
                         'detenu_id' => $detenu->id,
                         'prison_id' => $row['prison_id'],
@@ -135,6 +135,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                 }
 
                 // Create or fetch Affaires and attach to the Dossier
+                $affaireTribunal = array_map('trim', explode(':', $row['tribunalaffaire']));
                 $affaireNumeros = array_map('trim', explode(':', $row['numeroaffaire']));
                 $affaireDatesJugement = array_map('trim', explode(':', $row['datejujement']));
                 $affaireConenuJugement = array_map('trim', explode(':', $row['conenujugement']));
@@ -146,8 +147,10 @@ class DossierImport implements ToCollection, WithHeadingRow
                     // Ensure there's a corresponding date for each numeroAffaire
                     $dateJugement = $affaireDatesJugement[$index] ?? null;
                     $contenuJugement = $affaireConenuJugement[$index] ?? null;
+                    $tribunalJugement = $affaireTribunal[$index] ?? null;
 
-                    $affaire = Affaire::firstOrCreate(['numeroaffaire' => $numeroAffaire, 'datejujement' => $dateJugement, 'conenujugement' => $contenuJugement, 'tribunal_id' => 92]);
+
+                    $affaire = Affaire::firstOrCreate(['numeroaffaire' => $numeroAffaire, 'datejujement' => $dateJugement, 'conenujugement' => $contenuJugement, 'tribunal_id' => $tribunalJugement]);
                     $affaireIds[] = $affaire->id;
                 }
                 $dossier->affaires()->sync($affaireIds);

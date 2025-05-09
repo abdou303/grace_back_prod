@@ -586,6 +586,7 @@ class DossierController extends Controller
             'detenu.cin' => 'nullable|string',
             'detenu.genre' => 'nullable|string',
             'tr_tribunal' => 'nullable|string',
+            'tr_dapg' => 'nullable|string',
             'user_id' => 'required|int',
 
 
@@ -595,6 +596,12 @@ class DossierController extends Controller
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
         $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
+        $dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
+
+        $dossier->date_tr_tribunal = now()->format('Y-m-d H:i:s.v');
+        $dossier->date_tr_dapg = now()->format('Y-m-d H:i:s.v');
+
+
         $dossier->user_id = $validated['user_id'] ?? $dossier->user_id;
 
 
