@@ -595,11 +595,17 @@ class DossierController extends Controller
         // Update main dossier fields
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
-        $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
-        $dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
+        //$dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
+        //$dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
+        if ($request->filled('tr_tribunal')) {
+            $dossier->tr_tribunal = $validated['tr_tribunal'];
+            $dossier->date_tr_tribunal = now()->format('Y-m-d H:i:s.v');
+        }
+        if ($request->filled('tr_dapg')) {
+            $dossier->tr_dapg = $validated['tr_dapg'];
+            $dossier->date_tr_dapg = now()->format('Y-m-d H:i:s.v');
+        }
 
-        $dossier->date_tr_tribunal = now()->format('Y-m-d H:i:s.v');
-        $dossier->date_tr_dapg = now()->format('Y-m-d H:i:s.v');
 
 
         $dossier->user_id = $validated['user_id'] ?? $dossier->user_id;
