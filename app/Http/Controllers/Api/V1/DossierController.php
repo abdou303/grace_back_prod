@@ -587,6 +587,9 @@ class DossierController extends Controller
             'detenu.genre' => 'nullable|string',
             'tr_tribunal' => 'nullable|string',
             'tr_dapg' => 'nullable|string',
+            'date_tr_tribunal' => 'nullable|string',
+            'date_tr_dapg' => 'nullable|string',
+
             'user_id' => 'required|int',
 
 
@@ -595,16 +598,21 @@ class DossierController extends Controller
         // Update main dossier fields
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
-        //$dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
-        //$dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
-        if ($request->filled('tr_tribunal')) {
+        $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
+        $dossier->date_tr_tribunal = $validated['date_tr_tribunal'] ?? $dossier->date_tr_tribunal;
+
+        $dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
+        $dossier->date_tr_dapg = $validated['date_tr_dapg'] ?? $dossier->date_tr_dapg;
+
+
+        /*if ($request->filled('tr_tribunal')) {
             $dossier->tr_tribunal = $validated['tr_tribunal'];
             $dossier->date_tr_tribunal = now()->format('Y-m-d H:i:s.v');
         }
         if ($request->filled('tr_dapg')) {
             $dossier->tr_dapg = $validated['tr_dapg'];
             $dossier->date_tr_dapg = now()->format('Y-m-d H:i:s.v');
-        }
+        }*/
 
 
 
