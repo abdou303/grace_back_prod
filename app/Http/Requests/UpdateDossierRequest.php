@@ -27,7 +27,7 @@ class UpdateDossierRequest extends FormRequest
             'datenaissance' => 'nullable',
             'nompere' => 'nullable',
             'nommere' => 'nullable',
-            'cin' => 'min:4|max:12',
+            'cin' => 'min:2|max:50',
             'genre' => 'required',
             'nationalite' => 'nullable',
             'numeromp' => 'required',

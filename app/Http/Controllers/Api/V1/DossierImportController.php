@@ -9,16 +9,24 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class DossierImportController extends Controller
 {
-    
+
     public function import(Request $request)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,csv',
         ]);
 
-        Excel::import(new DossierImport, $request->file('file'));
+        /* Excel::import(new DossierImport, $request->file('file'));
 
-        return back()->with('success', 'Dossiers and Affaires imported successfully!');
+        return back()->with('success', 'Dossiers and Affaires imported successfully!');*/
+        try {
+            Excel::import(new DossierImport, $request->file('file'));
+            return response()->json([
+                'message' => 'تم استيراد الملفات بنجاح !!!!'
+            ], 200); // 200 OK with message 
+        } catch (\Exception $e) {
+            return back()->with('error', 'هناك خطأ في الاستيراد: ' . $e->getMessage());
+        }
     }
     /**
      * Display a listing of the resource.

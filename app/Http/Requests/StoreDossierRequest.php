@@ -29,7 +29,7 @@ class StoreDossierRequest extends FormRequest
 
             'nompere' => 'nullable',
             'nommere' => 'nullable',
-            'cin' => 'min:4|max:12',
+            'cin' => 'min:2|max:50',
             'genre' => 'required',
             'nationalite' => 'nullable',
             'numeromp' => 'nullable',

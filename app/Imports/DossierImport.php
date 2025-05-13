@@ -19,7 +19,7 @@ class DossierImport implements ToCollection, WithHeadingRow
 {
     public function collection(Collection $rows)
     {
-        $rows->shift();
+        // $rows->shift();
         foreach ($rows as $row) {
 
 
