@@ -109,6 +109,8 @@ class AuthController extends Controller
             'tribunal_libelle' => $user->tribunal?->libelle,
             'tribunal_ca' => $user->tribunal?->ca_id,
             'partenaire_id' => $user->partenaire_id,
+            'must_change_password' => $user->must_change_password,
+
         ];
 
         // Recreate token with custom claims
@@ -127,5 +129,23 @@ class AuthController extends Controller
     public function user(Request $request)
     {
         return response()->json($request->user());
+    }
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/[A-Z]/', 'regex:/[a-z]/', 'regex:/[0-9]/'],
+        ]);
+
+        $user = auth('api')->user();
+
+        if (!($user instanceof \App\Models\User)) {
+            return response()->json(['error' => 'User not found'], 404);
+        }
+
+        $user->password = bcrypt($request->password);
+        $user->must_change_password = false;
+        $user->save();
+
+        return response()->json(['message' => 'Password changed successfully.']);
     }
 }
