@@ -133,7 +133,7 @@ class AuthController extends Controller
     public function changePassword(Request $request)
     {
         $request->validate([
-            'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/[A-Z]/', 'regex:/[a-z]/', 'regex:/[0-9]/'],
+            'password' => ['required', 'string', 'min:6', 'confirmed', 'regex:/[A-Z]/', 'regex:/[a-z]/', 'regex:/[0-9]/'],
         ]);
 
         $user = auth('api')->user();
