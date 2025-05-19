@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         //Par moi le 03.04.2025
+        //Par moi le 03.04.2025
+
 
         // $middleware->append(App\Http\Middleware\CorsMiddleware::class);
         // other middleware if any...
