@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\NatureDossierController;
 use App\Http\Controllers\Api\V1\ObjetDemandeController;
 use App\Http\Controllers\Api\V1\ProvinceController;
 use App\Http\Controllers\Api\V1\SourceDemandeController;
+use App\Http\Controllers\Api\V1\StatisticsController;
 use App\Http\Controllers\Api\V1\TypeDossierController;
 use App\Http\Controllers\Api\V1\TypeMotifDossierController;
 
@@ -136,6 +137,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
         Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
         Route::get('/dossiers/{id}/pjs', [DossierController::class, 'getPjs']);
+        Route::get('/statistiques', [StatisticsController::class, 'getDossierStats']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
     });
 });
