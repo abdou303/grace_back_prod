@@ -32,12 +32,22 @@ class StatisticsController extends Controller
             /*'per_tribunal' => $query->select('tribunal_id')->with('tribunal:id,libelle')
                 ->selectRaw('count(*) as count')
                 ->groupBy('tribunal_id')->get(),
-            'per_tribunal' => $query->select('user_tribunal_id')->with('tribunaux:id,libelle')
+               'per_tribunal' => $query->select('user_tribunal_libelle')
                 ->selectRaw('count(*) as count')
-                ->groupBy('user_tribunal_id')->get(),*/
-            'per_tribunal' => 100,
+                ->groupBy('user_tribunal_libelle')->get(),
+            'per_tribunal' => 100,*/
+            'per_tribunal' => $query->whereNotNull('user_tribunal_libelle')
+                ->select('user_tribunal_libelle')
+                ->selectRaw('count(*) as count')
+                ->groupBy('user_tribunal_libelle')
+                ->get(),
 
-            'per_sex' => 100/*$query->select('sex')
+            'per_sex' => $query->select('user_tribunal_libelle')
+                ->selectRaw('count(*) as count')
+                ->groupBy('user_tribunal_libelle')->get()
+
+
+            /*$query->select('sex')
                 ->selectRaw('count(*) as count')
                 ->groupBy('sex')->get()*/,
 
