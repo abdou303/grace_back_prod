@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'sqlsrv'),
 
     /*
     |--------------------------------------------------------------------------
@@ -98,18 +98,31 @@ return [
         ],
 
         'sqlsrv' => [
-            'driver' => 'sqlsrv',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', 'localhost'),
-            'port' => env('DB_PORT', '1433'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
-            'prefix_indexes' => true,
+             'driver' => 'sqlsrv',
+            // 'url' => env('DB_URL'),
+            'host' => env('DB_HOST', '192.168.23.244'),
+             'port' => env('DB_PORT', '6001'),
+             'database' => env('DB_DATABASE', 'GraceLibCond'),
+            // 'username' => null ,//env('DB_USERNAME', 'pool-gracelibcond@justice.intra'),
+             //'password' => null ,//env('DB_PASSWORD', '123456****'),
+             'charset' => env('DB_CHARSET', 'utf8'),
+			 // 'authentication' => env('DB_AUTHENTICATION', 'ActiveDirectoryPassword'),
+            // 'prefix' => '',
+            // 'prefix_indexes' => true,
             // 'encrypt' => env('DB_ENCRYPT', 'yes'),
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+			'encrypt' => env('DB_ENCRYPT', true),
+            'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', true),
+			'options' => [
+			// This enables Windows Authentication
+			//PDO::ATTR_PERSISTENT => true,
+			PDO::SQLSRV_ATTR_DIRECT_QUERY => true,
+			// Trusted Connection
+			'TrustServerCertificate' => true,
+			'Encrypt' => true,
+			'MultipleActiveResultSets' => true,
+			'APP' => ['Trusted_Connection' => 'yes'],
+			],
         ],
 
     ],

@@ -9,6 +9,7 @@ class Prison extends Model
 {
     use HasFactory;
     protected $fillable = ['id', 'libelle'];
+	
 
     public function peines()
     {

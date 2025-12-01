@@ -9,16 +9,16 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class DossierImportController extends Controller
 {
+        /* Excel::import(new DossierImport, $request->file('file'));
 
-    public function import(Request $request)
+        return back()->with('success', 'Dossiers and Affaires imported successfully!');*/
+    /*public function import(Request $request)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,csv',
         ]);
 
-        /* Excel::import(new DossierImport, $request->file('file'));
 
-        return back()->with('success', 'Dossiers and Affaires imported successfully!');*/
         try {
             Excel::import(new DossierImport, $request->file('file'));
             return response()->json([
@@ -27,7 +27,24 @@ class DossierImportController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'هناك خطأ في الاستيراد: ' . $e->getMessage());
         }
+    }*/
+	public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx,csv',
+    ]);
+
+    try {
+        Excel::import(new DossierImport, $request->file('file'));
+        return response()->json([
+            'message' => 'تم استيراد الملفات بنجاح !!!!'
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'هناك خطأ في الاستيراد: ' . $e->getMessage()
+        ], 500);
     }
+}
     /**
      * Display a listing of the resource.
      */

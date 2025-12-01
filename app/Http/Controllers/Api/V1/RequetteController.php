@@ -11,12 +11,13 @@ use App\Models\StatutRequette;
 use App\Models\TypePj;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use App\Services\OpenBeeService;
 
 class RequetteController extends Controller
 {
 
 
-    public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
+    public function addReponseRequette(UpdateRequetteRequest $request, $requette_id,OpenBeeService $openBee)
     {
         // Find the Requette
         $requette = Requette::findOrFail($requette_id);
@@ -73,9 +74,28 @@ class RequetteController extends Controller
                 if (is_array($files)) {
                     foreach ($files as $affaireId => $file) {
                         // Process the file for each affaire
+                        //$pj->contenu = $file->storeAs('public/uploads', $filename);
                         $filename = $requette->numero . "_" . $dossier->id . "_" . $affaireId . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
+                        $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
+
+                        $path="OPENBEE/".$filename;
+                        try {
+                            $openBee->deleteIfExists($filenameSansExtension);
+                            $result = $openBee->upload($file, $filename, [
+                                'title'       => $filename,
+                                'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
+                                'path'        => config('openbee.path'),
+                            ]);
+                            $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
+                        } catch (\Exception $e) {
+                            \Log::error("Erreur d'upload Open Bee (sans affaire): " . $e->getMessage());
+                            $openbeeUrl = null;
+                        }
+        
                         $pj = new Pj();
-                        $pj->contenu = $file->storeAs('public/uploads', $filename);
+                        //$pj->contenu = $file->storeAs('public/uploads', $filename);
+                        $pj->contenu = $path;
+                        $pj->openbee_url = $openbeeUrl;
                         $pj->dossier_id = $dossier->id;
                         $pj->requette_id = $requette->id;
                         //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
@@ -89,13 +109,30 @@ class RequetteController extends Controller
                 } else {
                     // Single file upload (for cases where there's just one file)
                     $filename = $requette->numero . "_" . $dossier->id . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
+                    $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
+
+                    $path="OPENBEE/".$filename;
+                    try {
+                        $openBee->deleteIfExists($filenameSansExtension);
+                        $result = $openBee->upload($files, $filename, [
+                            'title'       => $filename,
+                            'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
+                            'path'        => config('openbee.path'),
+                        ]);
+                        $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
+                    } catch (\Exception $e) {
+                        \Log::error("Erreur d'upload Open Bee (sans affaire): " . $e->getMessage());
+                        $openbeeUrl = null;
+                    }
                     $pj = new Pj();
-                    $pj->contenu = $files->storeAs('public/uploads', $filename);
+                    //$pj->contenu = $files->storeAs('public/uploads', $filename);
+                    $pj->contenu = $path;
+
                     $pj->dossier_id = $dossier->id;
                     $pj->requette_id = $requette->id;
                     //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
                     $pj->observation = $insertedObservation;
-
+                    $pj->openbee_url = $openbeeUrl;
                     $pj->typepj_id = $typepjId;
                     $pj->save();
                 }
@@ -451,6 +488,12 @@ class RequetteController extends Controller
         ])->get();
 
         return new RequetteResource($requettes);
+    }
+	
+	 public function getPjs($requetteId)
+    {
+        $requette = Requette::with('pjs')->findOrFail($requetteId);
+        return response()->json($requette->pjs);
     }
 
     /**

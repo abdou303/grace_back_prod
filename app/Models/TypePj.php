@@ -9,6 +9,7 @@ class TypePj extends Model
 {
     use HasFactory;
     protected $table = 'typespjs';
+	
 
 
     public function pjs()

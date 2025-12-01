@@ -9,6 +9,7 @@ class Peine extends Model
 {
     use HasFactory;
     protected $fillable = ['datedebut', 'datefin','numerolocal','numeronational','datesortie','dateprescription'];
+	
     public function affaire()
     {
 

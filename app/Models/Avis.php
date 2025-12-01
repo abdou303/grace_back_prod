@@ -9,6 +9,7 @@ class Avis extends Model
 {
     use HasFactory;
     protected $table = 'avis';
+	
 
     public function dossiers()
     {

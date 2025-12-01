@@ -10,6 +10,7 @@ class Garant extends Model
     use HasFactory;
 
     protected $fillable = ['nom', 'prenom', 'adresse','genre','qualite','province_id','tribunal_id'];
+	
     public function dossiers()
     {
 

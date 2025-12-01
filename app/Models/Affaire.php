@@ -22,6 +22,7 @@ class Affaire extends Model
         'peine_id',
         'tribunal_id',
     ];
+	
 
     public function dossiers()
     {

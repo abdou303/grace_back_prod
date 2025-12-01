@@ -37,4 +37,17 @@ class StoreAntecedentDossierRequest extends FormRequest
 
         ];
     }
+
+    public function messages(): array
+{
+    return [
+        'typedossier.required' => 'نوع الملف مطلوب.',
+        'naturedossier.required' => 'طبيعة الملف مطلوبة.',
+        'sourcedemande.required' => 'مصدر الطلب مطلوب.',
+        'user_id.required' => 'معرف المستخدم مطلوب.',
+        'has_antecedent.required' => 'يجب تحديد ما إذا كان هناك سوابق أم لا.',
+        'antecedant_id.required' => 'المرجع الخاص بالسابق مطلوب.',
+        'detenu_id.required' => 'المتابع مطلوب.',
+    ];
+}
 }

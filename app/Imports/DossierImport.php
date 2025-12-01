@@ -19,7 +19,7 @@ class DossierImport implements ToCollection, WithHeadingRow
 {
     public function collection(Collection $rows)
     {
-        // $rows->shift();
+        //$rows->shift();
         foreach ($rows as $row) {
 
 
@@ -49,7 +49,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                     'nompere' => $row['nompere'],
                     'nommere' => $row['nommere'],
                     'cin' => $row['cin'],
-                    'datenaissance' => $row['datenaissance'],
+                    'datenaissance' => $row['datenaissance'],                
+					'nationalite_id' => $row['nationality'] ?? '100',
                     // 'datenaissance' => Carbon::createFromFormat('d/m/Y', $row['datenaissance'])->format('Y-m-d'),
 
 

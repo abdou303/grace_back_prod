@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class StatutRequette extends Model
 {
     use HasFactory;
+	
 
     //
     public function requettes()

@@ -37,6 +37,7 @@ return new class extends Migration
             $table->foreign('objetdemande_id')->references('id')->on('objetsdemandes')->onDelete('cascade');
             $table->unsignedBigInteger('sourcedemande_id')->nullable();
             $table->foreign('sourcedemande_id')->references('id')->on('sourcesdemandes')->onDelete('cascade');
+			$table->string('autre_source', 500)->nullable();
             $table->unsignedBigInteger('prison_id')->nullable();
             $table->foreign('prison_id')->references('id')->on('prisons')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');

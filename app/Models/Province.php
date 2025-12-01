@@ -11,6 +11,7 @@ class Province extends Model
     use HasFactory;
 
     protected $fillable = ['libelle', 'active'];
+	
 
     public function garants()
     {

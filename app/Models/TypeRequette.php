@@ -9,6 +9,7 @@ class TypeRequette extends Model
 {
     use HasFactory;
     protected $table = 'typesrequettes';
+
     
     public function requettes()
     {

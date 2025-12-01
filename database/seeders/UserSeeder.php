@@ -32,7 +32,9 @@ class UserSeeder extends Seeder
             ]
         );*/
 
-        $users = [
+        
+        
+       /* $users = [
             [
                 'name' => 'مستعمل 1',
                 'username' => 'carabat',
@@ -73,6 +75,41 @@ class UserSeeder extends Seeder
                 'groupe_id' => 1
 
             ],
+        ];*/
+		
+		/*$users = [
+            [
+                'name' => 'TEST TRIBUNAL',
+                'username' => 'testtribunal',
+                'email' => 'testtribunal@example.com',
+                'tribunal_id' => 92,
+                'role_id' => 1,
+                'groupe_id' => 3
+            ],
+
+            [
+                'name' => 'TEST DAPG',
+                'username' => 'testdapg',
+                'email' => 'testdapg@example.com',
+                'role_id' => 3,
+                'groupe_id' => 2
+
+            ],
+
+        ];*/
+		
+			$users = [
+            [
+                'name' => 'CA AGADIR',
+                'username' => 'caagadir',
+                'email' => 'caagadir@example.com',
+                'tribunal_id' => 128,
+                'role_id' => 1,
+                'groupe_id' => 3
+            ],
+
+   
+
         ];
 
         foreach ($users as $user) {

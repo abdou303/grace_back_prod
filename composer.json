@@ -12,7 +12,8 @@
         "laravel/tinker": "^2.9",
         "maatwebsite/excel": "^3.1",
         "mpdf/mpdf": "^8.2",
-        "tymon/jwt-auth": "^2.1"
+        "tymon/jwt-auth": "^2.1",
+		"directorytree/ldaprecord-laravel": "^3.4"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

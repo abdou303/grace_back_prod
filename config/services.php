@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+
+    'openbee' => [
+        'base_url' => env('OPENBEE_BASE_URL'),
+        'username' => env('OPENBEE_USERNAME'),
+        'password' => env('OPENBEE_PASSWORD'),
+        'api_key' => env('OPENBEE_API_KEY'),
+        'get_document' => env('OPENBEE_GET_DOCUMENT'),
+		'infos_document' => env('OPENBEE_INFOS_DOCUMENT'),
+
+
+    ],
+
 ];

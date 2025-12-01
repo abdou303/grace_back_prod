@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ca extends Model
 {
     use HasFactory;
+	
     public function tribunaux()
     {
 

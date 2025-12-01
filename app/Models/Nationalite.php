@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Nationalite extends Model
 {
     use HasFactory;
+	
     public function detenus()
     {
 

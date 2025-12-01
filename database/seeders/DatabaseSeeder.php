@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
         ]);*/
 
         $this->call([
-            //  GarantSeeder::class,
+            //GarantSeeder::class,
             //RoleSeeder::class,
             //GroupeSeeder::class,
             //PartenaireSeeder::class,

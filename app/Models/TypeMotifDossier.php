@@ -9,6 +9,7 @@ class TypeMotifDossier extends Model
 {
     use HasFactory;
     protected $table = 'typesmotifsdossiers';
+	
     public function dossiers()
     {
 

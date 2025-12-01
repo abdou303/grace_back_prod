@@ -7,6 +7,7 @@ use App\Http\Requests\StoreAntecedentDossierRequest;
 use App\Http\Requests\StoreDossierRequest;
 use App\Http\Requests\UpdateDossierRequest;
 use App\Http\Resources\DossierResource;
+use App\Services\OpenBeeService;
 use App\Models\Affaire;
 use App\Models\Detenu;
 use App\Models\Dossier;
@@ -33,11 +34,11 @@ class DossierController extends Controller
         $request->validate([
             'statutRequette' => 'required|exists:statut_requettes,code',
             'numeromp' => 'required',
-            'copie_decision' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_non_recours' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_decision' => 'nullable|file|mimes:pdf|max:2048',
+            'copie_cin' => 'nullable|file|mimes:pdf|max:2048',
+            'copie_mp' => 'nullable|file|mimes:pdf|max:2048',
+            'copie_non_recours' => 'nullable|file|mimes:pdf|max:2048',
+            'copie_social' => 'nullable|file|mimes:pdf|max:2048',
         ]);
 
         $dossier->numeromp = $request->numeromp;
@@ -176,7 +177,7 @@ class DossierController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreDossierRequest $request)
+    public function store(StoreDossierRequest $request,OpenBeeService $openBee)
     {
 
 
@@ -209,6 +210,9 @@ class DossierController extends Controller
         $dossier->typedossier_id = $request->typedossier;
         $dossier->naturedossiers_id = $request->naturedossier;
         $dossier->sourcedemande_id = $request->sourcedemande;
+        $dossier->autre_source = $request->autre_source;
+
+
         $dossier->numero = $numero_dossier;
         $dossier->etat = 'NT';
 
@@ -247,15 +251,32 @@ class DossierController extends Controller
         // Handle file uploads
         foreach ($fileMappings as $fieldName => $typepjId) {
 
-
+ 
 
 
             if ($request->hasFile($fieldName)) {
 
                 $file = $request->file($fieldName);
                 $filename = $numero_dossier . $fieldName . '.' . $file->getClientOriginalExtension();
+                $path = "OPENBEE/".$filename;
+
+
+                try {
+               
+                    $result = $openBee->upload($file, $filename, [
+                        'title'       => $filename,
+                        'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
+                        'path'        => config('openbee.path'),
+                    ]);
+                    $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
+                } catch (\Exception $e) {
+                    \Log::error("Erreur d'upload Open Bee (sans affaire): " . $e->getMessage());
+                    $openbeeUrl = null;
+                }
                 $pj = new Pj();
-                $pj->contenu =  $file->storeAs('public/uploads', $filename);
+                //$pj->contenu =  $file->storeAs('public/uploads', $filename);
+                $pj->contenu = $path;
+                $pj->openbee_url = $openbeeUrl;
                 $pj->dossier_id = $dossier_id;
                 $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
                 $pj->typepj_id = $typepjId;
@@ -305,16 +326,29 @@ class DossierController extends Controller
 
                         // Generate a unique filename
                         $filename = $dossier->numero . "_" . $affaire->id . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
-
+                        $path="OPENBEE/".$filename;
                         // Save the file in storage
-                        $filePath = $file->storeAs('public/uploads', $filename);
-
+                        //$filePath = $file->storeAs('public/uploads', $filename);
+                        try {
+                            //$openBee->deleteIfExists($filename);
+                            $result = $openBee->upload($file, $filename, [
+                                'title'       => $filename,
+                                'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
+                                'path'        => config('openbee.path'),
+                            ]);
+                            $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
+                        } catch (\Exception $e) {
+                            \Log::error("Erreur d'upload Open Bee (sans affaire): " . $e->getMessage());
+                            $openbeeUrl = null;
+                        }
                         // Insert into Pj table with affaire_id
                         $pj = new Pj();
-                        $pj->contenu = $filePath;
+                        $pj->contenu = $path;
                         $pj->dossier_id = $dossier->id;
                         $pj->affaire_id = $affaire->id; // Assign correct affaire_id
                         $pj->typepj_id = $typepjId;
+                        $pj->openbee_url = $openbeeUrl;
+
                         //$pj->observation = ($typepjId == 5) ? 'Copie Decision' : 'Copie Non Recours';
                         $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
                         $pj->save();
@@ -368,19 +402,18 @@ class DossierController extends Controller
         ], 201);
     }
     /******************************************************** */
-    public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id)
+ 
+    public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
     {
+        \Log::debug('Requête reçue :', $request->all());
 
-        // Find the Dossier
         $dossier = Dossier::findOrFail($dossier_id);
-        // Get the related Detenu
         $detenu = $dossier->detenu;
-
+    
         if (!$detenu) {
             return response()->json(['message' => 'Detenu not found'], 404);
         }
-
-        // $detenu = new Detenu();
+    
         $detenu->nom = $request->nom;
         $detenu->prenom = $request->prenom;
         $detenu->datenaissance = $request->datenaissance;
@@ -390,40 +423,21 @@ class DossierController extends Controller
         $detenu->genre = $request->genre;
         $detenu->nationalite_id = $request->nationalite;
         $detenu->adresse = $request->adresse ?? null;
-
         $detenu->save();
-
-
-
+    
         $dossier->typedossier_id = $request->typedossier;
         $dossier->naturedossiers_id = $request->naturedossier;
         $dossier->sourcedemande_id = $request->sourcedemande;
-        //$dossier->numero = $numero_dossier;
         $dossier->etat = 'OK';
-
-        //$dossier->objetdemande_id = $request->objetdemande ?? null;
-        $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande)  ? (int) $request->objetdemande : null;
+        $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
         $dossier->user_id = $request->user_id;
         $dossier->user_tribunal_id = $request->tribunal_user_id;
         $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
         $dossier->numeromp = $request->numeromp;
-
-
-        //$dossier->detenu_id = $detenu->id;
-        //$dossier->prison_id =  $request->prison;
-        $dossier->prison_id = isset($request->prison) && is_numeric($request->prison)  ? (int) $request->prison : null;
-        $dossier->numero_detention =  $request->numerolocal;
-
-
-
-
-
+        $dossier->prison_id = isset($request->prison) && is_numeric($request->prison) ? (int) $request->prison : null;
+        $dossier->numero_detention = $request->numerolocal;
         $dossier->save();
-        $dossier_id = $dossier->id;
-
-
-
-        // Define file fields and corresponding typepj_id values
+    
         $fileMappings = [
             'copie_decision' => 5,
             'copie_cin' => 4,
@@ -432,110 +446,89 @@ class DossierController extends Controller
             'copie_social' => 1,
         ];
         $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
-        /*foreach ($fileMappings as $fieldName => $typepjId) {
-
-            $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
-
-
-            if ($request->hasFile($fieldName)) {
-                $files = $request->file($fieldName);
-
-                // If files are an array (for multiple affaires)
-                if (is_array($files)) {
-                    foreach ($files as $affaireId => $file) {
-                        // Process the file for each affaire
-                        $filename = $dossier->numero . "_" . $dossier->id . "_" . $affaireId . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
-                        $pj = new Pj();
-                        $pj->contenu = $file->storeAs('public/uploads', $filename);
-                        $pj->dossier_id = $dossier->id;
-                        // $pj->requette_id = $requette->id;
-                        //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
-                        $pj->observation = $insertedObservation;
-
-
-                        $pj->typepj_id = $typepjId;
-                        $pj->affaire_id = $affaireId; // Save affaire_id from dynamic file key
-                        $pj->save();
-                    }
-                } else {
-                    // Single file upload (for cases where there's just one file)
-                    $filename = $dossier->numero . "_" . $dossier->id . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
-                    $pj = new Pj();
-                    $pj->contenu = $files->storeAs('public/uploads', $filename);
-                    $pj->dossier_id = $dossier->id;
-                    //$pj->requette_id = $requette->id;
-                    //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
-                    $pj->observation = $insertedObservation;
-
-                    $pj->typepj_id = $typepjId;
-                    $pj->save();
-                }
-            }
-        }*/
-
+    
         foreach ($fileMappings as $fieldName => $typepjId) {
             $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
-
+            
             if ($request->hasFile($fieldName)) {
                 $files = $request->file($fieldName);
-
+    
                 if (is_array($files)) {
                     foreach ($files as $affaireId => $file) {
                         $filename = $dossier->numero . "_" . $dossier->id . "_" . $affaireId . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
-                        $path = $file->storeAs('public/uploads', $filename);
+                        $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
 
-                        // Try to find existing PJ
-                        $pj = Pj::where('dossier_id', $dossier->id)
-                            ->where('affaire_id', $affaireId)
-                            ->where('typepj_id', $typepjId)
-                            ->first();
 
-                        if (!$pj) {
-                            $pj = new Pj();
-                            $pj->dossier_id = $dossier->id;
-                            $pj->affaire_id = $affaireId;
-                            $pj->typepj_id = $typepjId;
+                        //$path = $file->storeAs('public/uploads', $filename);
+                        $path = "OPENBEE/".$filename;
+
+                        try {
+                           $openBee->deleteIfExists($filenameSansExtension);
+                            $result = $openBee->upload($file, $filename, [
+                                'title'       => $filename,
+                                'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
+                                'path'        => config('openbee.path'),
+                            ]);
+                            $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
+                            
+
+                        } catch (\Exception $e) {
+                            \Log::error("Erreur d'upload Open Bee (affaire: $affaireId): " . $e->getMessage());
+                            $openbeeUrl = null;
                         }
-
+    
+                        $pj = Pj::firstOrNew([
+                            'dossier_id' => $dossier->id,
+                            'affaire_id' => $affaireId,
+                            'typepj_id'  => $typepjId,
+                        ]);
                         $pj->contenu = $path;
+                        $pj->openbee_url = $openbeeUrl;
                         $pj->observation = $insertedObservation;
                         $pj->save();
                     }
                 } else {
                     $filename = $dossier->numero . "_" . $dossier->id . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
-                    $path = $files->storeAs('public/uploads', $filename);
+                    $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
+                    //$path = $files->storeAs('public/uploads', $filename);
+                    $path = "OPENBEE/".$filename;
 
-                    // Try to find existing PJ
-                    $pj = Pj::where('dossier_id', $dossier->id)
-                        ->whereNull('affaire_id')
-                        ->where('typepj_id', $typepjId)
-                        ->first();
-
-                    if (!$pj) {
-                        $pj = new Pj();
-                        $pj->dossier_id = $dossier->id;
-                        $pj->typepj_id = $typepjId;
+    
+                    try {
+                        $openBee->deleteIfExists($filenameSansExtension);
+                        $result = $openBee->upload($files, $filename, [
+                            'title'       => $filename,
+                            'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
+                            'path'        =>config('openbee.path'),
+                        ]);
+                        $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
+                    } catch (\Exception $e) {
+                        \Log::error("Erreur d'upload Open Bee (sans affaire): " . $e->getMessage());
+                        $openbeeUrl = null;
                     }
-
+    
+                    $pj = Pj::firstOrNew([
+                        'dossier_id' => $dossier->id,
+                        'typepj_id'  => $typepjId,
+                        'affaire_id' => null
+                    ]);
                     $pj->contenu = $path;
+                    $pj->openbee_url = $openbeeUrl;
                     $pj->observation = $insertedObservation;
                     $pj->save();
                 }
             }
         }
-
-
-
-
-
-
-
-
+    
         return response()->json([
             'message' => 'تم تسجيل الطلب بنجاح',
             'data' => $dossier,
         ], 201);
     }
+    
+
+
+
     /******************************************************** */
     /**
      * Display the specified resource.

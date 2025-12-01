@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Pays extends Model
 {
     use HasFactory;
+	
 
     public function villes()
     {

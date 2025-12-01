@@ -9,6 +9,7 @@ class ObjetDemande extends Model
 {
     use HasFactory;
     protected $table = 'objetsdemandes';
+	
 
     public function dossiers()
     {

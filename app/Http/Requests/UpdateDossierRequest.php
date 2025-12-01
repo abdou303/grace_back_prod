@@ -45,18 +45,59 @@ class UpdateDossierRequest extends FormRequest
             'affaires.*.tribunal' => 'required|numeric',
             'affaires.*.datejujement' => 'required|string',
             'affaires.*.conenujugement' => 'nullable|string',
-            'affaires.*.copie_decision' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
-            'affaires.*.copie_non_recours' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid*/
+            'affaires.*.copie_decision' => 'file|mimes:pdf|max:2048', // Each file must be valid
+            'affaires.*.copie_non_recours' => 'file|mimes:pdf|max:2048', // Each file must be valid*/
 
             'copie_decision' => 'nullable|array',
-            'copie_decision.*' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
+            'copie_decision.*' => 'file|mimes:pdf|max:2048', // Each file must be valid
             'copie_non_recours' => 'nullable|array',
-            'copie_non_recours.*' => 'file|mimes:jpg,jpeg,png,pdf|max:2048', // Each file must be valid
-            'copie_cin' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_mp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            'copie_social' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'copie_non_recours.*' => 'file|mimes:pdf|max:2048', // Each file must be valid
+            'copie_cin' => 'nullable|file|mimes:pdf|max:2048',
+            'copie_mp' => 'nullable|file|mimes:pdf|max:2048',
+            'copie_social' => 'nullable|file|mimes:pdf|max:2048',
             'prison' => 'nullable',
             'numerolocal' => 'nullable|numeric',
         ];
     }
+
+    public function messages(): array
+{
+    return [
+        'nom.required' => ' الاسم العائلي مطلوب.',
+        'prenom.required' => ' الاسم الشخصي مطلوب.',
+        'cin.min' => 'رقم البطاقة الوطنية يجب أن يحتوي على حرفين على الأقل.',
+        'cin.max' => 'رقم البطاقة الوطنية لا يجب أن يتجاوز 50 حرفًا.',
+        'genre.required' => 'حقل الجنس مطلوب.',
+        'numeromp.required' => 'رقم ملف النيابة العامة مطلوب.',
+        'typedossier.required' => 'نوع الملف مطلوب.',
+        'naturedossier.required' => 'طبيعة الملف مطلوبة.',
+        'sourcedemande.required' => 'مصدر الطلب مطلوب.',
+        'user_id.required' => 'معرف المستخدم مطلوب.',
+
+        // fichiers multiples
+        'copie_decision.*.file' => ' نسخة من المقرر القضائي يجب أن يكون ملفًا صالحًا.',
+        'copie_decision.*.mimes' => 'نسخة من المقرر القضائي يجب أن يكون بصيغة PDF.',
+        'copie_decision.*.max' => 'نسخة من المقرر القضائي 2 ميغابايت.',
+
+        'copie_non_recours.*.file' => 'شهادة ضبطية او مايفيد حيازة المقرر القضائي لقوة الشيء المقضي به يجب أن يكون ملفًا صالحًا.',
+        'copie_non_recours.*.mimes' => 'شهادة ضبطية او مايفيد حيازة المقرر القضائي لقوة الشيء المقضي به يجب أن يكون بصيغة PDF.',
+        'copie_non_recours.*.max' => 'شهادة ضبطية او مايفيد حيازة المقرر القضائي لقوة الشيء المقضي به لا يجب أن يتجاوز 2 ميغابايت.',
+
+        // fichiers simples
+        'copie_cin.file' => 'نسخة من بطاقة التعريف الوطنية يجب أن تكون ملفًا صالحًا.',
+        'copie_cin.mimes' => 'نسخة من بطاقة التعريف الوطنية يجب أن تكون بصيغة PDF.',
+        'copie_cin.max' => 'نسخة من بطاقة التعريف الوطنية لا يجب أن تتجاوز 2 ميغابايت.',
+
+        'copie_mp.file' => 'ملتمس النيابة العامة يجب أن تكون ملفًا صالحًا.',
+        'copie_mp.mimes' => 'ملتمس النيابة العامة يجب أن تكون بصيغة PDF.',
+        'copie_mp.max' => 'ملتمس النيابة العامة لا يجب أن تتجاوز 2 ميغابايت.',
+
+        'copie_social.file' => 'البحث الاجتماعي يجب أن تكون ملفًا صالحًا.',
+        'copie_social.mimes' => 'البحث الاجتماعي يجب أن تكون بصيغة PDF.',
+        'copie_social.max' => 'البحث الاجتماعي لا يجب أن تتجاوز 2 ميغابايت.',
+
+        'numerolocal.numeric' => 'رقم الاعتقال المحلي يجب أن يكون رقمًا.',
+    ];
+}
+
 }

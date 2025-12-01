@@ -27,6 +27,7 @@ INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [update
 INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N' احد افراد العائلة', 1, CAST(N'2025-01-30T11:15:31.767' AS DateTime), CAST(N'2025-01-30T11:15:31.767' AS DateTime))
 INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (3, N' أحد الأصدقاء ', 1, CAST(N'2025-01-30T11:15:31.770' AS DateTime), CAST(N'2025-01-30T11:15:31.770' AS DateTime))
 INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (4, N' المعني بالأمر', 1, CAST(N'2025-01-30T11:15:31.777' AS DateTime), CAST(N'2025-01-30T11:15:31.777' AS DateTime))
+INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (5, N'إقتراح', 1, CAST(N'2025-01-30T11:15:31.777' AS DateTime), CAST(N'2025-01-30T11:15:31.777' AS DateTime))
 SET IDENTITY_INSERT [dbo].[sourcesdemandes] OFF
 GO
 SET IDENTITY_INSERT [dbo].[typespjs] ON 
@@ -751,7 +752,7 @@ INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (179, N'المحكمة الإبتدائية بالراشدية', N'le TPI d''Errachidia', N'T', 0, 19, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (180, N'المحكمة الإبتدائية  الزجرية بالدار البيضاء', N'le TPI pénal de casablanca', N'T', 0, 3, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (181, N'المحكمة التجارية بأكادير', N'le TC de Agadir', N'T', 0, 26, NULL, NULL)
-INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (182, N'المحكمة التجارية بالدارالبيضاء', N'le TC de Casablanca', N'T', 0, 24, NULL, NULL)
+--INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (182, N'المحكمة التجارية بالدارالبيضاء', N'le TC de Casablanca', N'T', 0, 24, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (183, N'المحكمة التجارية بالرباط', N'le TC de Rabat ', N'T', 0, 24, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (184, N'المحكمة التجارية بطنجة', N'le TC de Tanger', N'T', 0, 28, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (185, N'المحكمة التجارية بفاس', N'le TC de Fes', N'T', 0, 25, NULL, NULL)
@@ -759,14 +760,14 @@ INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (187, N'المحكمة التجارية بمكناس', N'le TC de Meknes', N'T', 0, 25, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (188, N'المحكمة التجارية بوجدة', N'le TC de Oujda', N'T', 0, 25, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (189, N'رئاسة النيابة العامة', N'Prisidence de Ministere Public', N'P', 0, 22, NULL, NULL)
-INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (190, N'محكمة الاستئناف التجارية بالدارالبيضاء', N'la COUR D''APPEL de commerce de Casablanca', N'T', 0, 24, NULL, NULL)
+--INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (190, N'محكمة الاستئناف التجارية بالدارالبيضاء', N'la COUR D''APPEL de commerce de Casablanca', N'T', 0, 24, NULL, NULL)
 GO
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (191, N'محكمة الاستئناف التجارية بفاس', N'la COUR D''APPEL de commerce de Fés', N'T', 0, 25, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (192, N'محكمة الاستئناف التجارية بمراكش', N'la COUR D''APPELde commerce de Marrakesch', N'T', 0, 26, NULL, NULL)
-INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (193, N'المحكمة الابتدائية الاجتماعية بالدار البيضاء', N'le TPI Social de Casablanca', N'T', 0, 3, NULL, NULL)
+--INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (193, N'المحكمة الابتدائية الاجتماعية بالدار البيضاء', N'le TPI Social de Casablanca', N'T', 0, 3, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (194, N'محكمة النقض', N'le Cour de Cassation', N'T', 0, 23, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (195, N'المحكمة الإبتدائية بسوق السبت أولاد النمة', N'le TPI de Souk Sebt Oulad Nemma', N'T', 0, 14, NULL, NULL)
-INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (196, N'المحكمة الإبتدائية المدنية بالدار البيضاء', N'le TPI Civil de Casablanca', N'T', 0, 3, NULL, NULL)
+--INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (196, N'المحكمة الإبتدائية المدنية بالدار البيضاء', N'le TPI Civil de Casablanca', N'T', 0, 3, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (197, N' المحكمة الابتدائية بتحناوت
 ', N'le TPI de TAHANAOUT', N'T', 0, 5, NULL, NULL)
 INSERT [dbo].[tribunaux] ([id], [libelle], [libelle_fr], [type_tribunal], [ordre], [ca_id], [created_at], [updated_at]) VALUES (198, N'المحكمة الابتدائية بتارجيست', N'le TPI de Targuist', N'T', 0, 21, NULL, NULL)

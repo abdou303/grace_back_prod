@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Partenaire extends Model
 {
     use HasFactory;
+	
+	
     public function requettes()
     {
 

@@ -8,7 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class Pj extends Model
 {
 
-    public function dossier()
+    protected $fillable = [
+        'contenu'
+      ,'observation'
+      ,'typepj_id'
+      ,'requette_id'
+      ,'affaire_id'
+      ,'dossier_id'
+      ,'openbee_url'
+   
+
+    ];
+	public function dossier()
     {
 
         return $this->belongsTo(Dossier::class);

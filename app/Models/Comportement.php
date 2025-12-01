@@ -9,6 +9,7 @@ class Comportement extends Model
 {
     use HasFactory;
     protected $table = 'comportements';
+	
 
     public function dossiers()
     {

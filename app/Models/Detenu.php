@@ -16,9 +16,11 @@ class Detenu extends Model
         'nommere',
         'cin',
         'datenaissance',
-        'genre'
+        'genre',
+		 'nationalite_id'
 
     ];
+	
 
     public function ville()
     {

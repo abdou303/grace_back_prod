@@ -25,6 +25,7 @@ class Requette extends Model
         'date_importation',
         'etat'
     ];
+	
     public function pjs()
     {
 
