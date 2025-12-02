@@ -16,7 +16,7 @@
 		"directorytree/ldaprecord-laravel": "^3.4"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.23",
+        "fakerphp/faker": "*",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.26",
         "mockery/mockery": "^1.6",

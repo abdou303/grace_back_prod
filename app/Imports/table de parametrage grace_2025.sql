@@ -27,7 +27,8 @@ INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [update
 INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N' احد افراد العائلة', 1, CAST(N'2025-01-30T11:15:31.767' AS DateTime), CAST(N'2025-01-30T11:15:31.767' AS DateTime))
 INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (3, N' أحد الأصدقاء ', 1, CAST(N'2025-01-30T11:15:31.770' AS DateTime), CAST(N'2025-01-30T11:15:31.770' AS DateTime))
 INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (4, N' المعني بالأمر', 1, CAST(N'2025-01-30T11:15:31.777' AS DateTime), CAST(N'2025-01-30T11:15:31.777' AS DateTime))
-INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (5, N'إقتراح', 1, CAST(N'2025-01-30T11:15:31.777' AS DateTime), CAST(N'2025-01-30T11:15:31.777' AS DateTime))
+INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (5, N'آخر', 1, CAST(N'2025-01-30T11:15:31.777' AS DateTime), CAST(N'2025-01-30T11:15:31.777' AS DateTime))
+INSERT [dbo].[sourcesdemandes] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (6, N'إقتراح', 1, CAST(N'2025-01-30T11:15:31.777' AS DateTime), CAST(N'2025-01-30T11:15:31.777' AS DateTime))
 SET IDENTITY_INSERT [dbo].[sourcesdemandes] OFF
 GO
 SET IDENTITY_INSERT [dbo].[typespjs] ON 

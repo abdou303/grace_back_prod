@@ -32,9 +32,9 @@ class UserSeeder extends Seeder
             ]
         );*/
 
-        
-        
-       /* $users = [
+
+
+        $users = [
             [
                 'name' => 'مستعمل 1',
                 'username' => 'carabat',
@@ -75,9 +75,9 @@ class UserSeeder extends Seeder
                 'groupe_id' => 1
 
             ],
-        ];*/
-		
-		/*$users = [
+        ];
+
+        /*$users = [
             [
                 'name' => 'TEST TRIBUNAL',
                 'username' => 'testtribunal',
@@ -97,8 +97,8 @@ class UserSeeder extends Seeder
             ],
 
         ];*/
-		
-			$users = [
+
+        /*$users = [
             [
                 'name' => 'CA AGADIR',
                 'username' => 'caagadir',
@@ -110,7 +110,7 @@ class UserSeeder extends Seeder
 
    
 
-        ];
+        ];*/
 
         foreach ($users as $user) {
             User::factory()->create($user);
