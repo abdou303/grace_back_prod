@@ -7,6 +7,7 @@ use App\Http\Requests\StoreAntecedentDossierRequest;
 use App\Http\Requests\StoreDossierRequest;
 use App\Http\Requests\UpdateDossierRequest;
 use App\Http\Resources\DossierResource;
+use App\Jobs\UploadDossierPJsJob;
 use App\Services\OpenBeeService;
 use App\Models\Affaire;
 use App\Models\Detenu;
@@ -320,7 +321,7 @@ class DossierController extends Controller
                 $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
 
                 // foreach (['copie_decision' => 5, 'copie_non_recours' => 2] as $fieldName => $typepjId) {
-                foreach ($fileMappings as $fieldName => $typepjId) {
+                /* foreach ($fileMappings as $fieldName => $typepjId) {
                     if (isset($affaireData[$fieldName]) && $affaireData[$fieldName] instanceof \Illuminate\Http\UploadedFile) {
                         $file = $affaireData[$fieldName];
 
@@ -353,7 +354,9 @@ class DossierController extends Controller
                         $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
                         $pj->save();
                     }
-                }
+
+                }*/
+                UploadDossierPJsJob::dispatch($fileMappings, $affaireData, $dossier, $affaire);
             }
         }
         return response()->json([
@@ -403,7 +406,7 @@ class DossierController extends Controller
     }
     /******************************************************** */
 
-    public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
+    /*public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
     {
         \Log::debug('Requête reçue :', $request->all());
 
@@ -446,7 +449,7 @@ class DossierController extends Controller
             'copie_social' => 1,
         ];
         $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
-
+        
         foreach ($fileMappings as $fieldName => $typepjId) {
             $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
 
@@ -518,13 +521,76 @@ class DossierController extends Controller
             }
         }
 
+               
+        
+
+
+
+
+
         return response()->json([
             'message' => 'تم تسجيل الطلب بنجاح',
             'data' => $dossier,
         ], 201);
     }
 
+*/
 
+    public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
+    {
+        \Log::debug('Requête reçue :', $request->all());
+
+        $dossier = Dossier::findOrFail($dossier_id);
+        $detenu = $dossier->detenu;
+
+        if (!$detenu) {
+            return response()->json(['message' => 'Detenu not found'], 404);
+        }
+
+        // Mise à jour du détenu
+        $detenu->nom = $request->nom;
+        $detenu->prenom = $request->prenom;
+        $detenu->datenaissance = $request->datenaissance;
+        $detenu->nompere = $request->nompere;
+        $detenu->nommere = $request->nommere;
+        $detenu->cin = $request->cin;
+        $detenu->genre = $request->genre;
+        $detenu->nationalite_id = $request->nationalite;
+        $detenu->adresse = $request->adresse ?? null;
+        $detenu->save();
+
+        // Mise à jour du dossier
+        $dossier->typedossier_id = $request->typedossier;
+        $dossier->naturedossiers_id = $request->naturedossier;
+        $dossier->sourcedemande_id = $request->sourcedemande;
+        $dossier->etat = 'OK';
+        $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
+        $dossier->user_id = $request->user_id;
+        $dossier->user_tribunal_id = $request->tribunal_user_id;
+        $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
+        $dossier->numeromp = $request->numeromp;
+        $dossier->prison_id = isset($request->prison) && is_numeric($request->prison) ? (int) $request->prison : null;
+        $dossier->numero_detention = $request->numerolocal;
+        $dossier->save();
+
+        // Configuration des PJs
+        $fileMappings = [
+            'copie_decision' => 5,
+            'copie_cin' => 4,
+            'copie_mp' => 3,
+            'copie_non_recours' => 2,
+            'copie_social' => 1,
+        ];
+        $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
+
+        // Dispatch du Job pour le traitement asynchrone des fichiers
+        UploadDossierPJsJob::dispatch($dossier, $request->all(), $fileMappings, $typepjLabels);
+
+        return response()->json([
+            'message' => 'تم تسجيل الطلب بنجاح. Upload des fichiers en cours...',
+            'data' => $dossier,
+        ], 201);
+    }
 
 
     /******************************************************** */
