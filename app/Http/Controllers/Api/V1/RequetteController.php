@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateRequetteRequest;
 use App\Http\Resources\RequetteResource;
+use App\Jobs\UploadDossierPJsJob;
 use App\Models\Pj;
 use App\Models\Requette;
 use App\Models\StatutRequette;
@@ -17,7 +18,7 @@ class RequetteController extends Controller
 {
 
 
-    public function addReponseRequette(UpdateRequetteRequest $request, $requette_id,OpenBeeService $openBee)
+    /* public function addReponseRequette(UpdateRequetteRequest $request, $requette_id,OpenBeeService $openBee)
     {
         // Find the Requette
         $requette = Requette::findOrFail($requette_id);
@@ -31,15 +32,7 @@ class RequetteController extends Controller
         $dossier->numeromp = $request->numeromp;
         $dossier->save();
 
-        // Define file fields and corresponding typepj_id values
-        /*if ($requette->cat == 'CAT-1') {
-        
-        } else {
-            $fileMappings = [
-                'copie_cat2' => 6,
-
-            ];
-        }*/
+  
 
         $fileMappings = [
             'copie_cat2' => 6,
@@ -149,6 +142,76 @@ class RequetteController extends Controller
         $requette->statutrequettes()->attach([$id_staut]);
 
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
+    }*/
+
+    public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
+    {
+        // L'injection de OpenBeeService n'est plus nécessaire ici.
+
+        // 1. Logique métier immédiate (Base de données)
+        $requette = Requette::findOrFail($requette_id);
+        $dossier = $requette->dossier;
+
+        if (!$dossier) {
+            return response()->json(['message' => 'Dossier not found'], 404);
+        }
+
+        $dossier->numeromp = $request->numeromp;
+        $dossier->save();
+
+        // 2. Préparation et Stockage TEMPORAIRE des fichiers (Logique similaire à terminerDossierTr)
+        $filesToProcess = [];
+        $fileMappings = [
+            'copie_cat2' => 6,
+            'copie_decision' => 5,
+            'copie_cin' => 4,
+            'copie_mp' => 3,
+            'copie_non_recours' => 2,
+            'copie_social' => 1,
+        ];
+
+        foreach ($fileMappings as $fieldName => $typepjId) {
+            if ($request->hasFile($fieldName)) {
+                $files = $request->file($fieldName);
+                $filesArray = is_array($files) ? $files : [null => $files];
+
+                foreach ($filesArray as $affaireIdKey => $file) {
+                    if ($file) {
+                        // **Stockage temporaire**
+                        $path = $file->store('temp/openbee_uploads');
+                        $filesToProcess[] = [
+                            'path' => $path,
+                            'typepjId' => $typepjId,
+                            'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                            'fieldName' => $fieldName,
+                            'originalName' => $file->getClientOriginalName(),
+                            // DONNÉE CLÉ pour le Job : Indiquer l'ID de la Requette
+                            'context_requette_id' => $requette->id,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // 3. Dispatch du Job
+        if (!empty($filesToProcess)) {
+            // L'appel reste identique à celui de terminerDossierTr
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess)->onQueue('openbee_uploads');
+        }
+
+        // 4. Finalisation des statuts (Logique métier immédiate)
+        $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
+        if ($request->statutRequette == 'OK') {
+            $requette->etat_tribunal = 'TR';
+            $requette->save();
+        }
+        $requette->statutrequettes()->attach([$id_staut]);
+
+        // 5. Réponse Immédiate
+        return response()->json([
+            'message' => 'Statut mis à jour. L\'upload des documents a démarré en arrière-plan.',
+            'requette' => $requette->load('statutrequettes')
+        ], 200);
     }
     /*
     public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
@@ -489,8 +552,8 @@ class RequetteController extends Controller
 
         return new RequetteResource($requettes);
     }
-	
-	 public function getPjs($requetteId)
+
+    public function getPjs($requetteId)
     {
         $requette = Requette::with('pjs')->findOrFail($requetteId);
         return response()->json($requette->pjs);
