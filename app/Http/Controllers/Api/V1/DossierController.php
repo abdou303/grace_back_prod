@@ -356,7 +356,7 @@ class DossierController extends Controller
                     }
 
                 }*/
-                UploadDossierPJsJob::dispatch($fileMappings, $affaireData, $dossier, $affaire);
+                //UploadDossierPJsJob::dispatch($fileMappings, $affaireData, $dossier, $affaire);
             }
         }
         return response()->json([
