@@ -470,7 +470,7 @@ class RequetteController extends Controller
         ])->where('tribunal_id', $tr_id)->where('etat', 'TR')->where(function ($query) {
             $query->where('etat_tribunal', '!=', 'TR')
                 ->orWhereNull('etat_tribunal');
-        })->get();
+        })->orderBy('requettes.numero', 'desc')->get();
 
         return new RequetteResource($requettes);
     }
@@ -495,7 +495,7 @@ class RequetteController extends Controller
             'dossier.garants',
             'tribunal',
             'typerequette'
-        ])->where('tribunal_id', $tr_id)->where('etat', 'TR')->get();
+        ])->where('tribunal_id', $tr_id)->where('etat', 'TR')->orderBy('requettes.numero', 'desc')->get();
 
         return new RequetteResource($requettes);
     }
