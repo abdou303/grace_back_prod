@@ -789,7 +789,7 @@ GO
 SET IDENTITY_INSERT [dbo].[typesdossiers] ON 
 
 INSERT [dbo].[typesdossiers] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (1, N'ملف عفو', 1, CAST(N'2025-01-13T10:00:38.307' AS DateTime), CAST(N'2025-01-13T10:00:38.307' AS DateTime))
-INSERT [dbo].[typesdossiers] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N'ملف افراج مقيد بشرووط', 1, CAST(N'2025-01-13T10:00:38.310' AS DateTime), CAST(N'2025-01-13T10:00:38.310' AS DateTime))
+INSERT [dbo].[typesdossiers] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N'ملف افراج مقيد بشروط', 1, CAST(N'2025-01-13T10:00:38.310' AS DateTime), CAST(N'2025-01-13T10:00:38.310' AS DateTime))
 SET IDENTITY_INSERT [dbo].[typesdossiers] OFF
 GO
 SET IDENTITY_INSERT [dbo].[typesmotifsdossiers] ON 
