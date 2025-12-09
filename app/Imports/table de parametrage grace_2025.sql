@@ -11,6 +11,11 @@ SET IDENTITY_INSERT [dbo].[roles] ON
 INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (1, N'TR', 1, CAST(N'2025-02-04T14:40:58.417' AS DateTime), CAST(N'2025-02-04T14:40:58.417' AS DateTime))
 INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (2, N'DAPG', 1, CAST(N'2025-02-04T14:40:58.447' AS DateTime), CAST(N'2025-02-04T14:40:58.447' AS DateTime))
 INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (3, N'ADMIN', 1, CAST(N'2025-02-04T14:40:58.447' AS DateTime), CAST(N'2025-02-04T14:40:58.447' AS DateTime))
+INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (4, N'TR-PARQUET', 1, CAST(N'2025-12-08T14:27:39.430' AS DateTime), CAST(N'2025-12-08T14:27:39.430' AS DateTime))
+INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (5, N'TR-GREFFE', 1, CAST(N'2025-12-08T14:27:39.453' AS DateTime), CAST(N'2025-12-08T14:27:39.453' AS DateTime))
+INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (6, N'DAPG-GRACES', 1, CAST(N'2025-12-08T14:27:39.453' AS DateTime), CAST(N'2025-12-08T14:27:39.453' AS DateTime))
+INSERT [dbo].[roles] ([id], [libelle], [active], [created_at], [updated_at]) VALUES (7, N'DAPG-LC', 1, CAST(N'2025-12-08T14:27:39.457' AS DateTime), CAST(N'2025-12-08T14:27:39.457' AS DateTime))
+
 SET IDENTITY_INSERT [dbo].[roles] OFF
 GO
 GO

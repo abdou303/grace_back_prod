@@ -33,7 +33,7 @@ class UserSeeder extends Seeder
         );*/
 
 
-
+        /* *********************seeder du depart *************************
         $users = [
             [
                 'name' => 'مستعمل 1',
@@ -76,7 +76,7 @@ class UserSeeder extends Seeder
 
             ],
         ];
-
+*/
         /*$users = [
             [
                 'name' => 'TEST TRIBUNAL',
@@ -111,6 +111,30 @@ class UserSeeder extends Seeder
    
 
         ];*/
+
+
+
+
+        $users = [
+            [
+                'name' => 'الرئاسة',
+                'username' => 'carabat-greffe',
+                'email' => 'carabat-greffe@example.com',
+                'tribunal_id' => 92,
+                'role_id' => 5,
+                'groupe_id' => 3
+            ],
+            [
+                'name' => 'ممثل النيابة العامة',
+                'username' => 'carabat-parquet',
+                'email' => 'carabat-parquet@example.com',
+                'tribunal_id' => 92,
+                'role_id' => 4,
+                'groupe_id' => 3
+            ],
+
+        ];
+
 
         foreach ($users as $user) {
             User::factory()->create($user);
