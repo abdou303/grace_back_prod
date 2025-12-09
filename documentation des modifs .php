@@ -73,3 +73,5 @@ public function run(): void
     }
 
 php artisan db:seed --class=RoleSeeder
+
+php artisan db:seed --class=UserSeeder
