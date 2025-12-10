@@ -92,7 +92,7 @@ Route::prefix('v1')->group(function () {
 
 
 Route::prefix('v1')->group(function () {
-       
+
 
     // Public route
     Route::post('/login', [AuthController::class, 'login']);
@@ -125,7 +125,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('typesmotifsdossiers', TypeMotifDossierController::class);
         Route::apiResource('objetsdemandes', ObjetDemandeController::class);
         Route::apiResource('sourcesdemandes', SourceDemandeController::class);
-		Route::apiResource('dossiers', DossierController::class);
+        Route::apiResource('dossiers', DossierController::class);
         Route::get('/requettes/dossier/{dossier_id}', [RequetteController::class, 'getByDossier']);
         Route::get('/dossiers-tribunaux', [DossierController::class, 'dossiersTr']);
         Route::get('/dossiers-dapg', [DossierController::class, 'dossiersDapg']);
@@ -138,12 +138,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/tr-requettes', [RequetteController::class, 'getTRRequettes']);
         Route::put('/requettes/{requette}/change-statut', [RequetteController::class, 'changeStatut']);
         Route::put('/requettes/{requette}', [RequetteController::class, 'confirmRequette']);
+        Route::put('/requettes/{requette}/forward', [RequetteController::class, 'forwardRequette']);
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
         Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
         Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
         Route::get('/dossiers/{id}/pjs', [DossierController::class, 'getPjs']);
-		Route::get('/requettes/{id}/pjs', [RequetteController::class, 'getPjs']);
+        Route::get('/requettes/{id}/pjs', [RequetteController::class, 'getPjs']);
         Route::get('/statistiques', [StatisticsController::class, 'getDossierStats']);
         Route::get('/statistiques/{tr_id}', [StatisticsController::class, 'getDossierStatsByTR']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);

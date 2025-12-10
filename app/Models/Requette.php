@@ -23,9 +23,16 @@ class Requette extends Model
         'updated_at',
         'typerequette_id',
         'date_importation',
-        'etat'
+        'etat',
+        'date_etat_tribunal',
+        'date_etat_greffe',
+        'date_envoi_greffe',
+        'etat_greffe',
+        'user_tribunal',
+        'user_greffe',
+        'user_parquet'
     ];
-	
+
     public function pjs()
     {
 

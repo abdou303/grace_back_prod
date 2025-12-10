@@ -75,3 +75,5 @@ public function run(): void
 php artisan db:seed --class=RoleSeeder
 
 php artisan db:seed --class=UserSeeder
+
+php artisan make:migration add_fields_to_requettes_table

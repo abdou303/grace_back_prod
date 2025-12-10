@@ -203,6 +203,9 @@ class RequetteController extends Controller
         $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
         if ($request->statutRequette == 'OK') {
             $requette->etat_tribunal = 'TR';
+            $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
+            $requette->user_tribunal = $request->user_tribunal;
+
             $requette->save();
         }
         $requette->statutrequettes()->attach([$id_staut]);
@@ -327,7 +330,26 @@ class RequetteController extends Controller
         return new RequetteResource($requette);
     }
 
+    public function forwardRequette(Request $request, Requette $requette)
+    {
+        $data = $request->validate([
 
+            'observations' => 'nullable|string',
+            'dossier_id' => 'required|int',
+            'user_id' => 'required|int',
+            'tribunal_id' => 'required|int',
+            'typerequette_id' => 'required|int',
+        ]);
+
+
+
+        $requette->date_envoi_greffe = now()->format('Y-m-d H:i:s.v');
+        $requette->etat_greffe = "NT";
+        $requette->save();
+        $id_staut = StatutRequette::where('code', 'TR')->value('id');
+        $requette->statutrequettes()->attach($id_staut);
+        return new RequetteResource($requette);
+    }
     /**
      * Display a listing of the resource.
      */
