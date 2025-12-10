@@ -324,6 +324,9 @@ class RequetteController extends Controller
         $requette->fill($data);
         $requette->numero = $numero;
         $requette->etat = "TR";
+        $requette->etat_greffe = "KO";
+
+
         $requette->save();
         $id_staut = StatutRequette::where('code', 'KO')->value('id');
         $requette->statutrequettes()->attach($id_staut);
