@@ -140,6 +140,7 @@ Route::prefix('v1')->group(function () {
         Route::put('/requettes/{requette}', [RequetteController::class, 'confirmRequette']);
         Route::put('/requettes/{requette}/forward', [RequetteController::class, 'forwardRequette']);
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
+        Route::post('/requettes/reponse-greffe/{requette_id}', [RequetteController::class, 'addReponseGreffeRequette']);
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
         Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
         Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
