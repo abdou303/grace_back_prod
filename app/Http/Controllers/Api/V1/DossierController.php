@@ -229,6 +229,10 @@ class DossierController extends Controller
         //$dossier->prison_id =  $request->prison;
         $dossier->prison_id = isset($request->prison) && is_numeric($request->prison)  ? (int) $request->prison : null;
         $dossier->numero_detention =  $request->numerolocal;
+        $dossier->etat_greffe =  "NT";
+        $dossier->date_envoi_greffe =  now()->format('Y-m-d H:i:s.v');
+
+
 
 
 
