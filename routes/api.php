@@ -142,6 +142,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
         Route::post('/requettes/reponse-greffe/{requette_id}', [RequetteController::class, 'addReponseGreffeRequette']);
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
+        Route::post('/dossiers/terminer-tr-greffe/{dossier_id}', [DossierController::class, 'terminerGreffeDossierTr']);
+
         Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
         Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
         Route::get('/dossiers/{id}/pjs', [DossierController::class, 'getPjs']);
