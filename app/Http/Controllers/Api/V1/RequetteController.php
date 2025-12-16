@@ -205,7 +205,11 @@ class RequetteController extends Controller
             $requette->etat_tribunal = 'TR';
             $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
             $requette->user_tribunal = $request->user_tribunal;
+            $requette->dossier()->update([
+                'etat' => 'OK',
+                'tr_tribunal' => 'OK',
 
+            ]);
             $requette->save();
         }
         $requette->statutrequettes()->attach([$id_staut]);
@@ -405,9 +409,14 @@ class RequetteController extends Controller
         $requette->numero = $numero;
         $requette->etat = "TR";
         $requette->etat_greffe = "KO";
-
-
         $requette->save();
+        //   Mise à jour du dossier lié
+        $requette->dossier()->update([
+            'etat' => 'NT',
+            'tr_tribunal' => 'NT',
+            'user_tribunal_id' => $request->tribunal_id,
+            'categorie' => $requette->typerequette->cat
+        ]);
         $id_staut = StatutRequette::where('code', 'KO')->value('id');
         $requette->statutrequettes()->attach($id_staut);
         return new RequetteResource($requette);

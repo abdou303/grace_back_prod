@@ -82,7 +82,7 @@ class DossierController extends Controller
             'prison',
             'objetdemande',
             'sourcedemande',
-        ])->where('user_tribunal_id', $tr_id)->orderBy('id', 'desc')->get();
+        ])->where('user_tribunal_id', $tr_id)->where('categorie', 'CAT-1')->orderBy('id', 'desc')->get();
 
         return new DossierResource($dossiers);
     }
@@ -307,7 +307,7 @@ class DossierController extends Controller
                 $affaire->numero = $affaireData['numero'];
                 $affaire->code = $affaireData['code'];
                 $affaire->annee = $affaireData['annee'];
-                $affaire->numeroaffaire = "TR-AFFAIRE";
+                $affaire->numeroaffaire = "";
                 $affaire->tribunal_id = $affaireData['tribunal'];
                 $affaire->datejujement = $affaireData['datejujement'];
                 $affaire->conenujugement = $affaireData['conenujugement'];
