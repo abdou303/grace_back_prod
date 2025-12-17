@@ -13,6 +13,7 @@ use App\Models\TypePj;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Services\OpenBeeService;
+use Illuminate\Support\Facades\DB;
 
 class RequetteController extends Controller
 {

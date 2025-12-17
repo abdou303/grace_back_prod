@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Log; // Import Log facade
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\DB;
 
 class DossierController extends Controller
 {
@@ -815,5 +815,52 @@ class DossierController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function getRegistreTribunal($id_tribunal)
+    {
+        // Dossiers filtrés par tribunal
+        $dossiers = DB::table('dossiers')
+            ->where('tr_tribunal', $id_tribunal)
+            ->select([
+                DB::raw("'DOSSIER' as source"),
+                'id as dossier_id',
+                DB::raw('NULL as requette_id'),
+                'numero',
+                'numeromp',
+                'detenu_id',
+                DB::raw('NULL as date_etat_greffe'),
+                DB::raw('NULL as date_envoi_greffe'),
+                DB::raw('NULL as etat_greffe'),
+                DB::raw('NULL as typerequette_id'),
+                'created_at'
+            ]);
+
+        // Requêtes filtrées par tribunal
+        $requettes = DB::table('requettes')
+            ->join('dossiers', 'requettes.dossier_id', '=', 'dossiers.id')
+            ->where('requettes.tribunal_id', $id_tribunal)
+            ->select([
+                DB::raw("'REQUETTE' as source"),
+                'requettes.dossier_id',
+                'requettes.id as requette_id',
+                'requettes.numero',
+                'dossiers.detenu_id',
+                'requettes.date_etat_greffe',
+                'requettes.date_envoi_greffe',
+                'requettes.etat_greffe',
+                'requettes.typerequette_id',
+                'requettes.date',
+                'requettes.created_at'
+            ]);
+
+        // Fusionner les résultats
+        $data = $dossiers->unionAll($requettes)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'data' => $data
+        ]);
     }
 }

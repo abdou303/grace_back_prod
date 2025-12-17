@@ -132,6 +132,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/tribunaux/ca/{ca_id}', [TribunalController::class, 'getByCa']);
         Route::post('/import-dossiers', [DossierImportController::class, 'import']);
         Route::get('/dossiers/tribunal/{tr_id}', [DossierController::class, 'dossierByTr']);
+        Route::get('/dossiers-registre/{tr_id}', [DossierController::class, 'getRegistreTribunal']);
         Route::get('/requettes/tribunal/{tr_id}', [RequetteController::class, 'requetteByTr']);
         Route::get('/requettes-nt/tribunal/{tr_id}', [RequetteController::class, 'requetteNTByTr']);
         Route::get('/nt-requettes', [RequetteController::class, 'getNTRequettes']);
@@ -143,7 +144,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/requettes/reponse-greffe/{requette_id}', [RequetteController::class, 'addReponseGreffeRequette']);
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
         Route::post('/dossiers/terminer-tr-greffe/{dossier_id}', [DossierController::class, 'terminerGreffeDossierTr']);
-
         Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
         Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
         Route::get('/dossiers/{id}/pjs', [DossierController::class, 'getPjs']);

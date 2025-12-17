@@ -30,6 +30,12 @@ class Dossier extends Model
         'date_tr_dapg',
         'has_antecedent',
         'antecedant_id',
+        'date_etat_greffe',
+        'date_envoi_greffe',
+        'etat_greffe',
+        'user_tribunal',
+        'user_greffe',
+        'user_parquet'
 
     ];
 
