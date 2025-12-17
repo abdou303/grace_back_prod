@@ -817,50 +817,51 @@ class DossierController extends Controller
         //
     }
 
-    public function getRegistreTribunal($id_tribunal)
+    public function getRegistreTribunal($id_tr)
     {
-        // Dossiers filtrés par tribunal
-        $dossiers = DB::table('dossiers')
-            ->where('tr_tribunal', $id_tribunal)
-            ->select([
-                DB::raw("'DOSSIER' as source"),
-                'id as dossier_id',
-                DB::raw('NULL as requette_id'),
-                'numero',
-                'numeromp',
-                'detenu_id',
-                DB::raw('NULL as date_etat_greffe'),
-                DB::raw('NULL as date_envoi_greffe'),
-                DB::raw('NULL as etat_greffe'),
-                DB::raw('NULL as typerequette_id'),
-                'created_at'
-            ]);
+        $dossiers = Dossier::with([
+            'detenu',
+            'garants',
+            'affaires',
 
-        // Requêtes filtrées par tribunal
-        $requettes = DB::table('requettes')
-            ->join('dossiers', 'requettes.dossier_id', '=', 'dossiers.id')
-            ->where('requettes.tribunal_id', $id_tribunal)
-            ->select([
-                DB::raw("'REQUETTE' as source"),
-                'requettes.dossier_id',
-                'requettes.id as requette_id',
-                'requettes.numero',
-                'dossiers.detenu_id',
-                'requettes.date_etat_greffe',
-                'requettes.date_envoi_greffe',
-                'requettes.etat_greffe',
-                'requettes.typerequette_id',
-                'requettes.date',
-                'requettes.created_at'
-            ]);
+            'requettes' => function ($query) {
+                $query
+                    ->whereNotNull('etat_greffe')
+                    ->where('etat_greffe', '!=', 'KO')
+                    ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
+                    ->latest('id')
+                    ->limit(1)
+                    ->with('typerequette');
+            }
+        ])
+            ->where('user_tribunal_id', $id_tr)
+            ->where('categorie', 'CAT-1')
 
-        // Fusionner les résultats
-        $data = $dossiers->unionAll($requettes)
-            ->orderBy('created_at', 'desc')
+            /* ⭐ LOGIQUE CORRECTE */
+            ->where(function ($query) {
+
+                // DOSSIERS AYANT AU MOINS UNE REQUETTE CAT-1 VALIDE
+                $query->whereHas('requettes', function ($q) {
+                    $q->whereNotNull('etat_greffe')
+                        ->where('etat_greffe', '!=', 'KO')
+                        ->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-1'));
+                })
+
+                    // OU DOSSIERS SANS AUCUNE REQUETTE CAT-1 VALIDE
+                    ->orWhere(function ($q) {
+                        $q->whereDoesntHave('requettes', function ($q2) {
+                            $q2->whereNotNull('etat_greffe')
+                                ->where('etat_greffe', '!=', 'KO')
+                                ->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-1'));
+                        })
+                            ->whereNotNull('etat_greffe')
+                            ->where('etat_greffe', '!=', 'KO');
+                    });
+            })
+
+            ->orderByDesc('id')
             ->get();
 
-        return response()->json([
-            'data' => $data
-        ]);
+        return DossierResource::collection($dossiers);
     }
 }
