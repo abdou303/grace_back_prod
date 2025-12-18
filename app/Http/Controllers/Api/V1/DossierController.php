@@ -578,6 +578,38 @@ class DossierController extends Controller
         $dossier->numero_detention = $request->numerolocal;
         $dossier->save();
 
+        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+        if ($request->has('has_non_recours')) {
+            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+
+                $affaire = $dossier->affaires()
+                    ->where('affaires.id', $affaireId)
+                    ->first();
+
+                if (!$affaire) {
+                    continue;
+                }
+
+                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+
+                $affaire->has_non_recours = $hasNonRecoursBool;
+
+                if (!$hasNonRecoursBool) {
+                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                } else {
+                    $affaire->numero_cassation = null;
+                    $affaire->numero_envoi_cassation = null;
+                    $affaire->date_envoi_cassation = null;
+                }
+
+                $affaire->save();
+            }
+        }
+
+
+
         // 3. Préparation et Stockage TEMPORAIRE des fichiers
         $filesToProcess = [];
         $fileMappings = [
@@ -610,6 +642,8 @@ class DossierController extends Controller
                 }
             }
         }
+
+
 
         // 4. Dispatch du Job pour le traitement en arrière-plan
         if (!empty($filesToProcess)) {
