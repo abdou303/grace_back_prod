@@ -45,6 +45,25 @@ class UpdateDossierGreffeRequest extends FormRequest
             'copie_social' => 'nullable|file|mimes:pdf|max:2048',
             'prison' => 'nullable',
             'numerolocal' => 'nullable|numeric',
+            'affaires.*.has_non_recours' => ['required', 'boolean'],
+
+            'affaires.*.numero_cassation' => [
+                'required_if:affaires.*.has_non_recours,false',
+                'nullable',
+                'string'
+            ],
+
+            'affaires.*.numero_envoi_cassation' => [
+                'required_if:affaires.*.has_non_recours,false',
+                'nullable',
+                'string'
+            ],
+
+            'affaires.*.date_envoi_cassation' => [
+                'required_if:affaires.*.has_non_recours,false',
+                'nullable',
+                'date'
+            ],
         ];
     }
 

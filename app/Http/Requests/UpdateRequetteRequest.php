@@ -53,6 +53,27 @@ class UpdateRequetteRequest extends FormRequest
 
             'copie_non_recours' => 'nullable|array',
             'copie_non_recours.*' => 'file|mimes:pdf|max:2048', // Each file must be valid
+
+
+            'affaires.*.has_non_recours' => ['required', 'boolean'],
+
+            'affaires.*.numero_cassation' => [
+                'required_if:affaires.*.has_non_recours,false',
+                'nullable',
+                'string'
+            ],
+
+            'affaires.*.numero_envoi_cassation' => [
+                'required_if:affaires.*.has_non_recours,false',
+                'nullable',
+                'string'
+            ],
+
+            'affaires.*.date_envoi_cassation' => [
+                'required_if:affaires.*.has_non_recours,false',
+                'nullable',
+                'date'
+            ],
         ];
     }
 
@@ -91,6 +112,7 @@ class UpdateRequetteRequest extends FormRequest
             'copie_non_recours.*.file' => 'كل ملف في شهادة ضبطية او مايفيد حيازة المقرر القضائي لقوة الشيء المقضي به يجب أن يكون ملفًا صالحًا.',
             'copie_non_recours.*.mimes' => 'كل ملف في شهادة ضبطية او مايفيد حيازة المقرر القضائي لقوة الشيء المقضي به يجب أن يكون بصيغة PDF.',
             'copie_non_recours.*.max' => 'كل ملف في شهادة ضبطية او مايفيد حيازة المقرر القضائي لقوة الشيء المقضي به لا يجب أن يتجاوز 2 ميغابايت.',
+
         ];
     }
 }
