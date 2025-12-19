@@ -193,6 +193,35 @@ class RequetteController extends Controller
                 }
             }
         }
+        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+        if ($request->has('has_non_recours')) {
+            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+
+                $affaire = $dossier->affaires()
+                    ->where('affaires.id', $affaireId)
+                    ->first();
+
+                if (!$affaire) {
+                    continue;
+                }
+
+                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+
+                $affaire->has_non_recours = $hasNonRecoursBool;
+
+                if (!$hasNonRecoursBool) {
+                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                } else {
+                    $affaire->numero_cassation = null;
+                    $affaire->numero_envoi_cassation = null;
+                    $affaire->date_envoi_cassation = null;
+                }
+
+                $affaire->save();
+            }
+        }
 
         // 3. Dispatch du Job
         if (!empty($filesToProcess)) {
@@ -270,7 +299,35 @@ class RequetteController extends Controller
                 }
             }
         }
+        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+        if ($request->has('has_non_recours')) {
+            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
 
+                $affaire = $dossier->affaires()
+                    ->where('affaires.id', $affaireId)
+                    ->first();
+
+                if (!$affaire) {
+                    continue;
+                }
+
+                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+
+                $affaire->has_non_recours = $hasNonRecoursBool;
+
+                if (!$hasNonRecoursBool) {
+                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                } else {
+                    $affaire->numero_cassation = null;
+                    $affaire->numero_envoi_cassation = null;
+                    $affaire->date_envoi_cassation = null;
+                }
+
+                $affaire->save();
+            }
+        }
         // 3. Dispatch du Job
         if (!empty($filesToProcess)) {
             // L'appel reste identique à celui de terminerDossierTr
