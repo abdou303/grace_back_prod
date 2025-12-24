@@ -21,8 +21,9 @@ class Affaire extends Model
         'nbrmois',
         'peine_id',
         'tribunal_id',
+        'nbr_redirection',
     ];
-	
+
 
     public function dossiers()
     {

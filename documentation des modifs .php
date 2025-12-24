@@ -77,3 +77,11 @@ php artisan db:seed --class=RoleSeeder
 php artisan db:seed --class=UserSeeder
 
 php artisan make:migration add_fields_to_requettes_table
+
+App\Models\Pj::query()->delete();
+App\Models\Affaire::query()->delete();
+App\Models\Requette::query()->delete();
+App\Models\Dossier::query()->delete();
+
+
+DB::statement("DBCC CHECKIDENT ('dossiers', RESEED, 0)");
