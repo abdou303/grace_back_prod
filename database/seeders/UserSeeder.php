@@ -115,7 +115,7 @@ class UserSeeder extends Seeder
 
 
 
-        $users = [
+        /*$users = [
             [
                 'name' => 'الرئاسة',
                 'username' => 'carabat-greffe',
@@ -133,8 +133,50 @@ class UserSeeder extends Seeder
                 'groupe_id' => 3
             ],
 
-        ];
+        ];*/
+        $users = [
+            [
+                'name' => 'الرئاسة',
+                'username' => 'caagadir-greffe',
+                'email' => 'caagadir-greffe@example.com',
+                'tribunal_id' => 128,
+                'role_id' => 5,
+                'groupe_id' => 3
+            ],
+            [
+                'name' => 'ممثل النيابة العامة',
+                'username' => 'caagadir-parquet',
+                'email' => 'caagadir-parquet@example.com',
+                'tribunal_id' => 128,
+                'role_id' => 4,
+                'groupe_id' => 3
+            ],
+            [
+                'name' => 'CA MARRAKECH',
+                'username' => 'camarrakech',
+                'email' => 'camarrakech@example.com',
+                'tribunal_id' => 114,
+                'role_id' => 1,
+                'groupe_id' => 3
+            ],
+            [
+                'name' => 'الرئاسة',
+                'username' => 'camarrakech-greffe',
+                'email' => 'camarrakech-greffe@example.com',
+                'tribunal_id' => 114,
+                'role_id' => 5,
+                'groupe_id' => 3
+            ],
+            [
+                'name' => 'ممثل النيابة العامة',
+                'username' => 'camarrakech-parquet',
+                'email' => 'camarrakech-parquet@example.com',
+                'tribunal_id' => 114,
+                'role_id' => 4,
+                'groupe_id' => 3
+            ],
 
+        ];
 
         foreach ($users as $user) {
             User::factory()->create($user);

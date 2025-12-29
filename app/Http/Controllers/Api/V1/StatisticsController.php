@@ -188,18 +188,18 @@ class StatisticsController extends Controller
 
         if ($range === 'current_year') {
             $query->whereYear('created_at', now()->year);
-            $query_requette->whereYear('created_at', now()->year);
+            // $query_requette->whereYear('created_at', now()->year);
         } elseif ($range === 'current_month') {
             $query->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year);
-            $query_requette->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year);
+            //$query_requette->whereMonth('created_at', now()->month)
+            //->whereYear('created_at', now()->year);
         } elseif ($range === 'current_week') {
             $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
-            $query_requette->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+            //$query_requette->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
         } elseif ($from && $to) {
             $query->whereBetween('created_at', [$from, $to]);
-            $query_requette->whereBetween('created_at', [$from, $to]);
+            //  $query_requette->whereBetween('created_at', [$from, $to]);
         }
 
         return response()->json([
