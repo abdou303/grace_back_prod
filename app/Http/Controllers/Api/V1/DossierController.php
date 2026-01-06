@@ -819,6 +819,12 @@ class DossierController extends Controller
             'date_tr_dapg' => 'nullable|string',
 
             'user_id' => 'required|int',
+            'prison' => 'nullable|int',
+            'date_sortie' => 'nullable|string',
+
+
+
+
 
 
         ]);
@@ -831,6 +837,8 @@ class DossierController extends Controller
 
         $dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
         $dossier->date_tr_dapg = $validated['date_tr_dapg'] ?? $dossier->date_tr_dapg;
+        $dossier->date_sortie = $validated['date_sortie'] ?? $dossier->date_sortie;
+
 
 
         /*if ($request->filled('tr_tribunal')) {
@@ -845,6 +853,8 @@ class DossierController extends Controller
 
 
         $dossier->user_id = $validated['user_id'] ?? $dossier->user_id;
+        $dossier->prison_id = $validated['prison'] ?? $dossier->prison_id;
+
 
 
         $dossier->save();
