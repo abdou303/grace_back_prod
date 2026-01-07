@@ -813,6 +813,7 @@ class DossierController extends Controller
             'detenu.nommere' => 'nullable|string',
             'detenu.cin' => 'nullable|string',
             'detenu.genre' => 'nullable|string',
+            'detenu.datenaissance' => 'nullable|string',
             'tr_tribunal' => 'nullable|string',
             'tr_dapg' => 'nullable|string',
             'date_tr_tribunal' => 'nullable|string',
