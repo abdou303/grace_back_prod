@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Detenu extends Model
 {
     use HasFactory;
+    // Force le format de date compatible avec SQL Server
+    protected $dateFormat = 'Y-m-d H:i:s';
     protected $fillable = [
 
         'nom',
@@ -17,10 +19,10 @@ class Detenu extends Model
         'cin',
         'datenaissance',
         'genre',
-		 'nationalite_id'
+        'nationalite_id'
 
     ];
-	
+
 
     public function ville()
     {
