@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ConvertNullStrings;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,7 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         //Par moi le 03.04.2025
         //Par moi le 03.04.2025
 
-
+        // Ajoutez-le ici pour qu'il s'applique à toutes les requêtes
+        $middleware->append(ConvertNullStrings::class);
         // $middleware->append(App\Http\Middleware\CorsMiddleware::class);
         // other middleware if any...
     })
