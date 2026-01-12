@@ -27,7 +27,7 @@ class OpenBeeController extends Controller
         $this->username = config('services.openbee.username');
         $this->password = config('services.openbee.password');
         $this->getDocument = config('services.openbee.get_document');
-		$this->infoDocument = config('services.openbee.infos_document');
+	//	$this->infoDocument = config('services.openbee.infos_document');
 
 
     }

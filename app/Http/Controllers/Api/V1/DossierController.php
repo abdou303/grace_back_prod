@@ -887,10 +887,37 @@ class DossierController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
         //
+
+
+        //
+
+
+        $user = Auth::user();
+
+
+
+        // Vérifier si l'utilisateur est connecté et remplit les conditions
+        // Note : Ajustez les noms des colonnes 'role' et 'group' selon votre table users
+        if (!$user || $user->role_id != 3 || $user->groupe_id != 1) {
+            return response()->json([
+                'message' => 'غير مسموح لك بالقيام بهذا الإجراء' // "Non autorisé" en arabe
+            ], 403);
+        }
+
+        $requette = Dossier::find($id);
+
+        if (!$requette) {
+            return response()->json(['message' => 'الطلب غير موجود'], 404);
+        }
+
+        $requette->delete();
+
+        return response()->json(['message' => 'تم الحذف بنجاح'], 200);
     }
+
 
     public function getRegistreTribunal($id_tr)
     {
