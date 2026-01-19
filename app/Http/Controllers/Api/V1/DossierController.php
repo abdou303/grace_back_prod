@@ -966,4 +966,63 @@ class DossierController extends Controller
 
         return DossierResource::collection($dossiers);
     }
+
+
+    // app/Http/Controllers/DossierController.php
+
+    public function searchMultiple(Request $request)
+    {
+        $nom = $request->input('nom');
+        $prenom = $request->input('prenom');
+        $cin = $request->input('cin');
+        $num_det = $request->input('numero_detention');
+
+        // Paramètres de l'affaire
+        $aff_num = $request->input('affaire_numero');
+        $aff_code = $request->input('affaire_code');
+        $aff_annee = $request->input('affaire_annee');
+
+        $query = Dossier::with(['detenu', 'affaires.tribunal']);
+
+        $query->where(function ($q) use ($nom, $prenom, $cin, $num_det, $aff_num, $aff_code, $aff_annee) {
+
+            // 1. Logique Nom + Prénom (Combinaisons)
+            if ($nom && $prenom) {
+                $q->orWhereHas('detenu', function ($sub) use ($nom, $prenom) {
+                    $sub->where(function ($sq) use ($nom, $prenom) {
+                        // Cherche "Nom Prénom" OU "Prénom Nom"
+                        $sq->whereRaw("CONCAT(nom, ' ', prenom) LIKE ?", ["%{$nom} {$prenom}%"])
+                            ->orWhereRaw("CONCAT(prenom, ' ', nom) LIKE ?", ["%{$nom} {$prenom}%"]);
+                    });
+                });
+            }
+
+            // 2. Logique CIN (Exacte)
+            if ($cin) {
+                $q->orWhereHas('detenu', function ($sub) use ($cin) {
+                    $sub->where('cin', $cin);
+                });
+            }
+
+            // 3. Logique Numéro d'écrou
+            if ($num_det) {
+                $q->orWhere('numero_detention', $num_det);
+            }
+
+            // 4. Logique Affaire (Somme des 3 critères)
+            // Ici on cherche un dossier qui possède UNE affaire ayant ces 3 valeurs
+            if ($aff_num && $aff_code && $aff_annee) {
+                $q->orWhereHas('affaires', function ($sub) use ($aff_num, $aff_code, $aff_annee) {
+                    $sub->where('numero', $aff_num)
+                        ->where('code', $aff_code)
+                        ->where('annee', $aff_annee);
+                });
+            }
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $query->limit(10)->get()
+        ]);
+    }
 }

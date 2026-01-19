@@ -151,6 +151,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/statistiques', [StatisticsController::class, 'getDossierStats']);
         Route::get('/statistiques/{tr_id}', [StatisticsController::class, 'getDossierStatsByTR']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
+        Route::post('/dossiers/search-multiple', [DossierController::class, 'searchMultiple']);
         Route::get('/openbee/file/{id}', [OpenBeeController::class, 'download']);
     });
 });
