@@ -228,6 +228,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                     $affaireDates = array_map('trim', explode(':', $row['datejujement']));
                     $affaireContenus = array_map('trim', explode(':', $row['conenujugement']));
 
+
+
                     $affaireIds = [];
                     foreach ($affaireNumerosBruts as $index => $numeroComplet) {
                         if (empty($numeroComplet)) continue;
@@ -251,14 +253,14 @@ class DossierImport implements ToCollection, WithHeadingRow
                         }
 
                         // Création ou récupération de l'affaire avec les nouvelles colonnes
-                        $affaire = Affaire::firstOrCreate([
+                        $affaire = Affaire::create([
                             'annee'           => $annee,
                             'code'            => $code,
                             'numero'          => $numero,
                             'datejujement'    => $affaireDates[$index] ?? null,
                             'tribunal_id'     => $affaireTribunaux[$index] ?? null,
                             'conenujugement'  => $affaireContenus[$index] ?? null,
-                            'numeroaffaire' => 'TR-AFFAIRE',
+                            'numeroaffaire' => $affaireNumerosBruts[$index] ?? null,
                         ]);
 
                         $affaireIds[] = $affaire->id;

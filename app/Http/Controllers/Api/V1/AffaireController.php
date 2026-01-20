@@ -57,6 +57,7 @@ class AffaireController extends Controller
             'annee' => $request->annee,
             'datejujement' => $request->datejujement,
             'conenujugement' => $request->conenujugement,
+            'numeroaffaire' => $request->numero . '/' . $request->code . '/' . $request->annee,
             'tribunal_id' => $request->tribunal_id
 
         ]);

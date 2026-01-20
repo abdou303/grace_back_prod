@@ -307,7 +307,7 @@ class DossierController extends Controller
                 $affaire->numero = $affaireData['numero'];
                 $affaire->code = $affaireData['code'];
                 $affaire->annee = $affaireData['annee'];
-                $affaire->numeroaffaire = "";
+                $affaire->numeroaffaire = $affaireData['numero'] . '/' . $affaireData['code'] . '/' . $affaireData['annee'];
                 $affaire->tribunal_id = $affaireData['tribunal'];
                 $affaire->datejujement = $affaireData['datejujement'];
                 $affaire->conenujugement = $affaireData['conenujugement'];
@@ -822,7 +822,7 @@ class DossierController extends Controller
             'date_tr_dapg' => 'nullable|string',
 
             'user_id' => 'required|int',
-            'prison' => 'nullable|int',
+            'prison' => 'nullable',
             'date_sortie' => 'nullable|string',
 
 
@@ -970,7 +970,7 @@ class DossierController extends Controller
 
     // app/Http/Controllers/DossierController.php
 
-    public function searchMultiple(Request $request)
+    /*public function searchMultiple(Request $request)
     {
         $nom = $request->input('nom');
         $prenom = $request->input('prenom');
@@ -1022,6 +1022,66 @@ class DossierController extends Controller
 
         return response()->json([
             'status' => 'success',
+            'data' => $query->limit(10)->get()
+        ]);
+    }*/
+    public function searchMultiple(Request $request)
+    {
+        $nom = $request->input('nom');
+        $prenom = $request->input('prenom');
+        $cin = $request->input('cin');
+        $num_det = $request->input('numero_detention');
+
+        // Paramètres de l'affaire
+        $aff_num = $request->input('affaire_numero');
+        $aff_code = $request->input('affaire_code');
+        $aff_annee = $request->input('affaire_annee');
+
+        $query = Dossier::with(['detenu', 'affaires.tribunal']);
+
+        $query->where(function ($q) use ($nom, $prenom, $cin, $num_det, $aff_num, $aff_code, $aff_annee) {
+
+            // 1. Logique Nom + Prénom (Flexible : "karim ahmadi" trouve "mahmadi karima")
+            if ($nom || $prenom) {
+                $q->orWhereHas('detenu', function ($sub) use ($nom, $prenom) {
+                    $search = trim("$nom $prenom"); // On combine les entrées
+                    $sub->where(function ($sq) use ($search) {
+                        $sq->whereRaw("CONCAT(nom, ' ', prenom) LIKE ?", ["%{$search}%"])
+                            ->orWhereRaw("CONCAT(prenom, ' ', nom) LIKE ?", ["%{$search}%"]);
+                    });
+                });
+            }
+
+            // 2. Logique CIN
+            if ($cin) {
+                $q->orWhereHas('detenu', function ($sub) use ($cin) {
+                    $sub->where('cin', 'LIKE', "%{$cin}%");
+                });
+            }
+
+            // 3. Logique Numéro d'écrou
+            if ($num_det) {
+                $q->orWhere('numero_detention', 'LIKE', "%{$num_det}%");
+            }
+
+            // 4. Logique Affaire (Format Flexible : 136/2601/2024 ou 2024/2601/136)
+            if ($aff_num && $aff_code && $aff_annee) {
+                $q->orWhereHas('affaires', function ($sub) use ($aff_num, $aff_code, $aff_annee) {
+                    $sub->where(function ($sq) use ($aff_num, $aff_code, $aff_annee) {
+                        // On teste les deux formats principaux de concaténation
+                        $format1 = "{$aff_num}/{$aff_code}/{$aff_annee}";
+                        $format2 = "{$aff_annee}/{$aff_code}/{$aff_num}";
+
+                        $sq->whereRaw("CONCAT(numero, '/', code, '/', annee) LIKE ?", ["%{$format1}%"])
+                            ->orWhereRaw("CONCAT(annee, '/', code, '/', numero) LIKE ?", ["%{$format2}%"]);
+                    });
+                });
+            }
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'count' => $query->count(),
             'data' => $query->limit(10)->get()
         ]);
     }
