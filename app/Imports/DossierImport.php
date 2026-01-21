@@ -205,6 +205,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'naturedossiers_id' => $row['naturedossiers_id'],
                         'detenu_id' => $detenu->id,
                         'user_id' => $row['user_id'],
+                        'originedossier' => 'R'
                     ];
 
                     // Logique spécifique selon le type de dossier

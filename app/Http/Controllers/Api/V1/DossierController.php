@@ -217,6 +217,7 @@ class DossierController extends Controller
 
         $dossier->numero = $numero_dossier;
         $dossier->etat = 'NT';
+        $dossier->originedossier = 'D';
 
         //$dossier->objetdemande_id = $request->objetdemande ?? null;
         $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande)  ? (int) $request->objetdemande : null;
@@ -921,6 +922,8 @@ class DossierController extends Controller
 
     public function getRegistreTribunal($id_tr)
     {
+
+
         $dossiers = Dossier::with([
             'detenu',
             'garants',
@@ -1037,7 +1040,28 @@ class DossierController extends Controller
         $aff_code = $request->input('affaire_code');
         $aff_annee = $request->input('affaire_annee');
 
-        $query = Dossier::with(['detenu', 'affaires.tribunal']);
+        $query = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'prison',
+            'objetdemande',
+            'sourcedemande',
+        ]);
 
         $query->where(function ($q) use ($nom, $prenom, $cin, $num_det, $aff_num, $aff_code, $aff_annee) {
 

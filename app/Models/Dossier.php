@@ -40,7 +40,8 @@ class Dossier extends Model
         'user_tribunal',
         'user_greffe',
         'user_parquet',
-        'nbr_redirection'
+        'nbr_redirection',
+        'originedossier'
 
     ];
 
