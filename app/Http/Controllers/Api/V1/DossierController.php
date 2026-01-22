@@ -1034,6 +1034,9 @@ class DossierController extends Controller
         $prenom = $request->input('prenom');
         $cin = $request->input('cin');
         $num_det = $request->input('numero_detention');
+        $user_tribunal = $request->input('user_tribunal');
+
+
 
         // Paramètres de l'affaire
         $aff_num = $request->input('affaire_numero');
@@ -1050,6 +1053,7 @@ class DossierController extends Controller
             'comportement',
             'affaires',
             'requettes',
+            'requettes.typerequette',
             'affaires.tribunal',
             'affaires.peine',
             'affaires.peine.prisons',
@@ -1061,7 +1065,7 @@ class DossierController extends Controller
             'prison',
             'objetdemande',
             'sourcedemande',
-        ]);
+        ])->where('categorie', 'CAT-1')->where('user_tribunal_id', $user_tribunal);
 
         $query->where(function ($q) use ($nom, $prenom, $cin, $num_det, $aff_num, $aff_code, $aff_annee) {
 
