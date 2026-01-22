@@ -18,7 +18,7 @@ class OpenBeeController extends Controller
     protected string $getDocument;
     protected string $infoDocument;
 
-	
+
 
 
     public function __construct()
@@ -27,18 +27,19 @@ class OpenBeeController extends Controller
         $this->username = config('services.openbee.username');
         $this->password = config('services.openbee.password');
         $this->getDocument = config('services.openbee.get_document');
-	//	$this->infoDocument = config('services.openbee.infos_document');
+        //	$this->infoDocument = config('services.openbee.infos_document');
 
 
     }
 
     public function download($id)
     {
-      $url = "http://192.168.26.54:8000/ws/v2/file/$id";
-       $infos_url="http://192.168.26.54:8000/ws/v2/document/$id";
-	   
-	   
-		/* $url = $this->$baseUrl. $this->$getDocument.$id;
+        // ce sont des infos de l url de connexion 
+        $url = "http://192.168.26.54:8000/ws/v2/file/$id";
+        $infos_url = "http://192.168.26.54:8000/ws/v2/document/$id";
+
+
+        /* $url = $this->$baseUrl. $this->$getDocument.$id;
 
        $infos_url= $this->$baseUrl. $this->$infoDocument.$id;
 	   
@@ -46,10 +47,10 @@ class OpenBeeController extends Controller
 		 \Log::error("INFO URL: " . $infos_url);*/
 
         $response = Http::withBasicAuth($this->username, $this->password)
-                        ->get($url);
+            ->get($url);
 
         $response_infos = Http::withBasicAuth($this->username, $this->password)
-                        ->get($infos_url);
+            ->get($infos_url);
 
         if ($response->ok()) {
             //$nomFichierChargee = $response_infos->header('name');
@@ -57,7 +58,7 @@ class OpenBeeController extends Controller
 
             return response($response->body(), 200)
                 ->header('Content-Type', $response->header('Content-Type'))
-                ->header('Content-Disposition', 'attachment; filename="PJ_'.$nomFichierChargee.'.pdf"');
+                ->header('Content-Disposition', 'attachment; filename="PJ_' . $nomFichierChargee . '.pdf"');
         }
 
         return response()->json(['error' => 'File not found'], 404);
