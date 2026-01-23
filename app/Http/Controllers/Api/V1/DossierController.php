@@ -410,6 +410,53 @@ class DossierController extends Controller
             'data' => $dossier,
         ], 201);
     }
+    public function storeAntecedentRequette(Request $request, Dossier $dossier)
+    {
+
+
+        $data = $request->validate([
+
+            'observations' => 'nullable|string',
+            'dossier_id' => 'required|int',
+            'user_id' => 'required|int',
+            'tribunal_id' => 'required|int',
+            'typerequette_id' => 'required|int',
+        ]);
+
+        $dossier = new Dossier();
+        $currentYear = now()->format('Y');
+        $lastRecord = Dossier::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
+
+        //$lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 4)) : 0;
+        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0;
+
+        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+        $numero_dossier = 'D-' . $currentYear . $newNumber;
+
+        $dossier->typedossier_id = $request->typedossier;
+        $dossier->naturedossiers_id = $request->naturedossier;
+        $dossier->sourcedemande_id = $request->sourcedemande;
+        $dossier->numero = $numero_dossier;
+        $dossier->etat = 'NT';
+        $dossier->has_antecedent = $request->has_antecedent;
+        $dossier->antecedant_id = $request->antecedant_id;
+        $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande)  ? (int) $request->objetdemande : null;
+        $dossier->user_id = $request->user_id;
+        $dossier->user_tribunal_id = $request->tribunal_user_id;
+        $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
+        $dossier->numeromp = $request->numeromp;
+        $dossier->detenu_id = $request->detenu_id;
+
+        $dossier->save();
+
+
+
+        return response()->json([
+            'message' => 'تم تسجيل الطلب بنجاح',
+            'data' => $dossier,
+        ], 201);
+    }
+
     /******************************************************** */
 
     /*public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
@@ -1062,6 +1109,7 @@ class DossierController extends Controller
             'typemotifdossier',
             'typedossier',
             'pjs',
+            'pjs.affaire',
             'prison',
             'objetdemande',
             'sourcedemande',
