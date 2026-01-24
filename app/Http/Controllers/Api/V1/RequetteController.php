@@ -778,4 +778,37 @@ class RequetteController extends Controller
 
         return response()->json(['message' => 'تم الحذف بنجاح'], 200);
     }
+
+    public function storeAntecedentRequette(Request $request, $requette_id)
+    {
+
+        // 1. Logique métier immédiate (Base de données)
+        $requette = Requette::findOrFail($requette_id);
+        $dossier = $requette->dossier;
+
+        if (!$dossier) {
+            return response()->json(['message' => 'Dossier not found'], 404);
+        }
+
+        $dossier->has_antecedent = $request->has_antecedent;
+        $dossier->antecedant_id = $request->antecedant_id;
+        $dossier->user_id = $request->user_id;
+
+        $dossier->save();
+
+        $requette->etat_tribunal = 'TR';
+        $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
+        $requette->user_tribunal = $request->user_tribunal;
+        $requette->dossier()->update([
+            'etat' => 'OK',
+            'tr_tribunal' => 'OK',
+
+        ]);
+        $requette->save();
+
+        return response()->json([
+            'message' => 'تم تسجيل الطلب بنجاح',
+            'data' => $dossier,
+        ], 201);
+    }
 }
