@@ -796,6 +796,26 @@ class RequetteController extends Controller
 
         $dossier->save();
 
+
+        // 4. Finalisation des statuts (Logique métier immédiate)
+        $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
+        if ($request->statutRequette == 'OK') {
+            $requette->etat_tribunal = 'TR';
+            $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
+            $requette->user_tribunal = $request->user_tribunal;
+            $requette->dossier()->update([
+                'etat' => 'OK',
+                'tr_tribunal' => 'OK',
+
+            ]);
+            $requette->save();
+        }
+        $requette->statutrequettes()->attach([$id_staut]);
+
+
+
+
+        /*
         $requette->etat_tribunal = 'TR';
         $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
         $requette->user_tribunal = $request->user_tribunal;
@@ -804,7 +824,7 @@ class RequetteController extends Controller
             'tr_tribunal' => 'OK',
 
         ]);
-        $requette->save();
+        $requette->save();*/
 
         return response()->json([
             'message' => 'تم تسجيل الطلب بنجاح',
