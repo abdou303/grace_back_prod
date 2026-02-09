@@ -19,7 +19,8 @@ class Detenu extends Model
         'cin',
         'datenaissance',
         'genre',
-        'nationalite_id'
+        'nationalite_id',
+        'numero_national_detenu'
 
     ];
 
