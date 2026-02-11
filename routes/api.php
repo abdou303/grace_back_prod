@@ -138,7 +138,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/nt-requettes', [RequetteController::class, 'getNTRequettes']);
         Route::get('/tr-requettes', [RequetteController::class, 'getTRRequettes']);
         Route::put('/requettes/{requette}/change-statut', [RequetteController::class, 'changeStatut']);
-        Route::put('/requettes/{requette}', [RequetteController::class, 'confirmRequette']);
+        Route::post('/requettes/{requette}', [RequetteController::class, 'confirmRequette']);
         Route::put('/requettes/{requette}/forward', [RequetteController::class, 'forwardRequette']);
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
         Route::post('/requettes/reponse-greffe/{requette_id}', [RequetteController::class, 'addReponseGreffeRequette']);

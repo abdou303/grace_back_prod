@@ -428,6 +428,8 @@ class RequetteController extends Controller
 
     public function confirmRequette(Request $request, Requette $requette)
     {
+
+
         $data = $request->validate([
             'date' => 'nullable',
             'observations' => 'nullable|string',
@@ -435,6 +437,7 @@ class RequetteController extends Controller
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
+            'copie_demande' => 'nullable|file|mimes:pdf|max:2048', // Validation du fichier
         ]);
 
 
@@ -499,6 +502,53 @@ class RequetteController extends Controller
         $requette->save();
         $id_staut = StatutRequette::where('code', 'TR')->value('id');
         $requette->statutrequettes()->attach($id_staut);
+
+
+        // 3. Préparation et Stockage TEMPORAIRE des fichiers
+        $filesToProcess = [];
+        $fileMappings = [
+
+            'copie_demande' => 7,
+        ];
+
+        foreach ($fileMappings as $fieldName => $typepjId) {
+            if ($request->hasFile($fieldName)) {
+                $files = $request->file($fieldName);
+
+                // Gérer les fichiers multiples (si affaireId est la clé) ou unique
+                $filesArray = is_array($files) ? $files : [null => $files];
+
+                foreach ($filesArray as $affaireIdKey => $file) {
+                    if ($file) {
+                        // Stocker le fichier dans un emplacement temporaire de Laravel
+                        $path = $file->store('temp/openbee_uploads');
+                        $filesToProcess[] = [
+                            'path' => $path, // Chemin d'accès temporaire
+                            'typepjId' => $typepjId,
+                            'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                            'fieldName' => $fieldName,
+                            'originalName' => $file->getClientOriginalName(),
+                        ];
+                    }
+                }
+            }
+        }
+
+
+
+        // 4. Dispatch du Job pour le traitement en arrière-plan
+        if (!empty($filesToProcess)) {
+            // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
+            UploadDossierPJsJob::dispatch($request->dossier_id, $filesToProcess)->onQueue('openbee_uploads');
+        }
+
+        /*
+        // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
+        return response()->json([
+            'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
+            'data' => $dossier,
+        ], 201);*/
+
         return new RequetteResource($requette);
     }
     /**
