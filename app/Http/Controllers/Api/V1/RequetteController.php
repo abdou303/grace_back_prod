@@ -440,6 +440,7 @@ class RequetteController extends Controller
             'copie_demande' => 'nullable|file|mimes:pdf|max:2048', // Validation du fichier
         ]);
 
+        //Log::debug('************ Requête reçue (forwardRequette) :*******************', $request->all());
 
         /*
         $currentYear = now()->format('Y');
@@ -481,28 +482,6 @@ class RequetteController extends Controller
         ]);
         $id_staut = StatutRequette::where('code', 'KO')->value('id');
         $requette->statutrequettes()->attach($id_staut);
-        return new RequetteResource($requette);
-    }
-
-    public function forwardRequette(Request $request, Requette $requette)
-    {
-        $data = $request->validate([
-
-            'observations' => 'nullable|string',
-            'dossier_id' => 'required|int',
-            'user_id' => 'required|int',
-            'tribunal_id' => 'required|int',
-            'typerequette_id' => 'required|int',
-        ]);
-
-
-
-        $requette->date_envoi_greffe = now()->format('Y-m-d H:i:s.v');
-        $requette->etat_greffe = "NT";
-        $requette->save();
-        $id_staut = StatutRequette::where('code', 'TR')->value('id');
-        $requette->statutrequettes()->attach($id_staut);
-
 
         // 3. Préparation et Stockage TEMPORAIRE des fichiers
         $filesToProcess = [];
@@ -528,6 +507,8 @@ class RequetteController extends Controller
                             'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
                             'fieldName' => $fieldName,
                             'originalName' => $file->getClientOriginalName(),
+                            // DONNÉE CLÉ pour le Job : Indiquer l'ID de la Requette
+                            'context_requette_id' => $requette->id,
                         ];
                     }
                 }
@@ -541,6 +522,30 @@ class RequetteController extends Controller
             // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
             UploadDossierPJsJob::dispatch($request->dossier_id, $filesToProcess)->onQueue('openbee_uploads');
         }
+
+        return new RequetteResource($requette);
+    }
+
+    public function forwardRequette(Request $request, Requette $requette)
+    {
+        $data = $request->validate([
+
+            'observations' => 'nullable|string',
+            'dossier_id' => 'required|int',
+            'user_id' => 'required|int',
+            'tribunal_id' => 'required|int',
+            'typerequette_id' => 'required|int',
+        ]);
+
+
+        $requette->date_envoi_greffe = now()->format('Y-m-d H:i:s.v');
+        $requette->etat_greffe = "NT";
+        $requette->save();
+        $id_staut = StatutRequette::where('code', 'TR')->value('id');
+        $requette->statutrequettes()->attach($id_staut);
+
+
+
 
         /*
         // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
