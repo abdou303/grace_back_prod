@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\ComportementController;
 use App\Http\Controllers\Api\V1\DossierImportController;
 use App\Http\Controllers\Api\V1\FichePdfController;
 use App\Http\Controllers\Api\V1\FileController;
+use App\Http\Controllers\Api\V1\GroupeController;
 use App\Http\Controllers\Api\V1\NatureDossierController;
 use App\Http\Controllers\Api\V1\ObjetDemandeController;
 use App\Http\Controllers\Api\V1\ProvinceController;
@@ -26,9 +27,8 @@ use App\Http\Controllers\Api\V1\StatisticsController;
 use App\Http\Controllers\Api\V1\TypeDossierController;
 use App\Http\Controllers\Api\V1\TypeMotifDossierController;
 use App\Http\Controllers\Api\V1\OpenBeeController;
-
-
-
+use App\Http\Controllers\Api\V1\RoleController;
+use App\Http\Controllers\Api\V1\UtilisateurController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -107,8 +107,10 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::apiResource('villes', VilleController::class);
+        Route::apiResource('utilisateurs', UtilisateurController::class);
         Route::apiResource('cas', CaController::class);
         Route::apiResource('tribunaux', TribunalController::class);
+        Route::get('/tribunaux-ca', [TribunalController::class, 'getCa']);
         Route::apiResource('prisons', PrisonController::class);
         Route::apiResource('pays', PaysController::class);
         Route::apiResource('nationalites', NationaliteController::class);
@@ -118,6 +120,8 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('partenaires', PartenaireController::class);
         Route::apiResource('requettes', RequetteController::class);
         Route::apiResource('avis', AvisController::class);
+        Route::apiResource('roles', RoleController::class);
+        Route::apiResource('groupes', GroupeController::class);
         Route::apiResource('comportements', ComportementController::class);
         Route::apiResource('provinces', ProvinceController::class);
         Route::apiResource('typesdossiers', TypeDossierController::class);
