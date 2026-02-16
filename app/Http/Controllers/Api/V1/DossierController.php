@@ -804,7 +804,7 @@ class DossierController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        Log::debug('Requête reçue UPDATE DOSSIER:', $request->all());
+        //Log::debug('Requête reçue UPDATE DOSSIER:', $request->all());
 
         $dossier = Dossier::with(['detenu', 'affaires', 'prison'])->findOrFail($id);
 
