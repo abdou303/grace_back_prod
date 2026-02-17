@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateGreffeRequetteRequest;
 use App\Http\Requests\UpdateRequetteRequest;
 use App\Http\Resources\RequetteResource;
 use App\Jobs\UploadDossierPJsJob;
@@ -252,7 +253,7 @@ class RequetteController extends Controller
         ], 200);
     }
 
-    public function addReponseGreffeRequette(UpdateRequetteRequest $request, $requette_id)
+    public function addReponseGreffeRequette(UpdateGreffeRequetteRequest $request, $requette_id)
     {
         // L'injection de OpenBeeService n'est plus nécessaire ici.
 
