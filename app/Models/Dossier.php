@@ -86,6 +86,12 @@ class Dossier extends Model
 
         return $this->belongsTo(CategorieDossier::class, 'categoriedossiers_id');
     }
+
+    public function avis()
+    {
+
+        return $this->belongsTo(Avis::class, 'avis_id');
+    }
     public function naturedossier()
     {
 
