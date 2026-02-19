@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\V1\TypeMotifDossierController;
 use App\Http\Controllers\Api\V1\OpenBeeController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\UtilisateurController;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -158,5 +159,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::post('/dossiers/search-multiple', [DossierController::class, 'searchMultiple']);
         Route::get('/openbee/file/{id}', [OpenBeeController::class, 'download']);
+        Route::get('/utilisateurs/parquet/{tribunal_id}', [UtilisateurController::class, 'getParquetUsersByTribunal']);
     });
 });

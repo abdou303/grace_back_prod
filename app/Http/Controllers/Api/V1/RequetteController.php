@@ -473,6 +473,8 @@ class RequetteController extends Controller
         $requette->numero = $numero;
         $requette->etat = "TR";
         $requette->etat_greffe = "KO";
+        $requette->etat_parquet = "KO";
+
         $requette->save();
         //   Mise à jour du dossier lié
         $requette->dossier()->update([

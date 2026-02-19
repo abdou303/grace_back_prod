@@ -29,6 +29,7 @@ class User extends Authenticatable implements JWTSubject
         'tribunal_id',
         'partenaire_id',
         'must_change_password',
+        'active'
     ];
 	
 	

@@ -23,6 +23,26 @@ class UtilisateurController extends Controller
         return UtilisateurResource::collection($users);
     }
 
+
+    /**
+     * Récupère la liste des utilisateurs du greffe pour un tribunal spécifique.
+     */
+    public function getParquetUsersByTribunal($tribunal_id)
+    {
+        // On récupère les users filtrés
+        $users = User::where('tribunal_id', $tribunal_id)
+            ->whereHas('role', function ($query) {
+                // On filtre par le nom ou le slug du rôle selon votre table 'roles'
+                $query->where('libelle', 'TR-PARQUET');
+            })
+            ->select('id', 'name') // Optimisation : on ne récupère que le nécessaire
+            ->where('active', true)
+            ->get();
+
+        // Retourne une réponse JSON structurée
+        return UtilisateurResource::collection($users);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
