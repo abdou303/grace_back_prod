@@ -145,6 +145,7 @@ Route::prefix('v1')->group(function () {
         Route::put('/requettes/{requette}/change-statut', [RequetteController::class, 'changeStatut']);
         Route::post('/requettes/{requette}', [RequetteController::class, 'confirmRequette']);
         Route::put('/requettes/{requette}/forward', [RequetteController::class, 'forwardRequette']);
+        Route::put('/requettes/{requette}/forward-parquet', [RequetteController::class, 'forwardParquetRequette']);
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
         Route::post('/requettes/reponse-greffe/{requette_id}', [RequetteController::class, 'addReponseGreffeRequette']);
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);

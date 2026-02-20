@@ -68,4 +68,9 @@ class Requette extends Model
 
         return $this->belongsToMany(StatutRequette::class, 'requette_statut_requette')->withTimestamps();
     }
+
+    public function userParquetObjet() // Nommez-la ainsi pour correspondre à votre souhait Angular
+    {
+        return $this->belongsTo(User::class, 'user_parquet');
+    }
 }

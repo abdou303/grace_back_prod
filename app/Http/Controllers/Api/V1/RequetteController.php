@@ -559,6 +559,35 @@ class RequetteController extends Controller
 
         return new RequetteResource($requette);
     }
+
+    public function forwardParquetRequette(Request $request, Requette $requette)
+    {
+        $data = $request->validate([
+
+            'observations' => 'nullable|string',
+            'dossier_id' => 'required|int',
+            'user_id' => 'required|int',
+            'tribunal_id' => 'required|int',
+            'typerequette_id' => 'required|int',
+        ]);
+
+
+        $requette->date_envoi_parquet = now()->format('Y-m-d H:i:s.v');
+        $requette->etat_parquet = "NT";
+        $requette->user_parquet = $request->user_id;
+        $requette->save();
+
+        $id_staut = StatutRequette::where('code', 'TR')->value('id');
+        $requette->statutrequettes()->attach($id_staut);
+
+
+
+
+
+
+
+        return new RequetteResource($requette);
+    }
     /**
      * Display a listing of the resource.
      */
@@ -687,6 +716,7 @@ class RequetteController extends Controller
             'dossier',
             'dossier.detenu',
             'dossier.affaires',
+            'userParquetObjet:id,name',
             'dossier.affaires.tribunal',
             'statutrequettes' => function ($query) {
                 $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
