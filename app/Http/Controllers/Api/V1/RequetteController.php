@@ -564,17 +564,15 @@ class RequetteController extends Controller
     {
         $data = $request->validate([
 
-            'observations' => 'nullable|string',
-            'dossier_id' => 'required|int',
-            'user_id' => 'required|int',
-            'tribunal_id' => 'required|int',
-            'typerequette_id' => 'required|int',
+
+            'parquet_user_id' => 'required|int',
+
         ]);
 
 
         $requette->date_envoi_parquet = now()->format('Y-m-d H:i:s.v');
         $requette->etat_parquet = "NT";
-        $requette->user_parquet = $request->user_id;
+        $requette->user_parquet = $request->parquet_user_id;
         $requette->save();
 
         $id_staut = StatutRequette::where('code', 'TR')->value('id');
