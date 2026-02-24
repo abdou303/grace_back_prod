@@ -66,6 +66,7 @@ class DossierController extends Controller
             'detenu.profession',
             'detenu.nationalite',
             'garants',
+            'userParquetObjet:id,name',
             'garants.province',
             'garants.tribunal',
             'comportement',
@@ -232,6 +233,7 @@ class DossierController extends Controller
         $dossier->prison_id = isset($request->prison) && is_numeric($request->prison)  ? (int) $request->prison : null;
         $dossier->numero_detention =  $request->numerolocal;
         $dossier->etat_greffe =  "NT";
+        $dossier->etat_parquet =  "KO";
         $dossier->date_envoi_greffe =  now()->format('Y-m-d H:i:s.v');
 
 
@@ -372,7 +374,23 @@ class DossierController extends Controller
     }
 
 
+    public function forwardParquetDossier(Request $request, Dossier $dossier)
+    {
+        $data = $request->validate([
 
+
+            'parquet_user_id' => 'required|int',
+
+        ]);
+
+
+        $dossier->date_envoi_parquet = now()->format('Y-m-d H:i:s.v');
+        $dossier->etat_parquet = "NT";
+        $dossier->user_parquet = $request->parquet_user_id;
+        $dossier->save();
+
+        return new DossierResource($dossier);
+    }
     public function storeAntecedent(StoreAntecedentDossierRequest $request)
     {
 

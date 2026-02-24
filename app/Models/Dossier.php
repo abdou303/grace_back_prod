@@ -131,4 +131,9 @@ class Dossier extends Model
 
         return $this->hasMany(Pj::class);
     }
+
+    public function userParquetObjet() // Nommez-la ainsi pour correspondre à votre souhait Angular
+    {
+        return $this->belongsTo(User::class, 'user_parquet');
+    }
 }

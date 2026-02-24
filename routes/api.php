@@ -35,61 +35,7 @@ use Illuminate\Support\Facades\Route;
 
 
 
-/*Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');*/
 
-/*Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
-    Route::apiResource('dossiers', DossierController::class);
-});*/
-
-/*Route::group(['middleware' => ['auth:api']], function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-});
-
-Route::prefix('v1')->group(function () {
-
-    Route::apiResource('villes', VilleController::class);
-    Route::apiResource('cas', CaController::class);
-    Route::apiResource('tribunaux', TribunalController::class);
-    Route::apiResource('prisons', PrisonController::class);
-    Route::apiResource('pays', PaysController::class);
-    Route::apiResource('nationalites', NationaliteController::class);
-    Route::apiResource('professions', ProfessionController::class);
-    Route::apiResource('dossiers', DossierController::class);
-    Route::apiResource('affaires', AffaireController::class);
-    Route::apiResource('typesrequettes', TypeRequetteController::class);
-    Route::apiResource('partenaires', PartenaireController::class);
-    Route::apiResource('requettes', RequetteController::class);
-    Route::apiResource('avis', AvisController::class);
-    Route::apiResource('comportements', ComportementController::class);
-    Route::apiResource('provinces', ProvinceController::class);
-    Route::apiResource('typesdossiers', TypeDossierController::class);
-    Route::apiResource('naturesdossiers', NatureDossierController::class);
-    Route::apiResource('typesmotifsdossiers', TypeMotifDossierController::class);
-    Route::apiResource('objetsdemandes', ObjetDemandeController::class);
-    Route::apiResource('sourcesdemandes', SourceDemandeController::class);
-    Route::get('/requettes/dossier/{dossier_id}', [RequetteController::class, 'getByDossier']);
-    Route::get('/dossiers-tribunaux', [DossierController::class, 'dossiersTr']);
-    Route::get('/dossiers-dapg', [DossierController::class, 'dossiersDapg']);
-    Route::get('/tribunaux/ca/{ca_id}', [TribunalController::class, 'getByCa']);
-    Route::post('/import-dossiers', [DossierImportController::class, 'import']);
-    Route::get('/dossiers/tribunal/{tr_id}', [DossierController::class, 'dossierByTr']);
-    Route::get('/requettes/tribunal/{tr_id}', [RequetteController::class, 'requetteByTr']);
-    Route::get('/requettes-nt/tribunal/{tr_id}', [RequetteController::class, 'requetteNTByTr']);
-    Route::get('/nt-requettes', [RequetteController::class, 'getNTRequettes']);
-    Route::get('/tr-requettes', [RequetteController::class, 'getTRRequettes']);
-    Route::put('/requettes/{requette}/change-statut', [RequetteController::class, 'changeStatut']);
-    Route::put('/requettes/{requette}', [RequetteController::class, 'confirmRequette']);
-    Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
-    Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
-    Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
-    Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
-    Route::get('/dossiers/{id}/pjs', [DossierController::class, 'getPjs']);
-    Route::post('/login', [AuthController::class, 'login']);
-});*/
 
 
 Route::prefix('v1')->group(function () {
@@ -146,6 +92,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/requettes/{requette}', [RequetteController::class, 'confirmRequette']);
         Route::put('/requettes/{requette}/forward', [RequetteController::class, 'forwardRequette']);
         Route::put('/requettes/{requette}/forward-parquet', [RequetteController::class, 'forwardParquetRequette']);
+        Route::put('/dossiers/{dossier}/forward-parquet', [DossierController::class, 'forwardParquetDossier']);
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
         Route::post('/requettes/reponse-greffe/{requette_id}', [RequetteController::class, 'addReponseGreffeRequette']);
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
