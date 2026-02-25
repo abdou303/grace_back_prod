@@ -785,6 +785,113 @@ class DossierController extends Controller
         ], 201);
     }
 
+
+
+    public function terminerParquetDossierTr(UpdateDossierGreffeRequest $request, $dossier_id, OpenBeeService $openBee)
+    {
+        Log::debug('Requête reçue :', $request->all());
+
+        $dossier = Dossier::findOrFail($dossier_id);
+        $detenu = $dossier->detenu;
+
+        if (!$detenu) {
+            return response()->json(['message' => 'Detenu not found'], 404);
+        }
+
+        // 1. Mise à jour et sauvegarde IMMÉDIATE du Détenu
+        /*$detenu->nom = $request->nom;
+        $detenu->prenom = $request->prenom;
+        $detenu->datenaissance = $request->datenaissance;
+        $detenu->nompere = $request->nompere;
+        $detenu->nommere = $request->nommere;
+        $detenu->cin = $request->cin;
+        $detenu->genre = $request->genre;
+        $detenu->nationalite_id = $request->nationalite;
+        $detenu->adresse = $request->adresse ?? null;
+        $detenu->save();*/
+
+        // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
+
+        $dossier->etat_parquet = 'TR'; // Mise à jour immédiate de l'état
+        $dossier->user_id = $request->user_id;
+        $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
+        $dossier->avis_id = $request->avis;
+        $dossier->observations_parquet = $request->observations_parquet;
+
+
+        $dossier->save();
+
+        // 3. Préparation et Stockage TEMPORAIRE des fichiers
+        $filesToProcess = [];
+        $fileMappings = [
+
+            'copie_mp' => 3,
+
+        ];
+
+        foreach ($fileMappings as $fieldName => $typepjId) {
+            if ($request->hasFile($fieldName)) {
+                $files = $request->file($fieldName);
+
+                // Gérer les fichiers multiples (si affaireId est la clé) ou unique
+                $filesArray = is_array($files) ? $files : [null => $files];
+
+                foreach ($filesArray as $affaireIdKey => $file) {
+                    if ($file) {
+                        // Stocker le fichier dans un emplacement temporaire de Laravel
+                        $path = $file->store('temp/openbee_uploads');
+                        $filesToProcess[] = [
+                            'path' => $path, // Chemin d'accès temporaire
+                            'typepjId' => $typepjId,
+                            'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                            'fieldName' => $fieldName,
+                            'originalName' => $file->getClientOriginalName(),
+                        ];
+                    }
+                }
+            }
+        }
+        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+        if ($request->has('has_non_recours')) {
+            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+
+                $affaire = $dossier->affaires()
+                    ->where('affaires.id', $affaireId)
+                    ->first();
+
+                if (!$affaire) {
+                    continue;
+                }
+
+                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+
+                $affaire->has_non_recours = $hasNonRecoursBool;
+
+                if (!$hasNonRecoursBool) {
+                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                } else {
+                    $affaire->numero_cassation = null;
+                    $affaire->numero_envoi_cassation = null;
+                    $affaire->date_envoi_cassation = null;
+                }
+
+                $affaire->save();
+            }
+        }
+        // 4. Dispatch du Job pour le traitement en arrière-plan
+        if (!empty($filesToProcess)) {
+            // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess)->onQueue('openbee_uploads');
+        }
+
+        // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
+        return response()->json([
+            'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
+            'data' => $dossier,
+        ], 201);
+    }
     /******************************************************** */
     /**
      * Display the specified resource.
