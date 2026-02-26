@@ -80,6 +80,7 @@ class DossierController extends Controller
             'typemotifdossier',
             'typedossier',
             'pjs',
+            'avis',
             'prison',
             'objetdemande',
             'sourcedemande',
