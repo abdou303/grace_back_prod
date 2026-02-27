@@ -181,7 +181,143 @@ class DossierController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+
+
+
     public function store(StoreDossierRequest $request, OpenBeeService $openBee)
+    {
+        try {
+            return DB::transaction(function () use ($request, $openBee) {
+
+                // 1. Création du Détenu
+                $detenu = new Detenu();
+                $detenu->fill([
+                    'nom' => $request->nom,
+                    'prenom' => $request->prenom,
+                    'datenaissance' => $request->datenaissance,
+                    'nompere' => $request->nompere,
+                    'nommere' => $request->nommere,
+                    'cin' => $request->cin,
+                    'genre' => $request->genre,
+                    'nationalite_id' => $request->nationalite,
+                    'adresse' => $request->adresse ?? null,
+                ]);
+                $detenu->save();
+
+                // 2. Génération du Numéro de Dossier (Logique Robuste)
+                $currentYear = now()->format('Y');
+                $prefix = 'D-' . $currentYear;
+
+                // On cherche le dernier numéro commençant par "D-2026"
+                $lastRecord = Dossier::where('numero', 'like', $prefix . '%')
+                    ->orderBy('numero', 'desc')
+                    ->lockForUpdate() // Verrouille la ligne pour éviter les doublons en cas d'accès simultanés
+                    ->first();
+
+                if ($lastRecord) {
+                    // On extrait la partie numérique après "D-2026" (index 6)
+                    $lastSequence = substr($lastRecord->numero, 6);
+                    $lastNumber = intval($lastSequence);
+                } else {
+                    $lastNumber = 0;
+                }
+
+                $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+                $numero_dossier = $prefix . $newNumber;
+
+                // 3. Création du Dossier
+                $dossier = new Dossier();
+                $dossier->numero = $numero_dossier;
+                $dossier->typedossier_id = $request->typedossier;
+                $dossier->naturedossiers_id = $request->naturedossier;
+                $dossier->sourcedemande_id = $request->sourcedemande;
+                $dossier->autre_source = $request->autre_source;
+                $dossier->etat = 'NT';
+                $dossier->originedossier = 'D';
+                $dossier->objetdemande_id = is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
+                $dossier->user_id = $request->user_id;
+                $dossier->user_tribunal_id = $request->tribunal_user_id;
+                $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
+                $dossier->numeromp = $request->numeromp;
+                $dossier->detenu_id = $detenu->id;
+                $dossier->prison_id = is_numeric($request->prison) ? (int) $request->prison : null;
+                $dossier->numero_detention = $request->numerolocal;
+                $dossier->etat_greffe = "NT";
+                $dossier->etat_parquet = "KO";
+                $dossier->date_envoi_greffe = now();
+
+                $dossier->save();
+
+                // 4. Gestion des Pièces Jointes (PJ)
+                $fileMappings = [
+                    'copie_decision' => 5,
+                    'copie_cin' => 4,
+                    'copie_mp' => 3,
+                    'copie_non_recours' => 2,
+                    'copie_social' => 1,
+                ];
+
+                $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
+
+                foreach ($fileMappings as $fieldName => $typepjId) {
+                    if ($request->hasFile($fieldName)) {
+                        $file = $request->file($fieldName);
+                        $filename = $numero_dossier . '_' . $fieldName . '.' . $file->getClientOriginalExtension();
+                        $path = "OPENBEE/" . $filename;
+
+                        $openbeeUrl = null;
+                        try {
+                            $result = $openBee->upload($file, $filename, [
+                                'title'       => $filename,
+                                'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج',
+                                'path'        => config('openbee.path'),
+                            ]);
+                            $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
+                        } catch (\Exception $e) {
+                            Log::error("Erreur OpenBee ($fieldName): " . $e->getMessage());
+                        }
+
+                        $pj = new Pj();
+                        $pj->contenu = $path;
+                        $pj->openbee_url = $openbeeUrl;
+                        $pj->dossier_id = $dossier->id;
+                        $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
+                        $pj->typepj_id = $typepjId;
+                        $pj->save();
+                    }
+                }
+
+                // 5. Gestion des Affaires
+                if ($request->has('affaires')) {
+                    foreach ($request->affaires as $affaireData) {
+                        $affaire = new Affaire();
+                        $affaire->numero = $affaireData['numero'];
+                        $affaire->code = $affaireData['code'];
+                        $affaire->annee = $affaireData['annee'];
+                        $affaire->numeroaffaire = $affaireData['numero'] . '/' . $affaireData['code'] . '/' . $affaireData['annee'];
+                        $affaire->tribunal_id = $affaireData['tribunal'];
+                        $affaire->datejujement = $affaireData['datejujement'];
+                        $affaire->conenujugement = $affaireData['conenujugement'];
+                        $affaire->save();
+
+                        $dossier->affaires()->attach($affaire->id);
+                    }
+                }
+
+                return response()->json([
+                    'message' => 'تم تسجيل الطلب بنجاح',
+                    'data' => $dossier,
+                ], 201);
+            });
+        } catch (\Exception $e) {
+            Log::error("Erreur globale store dossier: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de l\'enregistrement.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    /*   public function store(StoreDossierRequest $request, OpenBeeService $openBee)
     {
 
 
@@ -328,44 +464,6 @@ class DossierController extends Controller
                 ];
                 // Fetch all TypePj records and create an associative array of id => label
                 $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
-
-                // foreach (['copie_decision' => 5, 'copie_non_recours' => 2] as $fieldName => $typepjId) {
-                /* foreach ($fileMappings as $fieldName => $typepjId) {
-                    if (isset($affaireData[$fieldName]) && $affaireData[$fieldName] instanceof \Illuminate\Http\UploadedFile) {
-                        $file = $affaireData[$fieldName];
-
-                        // Generate a unique filename
-                        $filename = $dossier->numero . "_" . $affaire->id . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
-                        $path = "OPENBEE/" . $filename;
-                        // Save the file in storage
-                        //$filePath = $file->storeAs('public/uploads', $filename);
-                        try {
-                            //$openBee->deleteIfExists($filename);
-                            $result = $openBee->upload($file, $filename, [
-                                'title'       => $filename,
-                                'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
-                                'path'        => config('openbee.path'),
-                            ]);
-                            $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
-                        } catch (\Exception $e) {
-                            \Log::error("Erreur d'upload Open Bee (sans affaire): " . $e->getMessage());
-                            $openbeeUrl = null;
-                        }
-                        // Insert into Pj table with affaire_id
-                        $pj = new Pj();
-                        $pj->contenu = $path;
-                        $pj->dossier_id = $dossier->id;
-                        $pj->affaire_id = $affaire->id; // Assign correct affaire_id
-                        $pj->typepj_id = $typepjId;
-                        $pj->openbee_url = $openbeeUrl;
-
-                        //$pj->observation = ($typepjId == 5) ? 'Copie Decision' : 'Copie Non Recours';
-                        $pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
-                        $pj->save();
-                    }
-
-                }*/
-                //UploadDossierPJsJob::dispatch($fileMappings, $affaireData, $dossier, $affaire);
             }
         }
         return response()->json([
@@ -373,7 +471,7 @@ class DossierController extends Controller
             'data' => $dossier,
         ], 201);
     }
-
+*/
 
     public function forwardParquetDossier(Request $request, Dossier $dossier)
     {

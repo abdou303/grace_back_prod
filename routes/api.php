@@ -98,7 +98,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
         Route::post('/dossiers/terminer-tr-greffe/{dossier_id}', [DossierController::class, 'terminerGreffeDossierTr']);
         Route::post('/dossiers/terminer-tr-parquet/{dossier_id}', [DossierController::class, 'terminerParquetDossierTr']);
-
         Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
         Route::put('/antecedent-dossiers-requette/{requette_id}', [RequetteController::class, 'storeAntecedentRequette']);
         Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
