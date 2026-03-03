@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use App\Services\OpenBeeService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class RequetteController extends Controller
 {
@@ -427,30 +428,36 @@ class RequetteController extends Controller
     }
 
 
-    public function confirmRequette(Request $request, Requette $requette)
+    /* public function confirmRequette(Request $request, Requette $requette)
     {
+        $messages = [
+            // Utilisez 'required' au lieu de 'required_if' ici
+            'copie_demande.required' => "المرجو رفع الطلب",
+            'copie_demande.mimes' => "الملف يجب أن يكون بصيغة PDF",
+            'copie_demande.max' => "الملف يجب أن لا يتعدى 2 ميغابايت",
 
+            // Optionnel : si vous voulez être sûr de couvrir tous les cas
+            'copie_demande.required_if' => "المرجو رفع الطلب",
+        ];
 
         $data = $request->validate([
             'date' => 'nullable',
             'observations' => 'nullable|string',
+            'categorie' => 'required|string',
             'dossier_id' => 'required|int',
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
-            'copie_demande' => 'nullable|file|mimes:pdf|max:2048', // Validation du fichier
-        ]);
+            // 'copie_demande' => 'nullable|file|mimes:pdf|max:2048', // Validation du fichier
+            'copie_demande' => [
+                Rule::requiredIf($request->categorie === 'CAT-1'),
+                'file',
+                'mimes:pdf',
+                'max:2048'
+            ],
+        ], $messages);
 
-        //Log::debug('************ Requête reçue (forwardRequette) :*******************', $request->all());
 
-        /*
-        $currentYear = now()->format('Y');
-        $lastRecord = Requette::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
-
-        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0; // Adjusted substring index
-        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
-        $numero = 'R-' . $currentYear . $newNumber;
-        */
         $currentYear = now()->format('Y');
 
         // Find the last numero starting with the current year
@@ -527,6 +534,111 @@ class RequetteController extends Controller
         }
 
         return new RequetteResource($requette);
+    }*/
+
+
+    public function confirmRequette(Request $request, Requette $requette)
+    {
+        $data = $request->validate([
+            'date' => 'nullable',
+            'observations' => 'nullable|string',
+            'dossier_id' => 'required|int',
+            'user_id' => 'required|int',
+            'tribunal_id' => 'required|int',
+            'typerequette_id' => 'required|int',
+            'copie_demande' => 'nullable|file|mimes:pdf|max:2048',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($request, $requette, $data) {
+
+                // 1. Génération du numéro avec verrouillage (Lock)
+                $currentYear = now()->format('Y');
+                $prefix = 'R-' . $currentYear;
+
+                // lockForUpdate() empêche un autre utilisateur de générer le même numéro au même instant
+                $lastRecord = Requette::where('numero', 'like', $prefix . '%')
+                    ->orderBy('numero', 'desc')
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($lastRecord) {
+                    // Extraction du numéro après "R-2026" (index 6)
+                    $lastNumber = intval(substr($lastRecord->numero, 6));
+                } else {
+                    $lastNumber = 0;
+                }
+
+                $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+                $numero = $prefix . $newNumber;
+
+                // 2. Mise à jour de la Requête
+                $requette->fill($data);
+                $requette->numero = $numero;
+                $requette->etat = "TR";
+                $requette->etat_greffe = "KO";
+                $requette->etat_parquet = "KO";
+                $requette->save();
+
+                // 3. Mise à jour du Dossier lié
+                // Il est préférable d'utiliser le modèle directement
+                $requette->dossier()->update([
+                    'etat' => 'NT',
+                    'tr_tribunal' => 'NT',
+                    'user_tribunal_id' => $request->tribunal_id,
+                    'categorie' => $requette->typerequette->cat ?? null
+                ]);
+
+                // 4. Attachement du statut initial
+                $id_statut = StatutRequette::where('code', 'KO')->value('id');
+                if ($id_statut) {
+                    $requette->statutrequettes()->attach($id_statut);
+                }
+
+                // 5. Préparation des fichiers pour le Job
+                $filesToProcess = [];
+                $fileMappings = [
+                    'copie_demande' => 7,
+                ];
+
+                foreach ($fileMappings as $fieldName => $typepjId) {
+                    if ($request->hasFile($fieldName)) {
+                        $files = $request->file($fieldName);
+                        $filesArray = is_array($files) ? $files : [null => $files];
+
+                        foreach ($filesArray as $affaireIdKey => $file) {
+                            if ($file) {
+                                // Stockage temporaire pour le Job
+                                $tempPath = $file->store('temp/openbee_uploads');
+
+                                $filesToProcess[] = [
+                                    'path' => $tempPath,
+                                    'typepjId' => $typepjId,
+                                    'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                                    'fieldName' => $fieldName,
+                                    'originalName' => $file->getClientOriginalName(),
+                                    'context_requette_id' => $requette->id,
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                // 6. Dispatch du Job
+                if (!empty($filesToProcess)) {
+                    UploadDossierPJsJob::dispatch($request->dossier_id, $filesToProcess)
+                        ->onQueue('openbee_uploads');
+                }
+
+                return new RequetteResource($requette);
+            });
+        } catch (\Exception $e) {
+            Log::error("Erreur confirmation requête ID {$requette->id}: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Erreur lors de la confirmation.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function forwardRequette(Request $request, Requette $requette)
@@ -741,8 +853,9 @@ class RequetteController extends Controller
 
         $requettes = Requette::with([
             'dossier',
-            'userParquetObjet:id,name',
             'dossier.detenu',
+            'userParquetObjet:id,name',
+
             'dossier.affaires',
             'dossier.affaires.tribunal',
             'statutrequettes' => function ($query) {
@@ -840,19 +953,11 @@ class RequetteController extends Controller
      */
     public function destroy($id)
     {
-        //
-
-
         $user = Auth::user();
 
-
-
-        // Vérifier si l'utilisateur est connecté et remplit les conditions
-        // Note : Ajustez les noms des colonnes 'role' et 'group' selon votre table users
+        // Vérification des permissions
         if (!$user || $user->role_id != 3 || $user->groupe_id != 1) {
-            return response()->json([
-                'message' => 'غير مسموح لك بالقيام بهذا الإجراء' // "Non autorisé" en arabe
-            ], 403);
+            return response()->json(['message' => 'غير مسموح لك بالقيام بهذا الإجراء'], 403);
         }
 
         $requette = Requette::find($id);
@@ -861,9 +966,23 @@ class RequetteController extends Controller
             return response()->json(['message' => 'الطلب غير موجود'], 404);
         }
 
-        $requette->delete();
+        try {
+            return DB::transaction(function () use ($requette) {
+                // 1. Supprimer les relations dans la table pivot (statuts)
+                $requette->statutrequettes()->detach();
 
-        return response()->json(['message' => 'تم الحذف بنجاح'], 200);
+                // 2. Supprimer les PJs liées à cette requête
+                // Note: Si vous avez des fichiers physiques, il faudrait aussi les supprimer du stockage ici
+                $requette->pjs()->delete();
+
+                // 3. Supprimer la requête
+                $requette->delete();
+
+                return response()->json(['message' => 'تم الحذف بنجاح'], 200);
+            });
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'خطأ أثناء الحذف', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function storeAntecedentRequette(Request $request, $requette_id)

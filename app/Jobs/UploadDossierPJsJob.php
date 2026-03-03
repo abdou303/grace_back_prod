@@ -1,4 +1,136 @@
 <?php
+
+namespace App\Jobs;
+
+use App\Models\Dossier;
+use App\Models\Pj;
+use App\Models\Requette;
+use App\Models\TypePj;
+use App\Services\OpenBeeService;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
+
+class UploadDossierPJsJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    // On augmente à 5 tentatives pour être résilient face aux Deadlocks OpenBee
+    public $tries = 5;
+
+    // Délais progressifs entre les tentatives (en secondes)
+    public function backoff(): array
+    {
+        return [5, 15, 30, 60];
+    }
+
+    protected $dossierId;
+    protected $filesToProcess;
+
+    public function __construct(int $dossierId, array $filesToProcess)
+    {
+        $this->dossierId = $dossierId;
+        $this->filesToProcess = $filesToProcess;
+    }
+
+    public function handle(OpenBeeService $openBee)
+    {
+        $dossier = Dossier::findOrFail($this->dossierId);
+        $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
+
+        foreach ($this->filesToProcess as $fileData) {
+            $tempStoragePath = $fileData['path'];
+
+            // Vérifier si le fichier existe encore (évite les erreurs au retry)
+            if (!Storage::exists($tempStoragePath)) {
+                Log::warning("Fichier source absent pour le Job Dossier ID: {$this->dossierId}. Le fichier a peut-être déjà été traité.");
+                continue;
+            }
+
+            $tempFilePath = null;
+
+            try {
+                // 1. Reconstitution du fichier
+                $fileContent = Storage::get($tempStoragePath);
+                $tempFilePath = tempnam(sys_get_temp_dir(), 'openbee');
+                file_put_contents($tempFilePath, $fileContent);
+
+                $uploadedFile = new UploadedFile(
+                    $tempFilePath,
+                    $fileData['originalName'],
+                    mime_content_type($tempFilePath) ?: 'application/octet-stream',
+                    null,
+                    true
+                );
+
+                // 2. Logique de contexte (Requête ou Dossier)
+                $contextRequetteId = $fileData['context_requette_id'] ?? null;
+                $requette = $contextRequetteId ? Requette::find($contextRequetteId) : null;
+                $typepjId = $fileData['typepjId'];
+
+                if ($requette) {
+                    $insertedObservation = ($requette->typerequette->cat == "CAT-1")
+                        ? ($typepjLabels[$typepjId] ?? 'أخرى')
+                        : ($requette->typerequette->libelle ?? 'أخرى');
+                    $baseNumero = $requette->numero;
+                } else {
+                    $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
+                    $baseNumero = $dossier->numero;
+                }
+
+                // 3. Préparation du nom de fichier
+                $extension = pathinfo($fileData['originalName'], PATHINFO_EXTENSION);
+                $affairePart = $fileData['affaireId'] ? "_" . $fileData['affaireId'] : "";
+                $filename = $baseNumero . "_" . $dossier->id . $affairePart . "_" . $fileData['fieldName'] . '.' . $extension;
+                $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
+
+                // 4. Action OpenBee (La méthode upload() du service gère déjà son propre retry interne)
+                $openBee->deleteIfExists($filenameSansExtension);
+
+                $result = $openBee->upload($uploadedFile, $filename, [
+                    'title'       => $filename,
+                    'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
+                    'path'        => config('openbee.path'),
+                ]);
+
+                $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
+
+                // 5. Enregistrement en base de données (firstOrNew pour éviter les doublons au retry)
+                $pj = Pj::firstOrNew([
+                    'dossier_id' => $dossier->id,
+                    'affaire_id' => $fileData['affaireId'],
+                    'typepj_id'  => $typepjId,
+                    'requette_id' => $contextRequetteId,
+                ]);
+
+                $pj->contenu = "OPENBEE/" . $filename;
+                $pj->openbee_url = $openbeeUrl;
+                $pj->observation = $insertedObservation;
+                $pj->save();
+
+                // 6. Succès : On peut supprimer le fichier source du Storage Laravel
+                Storage::delete($tempStoragePath);
+            } catch (\Exception $e) {
+                Log::error("Échec dans UploadJob (Dossier: {$this->dossierId}): " . $e->getMessage());
+
+                // On jette l'exception pour que Laravel déclenche le système de retry/backoff
+                throw $e;
+            } finally {
+                // Toujours supprimer le fichier système temporaire (php tempnam)
+                if ($tempFilePath && file_exists($tempFilePath)) {
+                    @unlink($tempFilePath);
+                }
+            }
+        }
+    }
+}
+/*
+
 // App/Jobs/UploadDossierPJsJob.php
 
 namespace App\Jobs;
@@ -137,3 +269,4 @@ class UploadDossierPJsJob implements ShouldQueue
         }
     }
 }
+*/

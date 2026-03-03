@@ -1114,37 +1114,56 @@ class DossierController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+
     public function destroy($id)
     {
-        //
-
-
-        //
-
-
         $user = Auth::user();
 
-
-
-        // Vérifier si l'utilisateur est connecté et remplit les conditions
-        // Note : Ajustez les noms des colonnes 'role' et 'group' selon votre table users
+        // 1. Vérification des permissions
         if (!$user || $user->role_id != 3 || $user->groupe_id != 1) {
             return response()->json([
-                'message' => 'غير مسموح لك بالقيام بهذا الإجراء' // "Non autorisé" en arabe
+                'message' => 'غير مسموح لك بالقيام بهذا الإجراء'
             ], 403);
         }
 
-        $requette = Dossier::find($id);
+        // 2. Récupération du dossier
+        $dossier = Dossier::find($id);
 
-        if (!$requette) {
-            return response()->json(['message' => 'الطلب غير موجود'], 404);
+        if (!$dossier) {
+            return response()->json(['message' => 'الملف غير موجود'], 404);
         }
 
-        $requette->delete();
+        try {
+            return DB::transaction(function () use ($dossier) {
 
-        return response()->json(['message' => 'تم الحذف بنجاح'], 200);
+                // 3. Nettoyage des relations qui bloquent la suppression
+
+                // Supprimer les Pièces Jointes (PJs) liées
+                // Si vous avez une colonne requette_id dans PJs qui pointe vers ce dossier/requete
+                $dossier->pjs()->delete();
+
+                // Détacher les affaires (si c'est une relation Many-to-Many via table pivot)
+                if (method_exists($dossier, 'affaires')) {
+                    $dossier->affaires()->detach();
+                }
+
+                // Supprimer les requêtes associées au dossier (si applicable)
+                if (method_exists($dossier, 'requettes')) {
+                    $dossier->requettes()->delete();
+                }
+
+                // 4. Suppression finale du dossier
+                $dossier->delete();
+
+                return response()->json(['message' => 'تم الحذف بنجاح'], 200);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'حدث خطأ أثناء الحذف',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-
 
     public function getRegistreTribunal($id_tr)
     {
