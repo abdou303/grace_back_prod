@@ -242,7 +242,7 @@ class DossierController extends Controller
                 $dossier->detenu_id = $detenu->id;
                 $dossier->prison_id = is_numeric($request->prison) ? (int) $request->prison : null;
                 $dossier->numero_detention = $request->numerolocal;
-                $dossier->etat_greffe = "NT";
+                $dossier->etat_greffe = "KO";
                 $dossier->etat_parquet = "KO";
                 $dossier->date_envoi_greffe = now();
 
@@ -1358,5 +1358,14 @@ class DossierController extends Controller
             'count' => $query->count(),
             'data' => $query->limit(10)->get()
         ]);
+    }
+
+    public function forwardDossier(Request $request, Dossier $dossier)
+    {
+        $dossier->date_envoi_greffe = now()->format('Y-m-d H:i:s.v');
+        $dossier->etat_greffe = "NT";
+        $dossier->save();
+
+        return new DossierResource($dossier);
     }
 }
