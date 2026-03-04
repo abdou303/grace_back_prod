@@ -31,6 +31,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'prenom' => $row['prenom'],
                         'nompere' => $row['nompere'],
                         'nommere' => $row['nommere'],
+                        'adresse' => $row['adresse'],
                         'cin' => $row['cin'],
                         'datenaissance' => $row['datenaissance'],
                         'numero_national_detenu' => $row['numero_detention_national'],

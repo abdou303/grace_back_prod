@@ -20,7 +20,8 @@ class Detenu extends Model
         'datenaissance',
         'genre',
         'nationalite_id',
-        'numero_national_detenu'
+        'numero_national_detenu',
+        'adresse'
 
     ];
 

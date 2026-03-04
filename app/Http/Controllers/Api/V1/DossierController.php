@@ -1040,6 +1040,7 @@ class DossierController extends Controller
             'detenu.prenom' => 'nullable|string',
             'detenu.nompere' => 'nullable|string',
             'detenu.nommere' => 'nullable|string',
+            'detenu.adresse' => 'nullable|string',
             'detenu.cin' => 'nullable|string',
             'detenu.genre' => 'nullable|string',
             'detenu.datenaissance' => 'nullable|string',

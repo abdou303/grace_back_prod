@@ -155,12 +155,16 @@ class RequetteController extends Controller
         // 1. Logique métier immédiate (Base de données)
         $requette = Requette::findOrFail($requette_id);
         $dossier = $requette->dossier;
+        $detenu = $dossier->detenu;
 
         if (!$dossier) {
             return response()->json(['message' => 'Dossier not found'], 404);
         }
 
         $dossier->numeromp = $request->numeromp;
+        $detenu->adresse = $request->adresse;
+
+        $detenu->save();
         $dossier->save();
 
         // 2. Préparation et Stockage TEMPORAIRE des fichiers (Logique similaire à terminerDossierTr)
@@ -539,7 +543,7 @@ class RequetteController extends Controller
 
     public function confirmRequette(Request $request, Requette $requette)
     {
-        $data = $request->validate([
+        /*$data = $request->validate([
             'date' => 'nullable',
             'observations' => 'nullable|string',
             'dossier_id' => 'required|int',
@@ -547,7 +551,34 @@ class RequetteController extends Controller
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
             'copie_demande' => 'nullable|file|mimes:pdf|max:2048',
-        ]);
+        ]);*/
+
+        $messages = [
+            // Utilisez 'required' au lieu de 'required_if' ici
+            'copie_demande.required' => "المرجو رفع الطلب",
+            'copie_demande.mimes' => "الملف يجب أن يكون بصيغة PDF",
+            'copie_demande.max' => "الملف يجب أن لا يتعدى 2 ميغابايت",
+
+            // Optionnel : si vous voulez être sûr de couvrir tous les cas
+            'copie_demande.required_if' => "المرجو رفع الطلب",
+        ];
+
+        $data = $request->validate([
+            'date' => 'nullable',
+            'observations' => 'nullable|string',
+            'categorie' => 'required|string',
+            'dossier_id' => 'required|int',
+            'user_id' => 'required|int',
+            'tribunal_id' => 'required|int',
+            'typerequette_id' => 'required|int',
+            // 'copie_demande' => 'nullable|file|mimes:pdf|max:2048', // Validation du fichier
+            'copie_demande' => [
+                Rule::requiredIf($request->categorie === 'CAT-1'),
+                'file',
+                'mimes:pdf',
+                'max:2048'
+            ],
+        ], $messages);
 
         try {
             return DB::transaction(function () use ($request, $requette, $data) {
