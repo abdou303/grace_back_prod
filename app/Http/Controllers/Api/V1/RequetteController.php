@@ -855,6 +855,8 @@ class RequetteController extends Controller
 
         $requettes = Requette::with([
             'dossier',
+            'dossier.pjs',
+            'dossier.pjs.affaire',
             'dossier.detenu',
             'dossier.affaires',
             'userParquetObjet:id,name',
@@ -864,6 +866,7 @@ class RequetteController extends Controller
             },
             'dossier.naturedossier',
             'dossier.typedossier',
+            'dossier.objetdemande',
             'dossier.detenu.nationalite',
             'dossier.prison',
             'dossier.garants',

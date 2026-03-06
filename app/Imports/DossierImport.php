@@ -10,10 +10,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB; // Important pour la sécurité des données
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Carbon\Carbon;
 
 class DossierImport implements ToCollection, WithHeadingRow
 {
-    public function collection(Collection $rows)
+    /*  public function collection(Collection $rows)
     {
         foreach ($rows as $row) {
             // Utilisation d'une transaction pour garantir l'intégrité des données
@@ -118,7 +119,112 @@ class DossierImport implements ToCollection, WithHeadingRow
             });
         }
     }
+*/
+    public function collection(Collection $rows)
+    {
+        foreach ($rows as $row) {
+            // On ignore les lignes vides
+            if (empty($row['numero_dossier']) && empty($row['nom'])) continue;
 
+            DB::transaction(function () use ($row) {
+
+                $existingDossier = Dossier::where('numero_dapg', $row['numero_dossier'])->first();
+
+                if ($existingDossier) {
+                    // Si le dossier existe, on ajoute seulement la requête
+                    $this->createRequette($existingDossier->id, $row);
+                } else {
+                    // 1. Création du Détenu (avec transformation de la date de naissance)
+                    $detenu = Detenu::create([
+                        'nom'                    => $row['nom'],
+                        'prenom'                 => $row['prenom'],
+                        'nompere'                => $row['nompere'],
+                        'nommere'                => $row['nommere'],
+                        'adresse'                => $row['adresse'],
+                        'cin'                    => $row['cin'],
+                        'datenaissance'          => $this->transformDate($row['datenaissance']),
+                        'numero_national_detenu' => $row['numero_detention_national'],
+                        'nationalite_id'         => $row['nationality'] ?? 100,
+                    ]);
+
+                    // 2. Préparation des données du Dossier
+                    $dossierData = [
+                        'numero_dapg'         => $row['numero_dossier'],
+                        'date_sortie'         => $this->transformDate($row['datefin_peine']),
+                        'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
+                        'typedossier_id'      => $row['typedossier_id'],
+                        'naturedossiers_id'   => $row['naturedossiers_id'],
+                        'detenu_id'           => $detenu->id,
+                        'user_id'             => $row['user_id'],
+                        'originedossier'      => 'R'
+                    ];
+
+                    // Logique spécifique type dossier
+                    if ($row['typedossier_id'] == 1) {
+                        if ($row['naturedossiers_id'] == 1) {
+                            $dossierData['prison_id'] = $row['prison_id'];
+                            $dossierData['numero_detention'] = $row['numero_detention_local'];
+                        } else {
+                            $dossierData['objetdemande_id'] = $row['objetdemande_id'];
+                        }
+                    } elseif ($row['typedossier_id'] == 2) {
+                        $dossierData['prison_id'] = $row['prison_id'];
+                        $dossierData['numero_detention'] = $row['numero_detention_local'];
+                    }
+
+                    $dossier = Dossier::create($dossierData);
+
+                    // 3. Traitement des Affaires (Split et formatage)
+                    $affaireTribunaux    = !empty($row['tribunalaffaire']) ? explode(':', $row['tribunalaffaire']) : [];
+                    $affaireNumerosBruts = !empty($row['numeroaffaire']) ? explode(':', $row['numeroaffaire']) : [];
+                    $affaireDates        = !empty($row['datejujement']) ? explode(':', $row['datejujement']) : [];
+                    $affaireContenus     = !empty($row['conenujugement']) ? explode(':', $row['conenujugement']) : [];
+
+                    $affaireIds = [];
+                    foreach ($affaireNumerosBruts as $index => $numeroComplet) {
+                        $numeroComplet = trim($numeroComplet);
+                        if (empty($numeroComplet)) continue;
+
+                        // SPLIT DU NUMERO D'AFFAIRE (Ex: 2025/2601/123)
+                        $segments = explode('/', $numeroComplet);
+                        $annee = null;
+                        $code = null;
+                        $numero = null;
+
+                        if (count($segments) === 3) {
+                            $annee = trim($segments[0]);
+                            $code  = trim($segments[1]);
+                            $numero = trim($segments[2]);
+                        } elseif (count($segments) === 2) {
+                            $annee = trim($segments[0]);
+                            $numero = trim($segments[1]);
+                        } else {
+                            $numero = $numeroComplet; // Par défaut si format inconnu
+                        }
+
+                        $affaire = Affaire::create([
+                            'annee'          => $annee,
+                            'code'           => $code,
+                            'numero'         => $numero,
+                            'datejujement'   => $this->transformDate($affaireDates[$index] ?? null),
+                            'tribunal_id'    => trim($affaireTribunaux[$index] ?? 119),
+                            'conenujugement' => trim($affaireContenus[$index] ?? null),
+                            'numeroaffaire'  => $numeroComplet,
+                        ]);
+
+                        $affaireIds[] = $affaire->id;
+                    }
+
+                    if (!empty($affaireIds)) {
+                        $dossier->affaires()->sync($affaireIds);
+                    }
+
+                    // 4. Création de la requête initiale
+                    $this->createRequette($dossier->id, $row);
+                }
+            });
+        }
+    }
     /**
      * Fonction Helper pour éviter la répétition de création de requête
      */
@@ -133,5 +239,33 @@ class DossierImport implements ToCollection, WithHeadingRow
             'tribunal_id' => $row['tribunal_requette'],
             'dossier_id' => $dossierId
         ]);
+    }
+
+
+    /**
+     * Gère les années (1950 -> 1950-01-01) et les valeurs 0
+     */
+    private function transformDate($value)
+    {
+        $value = trim($value);
+        if (empty($value) || $value == "0") {
+            return null;
+        }
+
+        // Si c'est juste une année (4 chiffres)
+        if (is_numeric($value) && strlen((string)$value) === 4) {
+            return $value . "-01-01";
+        }
+
+        // Si c'est un format numérique Excel
+        if (is_numeric($value) && $value > 10000) {
+            return Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value))->format('Y-m-d');
+        }
+
+        try {
+            return Carbon::parse($value)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }
