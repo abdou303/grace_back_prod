@@ -43,6 +43,18 @@ class UtilisateurController extends Controller
         return UtilisateurResource::collection($users);
     }
 
+    public function getUsersByTribunal($tribunal_id)
+    {
+        // On récupère les users filtrés
+        $users = User::with(['role', 'groupe', 'tribunal'])
+            ->where('tribunal_id', $tribunal_id)
+            ->where('active', true)
+            ->get();
+
+        // Retourne une réponse JSON structurée
+        return UtilisateurResource::collection($users);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
