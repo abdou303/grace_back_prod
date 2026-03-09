@@ -102,6 +102,49 @@ class UtilisateurController extends Controller
         ], 201);
     }
 
+
+    public function storeTrUser(Request $request)
+    {
+        //
+        //Log::debug('Requête reçue **** users *** :', $request->all());
+
+
+        // 1. Validation des données
+        $validator = Validator::make($request->all(), [
+            'name'      => 'required|string|max:255',
+            // 'email'     => 'required|string|email|max:255|unique:users',
+            'username'  => 'required|string|max:255|unique:users',
+            'role_id'   => 'required|exists:roles,id',
+            'tribunal_id' => 'nullable|exists:tribunaux,id',
+
+
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // 2. Insertion avec valeurs forcées
+        $user = User::create([
+            'name'           => $request->name,
+            'email'          => $request->username . "@example.com",
+            'username'       => $request->username,
+            'role_id'        => $request->role_id,
+            'groupe_id'      => 3,
+            'tribunal_id'    => $request->tribunal_id,
+            // 'partenaire_id'  => $request->partenaire_id,
+
+            // --- VOS CONDITIONS SPÉCIFIQUES ---
+            'password'             => Hash::make('password'), // Valeur fixe hachée
+            'must_change_password' => true,                  // Forcé à true (bit 1 en SQL)
+        ]);
+
+        return response()->json([
+            'message' => 'Utilisateur créé avec succès',
+            'user'    => $user->load(['role', 'groupe']) // On renvoie l'user avec ses relations
+        ], 201);
+    }
+
     /**
      * Display the specified resource.
      */
@@ -147,8 +190,68 @@ class UtilisateurController extends Controller
 
         // 3. Gestion optionnelle du mot de passe
         // Si vous décidez d'envoyer un nouveau mot de passe depuis Angular
-        if ($request->filled('password')) {
+        /*if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
+            $data['must_change_password'] = true;
+        }*/
+
+
+        if ($request->must_change_password == true  || $request->must_change_password == 1 || $request->must_change_password == '1') {
+            $data['password'] = Hash::make('password');
+            $data['must_change_password'] = true;
+        }
+
+        // 4. Mise à jour dans SQL Server
+        $user->update($data);
+
+        return response()->json([
+            'message' => 'Utilisateur mis à jour avec succès',
+            'user'    => $user->load(['role', 'groupe', 'tribunal'])
+        ]);
+    }
+
+    public function updateTrUser(Request $request, string $id)
+    {
+        //
+
+        $user = User::findOrFail($id);
+
+        // 1. Validation
+        $validator = Validator::make($request->all(), [
+            'name'      => 'required|string|max:255',
+            // On ignore l'ID actuel pour la règle unique
+            // 'email'     => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'username'  => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'role_id'   => 'required|exists:roles,id',
+            //  'groupe_id' => 'required|exists:groupes,id',
+            'tribunal_id' => 'nullable|exists:tribunaux,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // 2. Préparation des données
+        $data = [
+            'name'          => $request->name,
+            'email'         => $request->username . "@example.com",
+            'username'      => $request->username,
+            'role_id'       => $request->role_id,
+            'groupe_id'     => 3,
+            'tribunal_id'   => $request->tribunal_id,
+            //    'partenaire_id' => $request->partenaire_id,
+        ];
+
+        // 3. Gestion optionnelle du mot de passe
+        // Si vous décidez d'envoyer un nouveau mot de passe depuis Angular
+        /*if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+            $data['must_change_password'] = true;
+        }*/
+
+
+        if ($request->must_change_password == true  || $request->must_change_password == 1 || $request->must_change_password == '1') {
+            $data['password'] = Hash::make('password');
             $data['must_change_password'] = true;
         }
 

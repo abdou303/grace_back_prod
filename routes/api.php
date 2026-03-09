@@ -108,8 +108,11 @@ Route::prefix('v1')->group(function () {
         Route::get('/statistiques/{tr_id}', [StatisticsController::class, 'getDossierStatsByTR']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::post('/dossiers/search-multiple', [DossierController::class, 'searchMultiple']);
+
         Route::get('/openbee/file/{id}', [OpenBeeController::class, 'download']);
         Route::get('/utilisateurs/parquet/{tribunal_id}', [UtilisateurController::class, 'getParquetUsersByTribunal']);
         Route::get('/utilisateurs/tribunal/{tribunal_id}', [UtilisateurController::class, 'getUsersByTribunal']);
+        Route::post('/tr-utilisateurs', [UtilisateurController::class, 'storeTrUser']);
+        Route::put('/tr-utilisateurs/{id}', [UtilisateurController::class, 'updateTrUser']);
     });
 });
