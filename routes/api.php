@@ -96,6 +96,7 @@ Route::prefix('v1')->group(function () {
         Route::put('/dossiers/{dossier}/forward-parquet', [DossierController::class, 'forwardParquetDossier']);
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
         Route::post('/requettes/reponse-greffe/{requette_id}', [RequetteController::class, 'addReponseGreffeRequette']);
+        Route::post('/requettes/terminer-tr-parquet/{requette_id}', [RequetteController::class, 'addReponseParquetRequette']);
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
         Route::post('/dossiers/terminer-tr-greffe/{dossier_id}', [DossierController::class, 'terminerGreffeDossierTr']);
         Route::post('/dossiers/terminer-tr-parquet/{dossier_id}', [DossierController::class, 'terminerParquetDossierTr']);
@@ -108,7 +109,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/statistiques/{tr_id}', [StatisticsController::class, 'getDossierStatsByTR']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::post('/dossiers/search-multiple', [DossierController::class, 'searchMultiple']);
-
         Route::get('/openbee/file/{id}', [OpenBeeController::class, 'download']);
         Route::get('/utilisateurs/parquet/{tribunal_id}', [UtilisateurController::class, 'getParquetUsersByTribunal']);
         Route::get('/utilisateurs/tribunal/{tribunal_id}', [UtilisateurController::class, 'getUsersByTribunal']);

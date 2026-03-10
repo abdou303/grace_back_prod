@@ -365,6 +365,94 @@ class RequetteController extends Controller
             'requette' => $requette->load('statutrequettes')
         ], 200);
     }
+
+
+    public function addReponseParquetRequette(Request $request, $requette_id)
+    {
+
+        /**/
+        $request->validate([
+
+            'tribunal_user_libelle' => 'nullable',
+            'user_id' => 'required|exists:users,id',
+            'tribunal_user_id' => 'required',
+            'avis' => 'nullable',
+            'observations_parquet' => 'nullable',
+
+
+        ]);
+
+        Log::debug('Requête reçue************** :', $request->all());
+
+        // L'injection de OpenBeeService n'est plus nécessaire ici.
+
+        // 1. Logique métier immédiate (Base de données)
+        $requette = Requette::findOrFail($requette_id);
+        $dossier = $requette->dossier;
+
+        if (!$dossier) {
+            return response()->json(['message' => 'Dossier not found'], 404);
+        }
+
+
+
+        // 2. Préparation et Stockage TEMPORAIRE des fichiers (Logique similaire à terminerDossierTr)
+        $filesToProcess = [];
+        $fileMappings = ['copie_mp' => 3,];
+
+        foreach ($fileMappings as $fieldName => $typepjId) {
+            if ($request->hasFile($fieldName)) {
+                $files = $request->file($fieldName);
+                $filesArray = is_array($files) ? $files : [null => $files];
+
+                foreach ($filesArray as $affaireIdKey => $file) {
+                    if ($file) {
+                        // **Stockage temporaire**
+                        $path = $file->store('temp/openbee_uploads');
+                        $filesToProcess[] = [
+                            'path' => $path,
+                            'typepjId' => $typepjId,
+                            'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                            'fieldName' => $fieldName,
+                            'originalName' => $file->getClientOriginalName(),
+                            // DONNÉE CLÉ pour le Job : Indiquer l'ID de la Requette
+                            'context_requette_id' => $requette->id,
+                        ];
+                    }
+                }
+            }
+        }
+        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+
+        // 3. Dispatch du Job
+        if (!empty($filesToProcess)) {
+            // L'appel reste identique à celui de terminerDossierTr
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess)->onQueue('openbee_uploads');
+        }
+
+
+
+        $requette->etat_parquet = 'TR';
+        $requette->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
+        $requette->user_parquet = $request->user_id;
+        $requette->user_id = $request->user_id;
+
+        $dossier->avis_id = $request->avis;
+        $dossier->observations_parquet = $request->observations_parquet;
+
+        $dossier->save();
+        $requette->save();
+
+
+
+        // 5. Réponse Immédiate
+        return response()->json([
+            'message' => 'Statut mis à jour. L\'upload des documents a démarré en arrière-plan.',
+            'requette' => $requette
+        ], 200);
+    }
+
+
     /*
     public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
     {
@@ -856,6 +944,7 @@ class RequetteController extends Controller
         $requettes = Requette::with([
             'dossier',
             'dossier.pjs',
+            'dossier.avis',
             'dossier.pjs.affaire',
             'dossier.detenu',
             'dossier.affaires',
