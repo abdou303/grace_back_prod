@@ -382,7 +382,7 @@ class RequetteController extends Controller
 
         ]);
 
-        Log::debug('Requête reçue************** :', $request->all());
+
 
         // L'injection de OpenBeeService n'est plus nécessaire ici.
 
@@ -759,6 +759,71 @@ class RequetteController extends Controller
             ], 500);
         }
     }
+
+
+
+    public function bulkConfirmRequette(Request $request)
+    {
+
+        Log::debug('Requête reçue* Multi ************* :', $request->all());
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:requettes,id',
+            'tribunal_id' => 'required'
+        ]);
+
+        $results = [];
+        $errors = [];
+
+        foreach ($request->ids as $id) {
+            try {
+                $requette = Requette::findOrFail($id);
+
+                // On réutilise la logique de transaction pour chaque requête
+                DB::transaction(function () use ($request, $requette) {
+                    $currentYear = now()->format('Y');
+                    $prefix = 'R-' . $currentYear;
+
+                    $lastRecord = Requette::where('numero', 'like', $prefix . '%')
+                        ->orderBy('numero', 'desc')
+                        ->lockForUpdate()
+                        ->first();
+
+                    $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 6)) : 0;
+                    $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+
+                    $requette->update([
+                        'numero' => $prefix . $newNumber,
+                        'etat' => "TR",
+                        'etat_greffe' => "KO",
+                        'etat_parquet' => "KO"
+                    ]);
+
+                    $requette->dossier()->update([
+                        'etat' => 'NT',
+                        'tr_tribunal' => 'NT',
+                        'user_tribunal_id' => $request->tribunal_id,
+                        'categorie' => $requette->typerequette->cat ?? null
+                    ]);
+
+                    $id_statut = StatutRequette::where('code', 'KO')->value('id');
+                    if ($id_statut) {
+                        $requette->statutrequettes()->syncWithoutDetaching([$id_statut]);
+                    }
+                });
+                $results[] = $id;
+            } catch (\Exception $e) {
+                $errors[] = ["id" => $id, "error" => $e->getMessage()];
+            }
+        }
+
+        return response()->json([
+            'confirmed_ids' => $results,
+            'errors' => $errors,
+            'message' => count($errors) === 0 ? 'Tout a été confirmé' : 'Certaines confirmations ont échoué'
+        ]);
+    }
+
 
     public function forwardRequette(Request $request, Requette $requette)
     {

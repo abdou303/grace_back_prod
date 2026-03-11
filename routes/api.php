@@ -90,6 +90,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/tr-requettes', [RequetteController::class, 'getTRRequettes']);
         Route::put('/requettes/{requette}/change-statut', [RequetteController::class, 'changeStatut']);
         Route::post('/requettes/{requette}', [RequetteController::class, 'confirmRequette']);
+        Route::post('/requettes/bulk-confirm', [RequetteController::class, 'bulkConfirmRequette']);
         Route::put('/requettes/{requette}/forward', [RequetteController::class, 'forwardRequette']);
         Route::put('/dossiers/{dossier}/forward', [DossierController::class, 'forwardDossier']);
         Route::put('/requettes/{requette}/forward-parquet', [RequetteController::class, 'forwardParquetRequette']);
