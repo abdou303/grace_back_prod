@@ -15,7 +15,7 @@ class DossierImportController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,csv',
+            'file' => 'required|mimes:xlsx,csv,xls',
         ]);
 
         Excel::import(new DossierImport, $request->file('file'));
