@@ -659,13 +659,13 @@ class RequetteController extends Controller
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
-            // 'copie_demande' => 'nullable|file|mimes:pdf|max:2048', // Validation du fichier
-            'copie_demande' => [
+            'copie_demande' => 'nullable|file|mimes:pdf|max:2048', // Validation du fichier
+            /*'copie_demande' => [
                 Rule::requiredIf($request->categorie === 'CAT-1'),
                 'file',
                 'mimes:pdf',
                 'max:2048'
-            ],
+            ],*/
         ], $messages);
 
         try {
@@ -764,64 +764,68 @@ class RequetteController extends Controller
 
     public function bulkConfirmRequette(Request $request)
     {
+        // On décode les IDs envoyés depuis Angular
+        $ids = json_decode($request->input('ids'));
 
-        Log::debug('Requête reçue* Multi ************* :', $request->all());
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:requettes,id',
-            'tribunal_id' => 'required'
-        ]);
+        if (empty($ids)) {
+            return response()->json(['message' => 'Aucun ID fourni'], 400);
+        }
 
-        $results = [];
-        $errors = [];
+        try {
+            $count = DB::transaction(function () use ($ids, $request) {
+                $processedCount = 0;
+                $currentYear = now()->format('Y');
 
-        foreach ($request->ids as $id) {
-            try {
-                $requette = Requette::findOrFail($id);
+                // On boucle sur chaque requête
+                foreach ($ids as $id) {
+                    $requette = Requette::with('typerequette')->findOrFail($id);
 
-                // On réutilise la logique de transaction pour chaque requête
-                DB::transaction(function () use ($request, $requette) {
-                    $currentYear = now()->format('Y');
+                    // --- LOGIQUE DE NUMÉROTATION ---
                     $prefix = 'R-' . $currentYear;
-
                     $lastRecord = Requette::where('numero', 'like', $prefix . '%')
                         ->orderBy('numero', 'desc')
                         ->lockForUpdate()
                         ->first();
 
                     $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 6)) : 0;
-                    $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+                    $numero = $prefix . str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
 
+                    // --- MISE À JOUR REQUETTE ---
                     $requette->update([
-                        'numero' => $prefix . $newNumber,
+                        'numero' => $numero,
                         'etat' => "TR",
                         'etat_greffe' => "KO",
-                        'etat_parquet' => "KO"
+                        'etat_parquet' => "KO",
+                        // On peut aussi mettre à jour l'observation si fournie
+                        'observations' => $request->observations ?? $requette->observations
                     ]);
 
+                    // --- MISE À JOUR DOSSIER ---
                     $requette->dossier()->update([
                         'etat' => 'NT',
                         'tr_tribunal' => 'NT',
-                        'user_tribunal_id' => $request->tribunal_id,
+                        'user_tribunal_id' => $requette->tribunal_id, // On garde celui d'origine
                         'categorie' => $requette->typerequette->cat ?? null
                     ]);
 
+                    // --- STATUT ---
                     $id_statut = StatutRequette::where('code', 'KO')->value('id');
                     if ($id_statut) {
                         $requette->statutrequettes()->syncWithoutDetaching([$id_statut]);
                     }
-                });
-                $results[] = $id;
-            } catch (\Exception $e) {
-                $errors[] = ["id" => $id, "error" => $e->getMessage()];
-            }
-        }
 
-        return response()->json([
-            'confirmed_ids' => $results,
-            'errors' => $errors,
-            'message' => count($errors) === 0 ? 'Tout a été confirmé' : 'Certaines confirmations ont échoué'
-        ]);
+                    $processedCount++;
+                }
+                return $processedCount;
+            });
+
+            return response()->json([
+                'success' => true,
+                'confirmed_count' => $count
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
 
