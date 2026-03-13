@@ -41,7 +41,8 @@ class Dossier extends Model
         'user_greffe',
         'user_parquet',
         'nbr_redirection',
-        'originedossier'
+        'originedossier',
+        'observation_redirection'
 
     ];
 

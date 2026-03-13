@@ -631,15 +631,7 @@ class RequetteController extends Controller
 
     public function confirmRequette(Request $request, Requette $requette)
     {
-        /*$data = $request->validate([
-            'date' => 'nullable',
-            'observations' => 'nullable|string',
-            'dossier_id' => 'required|int',
-            'user_id' => 'required|int',
-            'tribunal_id' => 'required|int',
-            'typerequette_id' => 'required|int',
-            'copie_demande' => 'nullable|file|mimes:pdf|max:2048',
-        ]);*/
+
 
         $messages = [
             // Utilisez 'required' au lieu de 'required_if' ici
@@ -697,6 +689,7 @@ class RequetteController extends Controller
                 $requette->etat = "TR";
                 $requette->etat_greffe = "KO";
                 $requette->etat_parquet = "KO";
+                $requette->copie_demande_envoyee = $request->hasFile('copie_demande');
                 $requette->save();
 
                 // 3. Mise à jour du Dossier lié
@@ -796,7 +789,9 @@ class RequetteController extends Controller
                         'etat' => "TR",
                         'etat_greffe' => "KO",
                         'etat_parquet' => "KO",
+                        'date' => now()->format('Y-m-d H:i:s.v'),
                         // On peut aussi mettre à jour l'observation si fournie
+                        'copie_demande_envoyee' => false,
                         'observations' => $request->observations ?? $requette->observations
                     ]);
 

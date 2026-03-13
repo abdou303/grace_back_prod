@@ -31,7 +31,8 @@ class Requette extends Model
         'user_tribunal',
         'user_greffe',
         'user_parquet',
-        'nbr_redirection'
+        'nbr_redirection',
+        'observation_redirection'
     ];
 
     public function pjs()

@@ -127,8 +127,11 @@ class DossierImport implements ToCollection, WithHeadingRow
             if (empty($row['numero_dossier']) && empty($row['nom'])) continue;
 
             DB::transaction(function () use ($row) {
-
-                $existingDossier = Dossier::where('numero_dapg', $row['numero_dossier'])->first();
+                /*
+                $existingDossier = Dossier::where('numero_dapg', $row['numero_dossier'])->first();*/
+                $existingDossier = Dossier::where('numero_dapg', $row['numero_dossier'])
+                    ->where('typedossier_id', $row['typedossier_id'])
+                    ->first();
 
                 if ($existingDossier) {
                     // Si le dossier existe, on ajoute seulement la requête

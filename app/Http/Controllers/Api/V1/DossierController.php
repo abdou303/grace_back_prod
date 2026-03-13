@@ -735,6 +735,7 @@ class DossierController extends Controller
         // 3. Préparation et Stockage TEMPORAIRE des fichiers
         $filesToProcess = [];
         $fileMappings = [
+            'copie_demande' => 7,
             'copie_decision' => 5,
             'copie_cin' => 4,
             'copie_mp' => 3,
@@ -1066,6 +1067,8 @@ class DossierController extends Controller
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
         $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
+        // $dossier->tr_tribunal = "OK";
+
         $dossier->date_tr_tribunal = $validated['date_tr_tribunal'] ?? $dossier->date_tr_tribunal;
 
         $dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
@@ -1086,7 +1089,7 @@ class DossierController extends Controller
 
 
         $dossier->user_id = $validated['user_id'] ?? $dossier->user_id;
-        $dossier->prison_id = $validated['prison'] ?? $dossier->prison_id;
+        //$dossier->prison_id = $validated['prison'] ?? $dossier->prison_id;
 
 
 
