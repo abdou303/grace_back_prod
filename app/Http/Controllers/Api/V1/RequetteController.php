@@ -826,6 +826,8 @@ class RequetteController extends Controller
 
     public function forwardRequette(Request $request, Requette $requette)
     {
+
+        \Log::debug('Forward greffe Requête reçue :', $request->all());
         $data = $request->validate([
 
             'observations' => 'nullable|string',
