@@ -45,16 +45,16 @@ class UpdateDossierRequest extends FormRequest
             'affaires.*.tribunal' => 'required|numeric',
             'affaires.*.datejujement' => 'required|string',
             'affaires.*.conenujugement' => 'nullable|string',
-            'affaires.*.copie_decision' => 'file|mimes:pdf|max:2048', // Each file must be valid
-            'affaires.*.copie_non_recours' => 'file|mimes:pdf|max:2048', // Each file must be valid*/
+            'affaires.*.copie_decision' => 'file|mimes:pdf|max:25600', // Each file must be valid
+            'affaires.*.copie_non_recours' => 'file|mimes:pdf|max:25600', // Each file must be valid*/
 
             'copie_decision' => 'nullable|array',
-            'copie_decision.*' => 'file|mimes:pdf|max:2048', // Each file must be valid
+            'copie_decision.*' => 'file|mimes:pdf|max:25600', // Each file must be valid
             'copie_non_recours' => 'nullable|array',
-            'copie_non_recours.*' => 'file|mimes:pdf|max:2048', // Each file must be valid
-            'copie_cin' => 'nullable|file|mimes:pdf|max:2048',
-            'copie_mp' => 'nullable|file|mimes:pdf|max:2048',
-            'copie_social' => 'nullable|file|mimes:pdf|max:2048',
+            'copie_non_recours.*' => 'file|mimes:pdf|max:25600', // Each file must be valid
+            'copie_cin' => 'nullable|file|mimes:pdf|max:25600',
+            'copie_mp' => 'nullable|file|mimes:pdf|max:25600',
+            'copie_social' => 'nullable|file|mimes:pdf|max:25600',
             'prison' => 'nullable',
             'numerolocal' => 'nullable|numeric',
             'affaires.*.has_non_recours' => ['required', 'boolean'],

@@ -27,18 +27,18 @@ class UpdateGreffeRequetteRequest extends FormRequest
             'numeromp' => 'nullable',
             'user_tribunal' => 'required',
             // Validate single file fields
-            'copie_cin' => 'nullable|file|mimes:pdf|max:2048',
-            'copie_mp' => 'nullable|file|mimes:pdf|max:2048',
-            'copie_social' => 'nullable|file|mimes:pdf|max:2048',
-            'copie_cat2' => 'nullable|file|mimes:pdf|max:2048',
+            'copie_cin' => 'nullable|file|mimes:pdf|max:25600',
+            'copie_mp' => 'nullable|file|mimes:pdf|max:25600',
+            'copie_social' => 'nullable|file|mimes:pdf|max:25600',
+            'copie_cat2' => 'nullable|file|mimes:pdf|max:25600',
 
 
             // Validate multiple files for different affaires
             'copie_decision' => 'nullable|nullable|array',
-            'copie_decision.*' => 'file|mimes:pdf|max:2048', // Each file must be valid
+            'copie_decision.*' => 'file|mimes:pdf|max:25600', // Each file must be valid
 
             'copie_non_recours' => 'nullable|array',
-            'copie_non_recours.*' => 'file|mimes:pdf|max:2048', // Each file must be valid
+            'copie_non_recours.*' => 'file|mimes:pdf|max:25600', // Each file must be valid
 
 
             'affaires.*.has_non_recours' => ['required', 'boolean'],

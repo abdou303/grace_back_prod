@@ -540,7 +540,7 @@ class RequetteController extends Controller
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
-            // 'copie_demande' => 'nullable|file|mimes:pdf|max:2048', // Validation du fichier
+            // 'copie_demande' => 'nullable|file|mimes:pdf|max:25600', // Validation du fichier
             'copie_demande' => [
                 Rule::requiredIf($request->categorie === 'CAT-1'),
                 'file',
@@ -651,7 +651,7 @@ class RequetteController extends Controller
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
-            'copie_demande' => 'nullable|file|mimes:pdf|max:2048', // Validation du fichier
+            'copie_demande' => 'nullable|file|mimes:pdf|max:25600', // Validation du fichier
             /*'copie_demande' => [
                 Rule::requiredIf($request->categorie === 'CAT-1'),
                 'file',
