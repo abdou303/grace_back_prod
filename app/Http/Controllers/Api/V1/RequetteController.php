@@ -526,7 +526,7 @@ class RequetteController extends Controller
             // Utilisez 'required' au lieu de 'required_if' ici
             'copie_demande.required' => "المرجو رفع الطلب",
             'copie_demande.mimes' => "الملف يجب أن يكون بصيغة PDF",
-            'copie_demande.max' => "الملف يجب أن لا يتعدى 2 ميغابايت",
+            'copie_demande.max' => "الملف يجب أن لا يتعدى 25 ميغابايت",
 
             // Optionnel : si vous voulez être sûr de couvrir tous les cas
             'copie_demande.required_if' => "المرجو رفع الطلب",
@@ -637,7 +637,7 @@ class RequetteController extends Controller
             // Utilisez 'required' au lieu de 'required_if' ici
             'copie_demande.required' => "المرجو رفع الطلب",
             'copie_demande.mimes' => "الملف يجب أن يكون بصيغة PDF",
-            'copie_demande.max' => "الملف يجب أن لا يتعدى 2 ميغابايت",
+            'copie_demande.max' => "الملف يجب أن لا يتعدى 25 ميغابايت",
 
             // Optionnel : si vous voulez être sûr de couvrir tous les cas
             'copie_demande.required_if' => "المرجو رفع الطلب",
@@ -754,7 +754,96 @@ class RequetteController extends Controller
     }
 
 
+    public function confirmRequetteAddDemande(Request $request, Requette $requette)
+    {
 
+
+        $messages = [
+            // Utilisez 'required' au lieu de 'required_if' ici
+            'copie_demande.required' => "المرجو رفع الطلب",
+            'copie_demande.mimes' => "الملف يجب أن يكون بصيغة PDF",
+            'copie_demande.max' => "الملف يجب أن لا يتعدى 25 ميغابايت",
+
+            // Optionnel : si vous voulez être sûr de couvrir tous les cas
+            'copie_demande.required_if' => "المرجو رفع الطلب",
+        ];
+
+        $data = $request->validate([
+            'date' => 'nullable',
+            'observations' => 'nullable|string',
+            'categorie' => 'required|string',
+            'dossier_id' => 'required|int',
+            'user_id' => 'required|int',
+            'tribunal_id' => 'required|int',
+            'typerequette_id' => 'required|int',
+            'copie_demande' => 'required|file|mimes:pdf|max:25600', // Validation du fichier
+            /*'copie_demande' => [
+                Rule::requiredIf($request->categorie === 'CAT-1'),
+                'file',
+                'mimes:pdf',
+                'max:2048'
+            ],*/
+        ], $messages);
+
+        try {
+            return DB::transaction(function () use ($request, $requette, $data) {
+
+
+
+                $requette->copie_demande_envoyee = $request->hasFile('copie_demande');
+                $requette->user_id = $request->user_id;
+
+                $requette->save();
+
+
+
+
+
+                // 5. Préparation des fichiers pour le Job
+                $filesToProcess = [];
+                $fileMappings = [
+                    'copie_demande' => 7,
+                ];
+
+                foreach ($fileMappings as $fieldName => $typepjId) {
+                    if ($request->hasFile($fieldName)) {
+                        $files = $request->file($fieldName);
+                        $filesArray = is_array($files) ? $files : [null => $files];
+
+                        foreach ($filesArray as $affaireIdKey => $file) {
+                            if ($file) {
+                                // Stockage temporaire pour le Job
+                                $tempPath = $file->store('temp/openbee_uploads');
+
+                                $filesToProcess[] = [
+                                    'path' => $tempPath,
+                                    'typepjId' => $typepjId,
+                                    'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                                    'fieldName' => $fieldName,
+                                    'originalName' => $file->getClientOriginalName(),
+                                    'context_requette_id' => $requette->id,
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                // 6. Dispatch du Job
+                if (!empty($filesToProcess)) {
+                    UploadDossierPJsJob::dispatch($request->dossier_id, $filesToProcess)
+                        ->onQueue('openbee_uploads');
+                }
+
+                return new RequetteResource($requette);
+            });
+        } catch (\Exception $e) {
+            Log::error("Erreur confirmation requête ID {$requette->id}: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Erreur lors de la confirmation.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     public function bulkConfirmRequette(Request $request)
     {
         // On décode les IDs envoyés depuis Angular

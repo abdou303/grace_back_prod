@@ -85,3 +85,18 @@ App\Models\Dossier::query()->delete();
 
 
 DB::statement("DBCC CHECKIDENT ('dossiers', RESEED, 0)");
+
+
+
+/********************* 26/03/2026 ***************************/
+DB::table('roles')->max('id');
+DB::statement("DBCC CHECKIDENT ('roles', RESEED, 7)");
+DB::table('roles')->insert([
+    'libelle' => 'DAPG-BO',
+    'active' => 1
+]);
+
+DB::table('roles')->insert([
+    'libelle' => 'TR-LC',
+    'active' => 1
+]);
