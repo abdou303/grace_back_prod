@@ -126,6 +126,7 @@ class DossierController extends Controller
             'detenu.profession',
             'detenu.nationalite',
             'garants',
+            'LibelleTribunalUtilisateur:id,libelle',
             'garants.province',
             'garants.tribunal',
             'comportement',

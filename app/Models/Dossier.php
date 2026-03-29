@@ -137,4 +137,9 @@ class Dossier extends Model
     {
         return $this->belongsTo(User::class, 'user_parquet');
     }
+
+    public function LibelleTribunalUtilisateur() // Nommez-la ainsi pour correspondre à votre souhait Angular
+    {
+        return $this->belongsTo(Tribunal::class, 'user_tribunal_id');
+    }
 }
