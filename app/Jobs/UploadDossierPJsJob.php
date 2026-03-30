@@ -39,10 +39,18 @@ class UploadDossierPJsJob implements ShouldQueue
         $this->dossierId = $dossierId;
         $this->filesToProcess = $filesToProcess;
         $this->postUploadActions = $postUploadActions; // <--- Initialiser ceci
+
+        // Log à la création du Job (visible dans les logs classiques)
+        Log::debug("## JOB INITIALISÉ : Dossier {$dossierId}", [
+            'actions_recues' => $this->postUploadActions
+        ]);
     }
 
     public function handle(OpenBeeService $openBee)
     {
+        // Log au début de l'exécution
+        Log::info("## JOB DÉMARRÉ : Traitement du dossier {$this->dossierId}");
+
         $dossier = Dossier::findOrFail($this->dossierId);
         $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
 
@@ -131,6 +139,9 @@ class UploadDossierPJsJob implements ShouldQueue
             }
         }
         if (!empty($this->postUploadActions)) {
+            Log::info("##LOGIQUE DB : Exécution des post-actions pour le dossier {$this->dossierId}", [
+                'payload' => $this->postUploadActions
+            ]);
             DB::transaction(function () {
                 foreach ($this->postUploadActions as $action) {
                     $modelClass = $action['model'];
@@ -149,6 +160,7 @@ class UploadDossierPJsJob implements ShouldQueue
                             $model->{$action['relation']}()->attach($action['attach']);
                         }
                     }
+                    Log::debug("##ACTION RÉUSSIE : Mise à jour de " . $action['model'] . " ID: " . $action['id']);
                 }
             });
         }

@@ -647,6 +647,10 @@ class DossierController extends Controller
 
         // 4. Dispatch du Job pour le traitement en arrière-plan
         if (!empty($filesToProcess)) {
+            Log::info("## DEBUG: Envoi au Job pour Dossier ID: {$dossier->id}", [
+                'files_count' => count($filesToProcess),
+                'post_actions' => $postActions
+            ]);
             // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
             UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
         }
