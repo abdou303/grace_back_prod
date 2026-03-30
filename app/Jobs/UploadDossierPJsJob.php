@@ -15,6 +15,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 
 class UploadDossierPJsJob implements ShouldQueue
 {
@@ -31,11 +32,13 @@ class UploadDossierPJsJob implements ShouldQueue
 
     protected $dossierId;
     protected $filesToProcess;
+    protected $postUploadActions;
 
-    public function __construct(int $dossierId, array $filesToProcess)
+    public function __construct(int $dossierId, array $filesToProcess, array $postUploadActions = [])
     {
         $this->dossierId = $dossierId;
         $this->filesToProcess = $filesToProcess;
+        $this->postUploadActions = $postUploadActions; // <--- Initialiser ceci
     }
 
     public function handle(OpenBeeService $openBee)
@@ -126,6 +129,28 @@ class UploadDossierPJsJob implements ShouldQueue
                     @unlink($tempFilePath);
                 }
             }
+        }
+        if (!empty($this->postUploadActions)) {
+            DB::transaction(function () {
+                foreach ($this->postUploadActions as $action) {
+                    $modelClass = $action['model'];
+                    $modelId    = $action['id'];
+                    $data       = $action['data'] ?? [];
+
+                    $model = $modelClass::find($modelId);
+                    if ($model) {
+                        // Mise à jour des colonnes (etat, user_id, etc.)
+                        if (!empty($data)) {
+                            $model->update($data);
+                        }
+
+                        // Gestion des relations Many-to-Many (ex: attach de statutrequettes)
+                        if (isset($action['attach']) && isset($action['relation'])) {
+                            $model->{$action['relation']}()->attach($action['attach']);
+                        }
+                    }
+                }
+            });
         }
     }
 }

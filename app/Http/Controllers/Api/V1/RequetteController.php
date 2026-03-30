@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateGreffeRequetteRequest;
 use App\Http\Requests\UpdateRequetteRequest;
 use App\Http\Resources\RequetteResource;
 use App\Jobs\UploadDossierPJsJob;
+use App\Models\Dossier;
 use App\Models\Pj;
 use App\Models\Requette;
 use App\Models\StatutRequette;
@@ -22,131 +23,7 @@ class RequetteController extends Controller
 {
 
 
-    /* public function addReponseRequette(UpdateRequetteRequest $request, $requette_id,OpenBeeService $openBee)
-    {
-        // Find the Requette
-        $requette = Requette::findOrFail($requette_id);
-        // Get the related Dossier
-        $dossier = $requette->dossier;
 
-        if (!$dossier) {
-            return response()->json(['message' => 'Dossier not found'], 404);
-        }
-
-        $dossier->numeromp = $request->numeromp;
-        $dossier->save();
-
-  
-
-        $fileMappings = [
-            'copie_cat2' => 6,
-            'copie_decision' => 5,
-            'copie_cin' => 4,
-            'copie_mp' => 3,
-            'copie_non_recours' => 2,
-            'copie_social' => 1,
-        ];
-
-
-        // Fetch all TypePj records and create an associative array of id => label
-        $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
-
-
-        // Loop over file mappings and handle file uploads
-        foreach ($fileMappings as $fieldName => $typepjId) {
-            // Check if there are files for this field
-
-
-            $insertedObservation = "";
-            if ($requette->typerequette->cat == "CAT-1") {
-                $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
-            } else {
-                $insertedObservation = $requette->typerequette->libelle ?? 'أخرى';
-            }
-
-            if ($request->hasFile($fieldName)) {
-                $files = $request->file($fieldName);
-
-                // If files are an array (for multiple affaires)
-                if (is_array($files)) {
-                    foreach ($files as $affaireId => $file) {
-                        // Process the file for each affaire
-                        //$pj->contenu = $file->storeAs('public/uploads', $filename);
-                        $filename = $requette->numero . "_" . $dossier->id . "_" . $affaireId . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
-                        $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
-
-                        $path="OPENBEE/".$filename;
-                        try {
-                            $openBee->deleteIfExists($filenameSansExtension);
-                            $result = $openBee->upload($file, $filename, [
-                                'title'       => $filename,
-                                'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
-                                'path'        => config('openbee.path'),
-                            ]);
-                            $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
-                        } catch (\Exception $e) {
-                            \Log::error("Erreur d'upload Open Bee (sans affaire): " . $e->getMessage());
-                            $openbeeUrl = null;
-                        }
-        
-                        $pj = new Pj();
-                        //$pj->contenu = $file->storeAs('public/uploads', $filename);
-                        $pj->contenu = $path;
-                        $pj->openbee_url = $openbeeUrl;
-                        $pj->dossier_id = $dossier->id;
-                        $pj->requette_id = $requette->id;
-                        //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
-                        $pj->observation = $insertedObservation;
-
-
-                        $pj->typepj_id = $typepjId;
-                        $pj->affaire_id = $affaireId; // Save affaire_id from dynamic file key
-                        $pj->save();
-                    }
-                } else {
-                    // Single file upload (for cases where there's just one file)
-                    $filename = $requette->numero . "_" . $dossier->id . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
-                    $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
-
-                    $path="OPENBEE/".$filename;
-                    try {
-                        $openBee->deleteIfExists($filenameSansExtension);
-                        $result = $openBee->upload($files, $filename, [
-                            'title'       => $filename,
-                            'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
-                            'path'        => config('openbee.path'),
-                        ]);
-                        $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
-                    } catch (\Exception $e) {
-                        \Log::error("Erreur d'upload Open Bee (sans affaire): " . $e->getMessage());
-                        $openbeeUrl = null;
-                    }
-                    $pj = new Pj();
-                    //$pj->contenu = $files->storeAs('public/uploads', $filename);
-                    $pj->contenu = $path;
-
-                    $pj->dossier_id = $dossier->id;
-                    $pj->requette_id = $requette->id;
-                    //$pj->observation = $typepjLabels[$typepjId] ?? 'أخرى';
-                    $pj->observation = $insertedObservation;
-                    $pj->openbee_url = $openbeeUrl;
-                    $pj->typepj_id = $typepjId;
-                    $pj->save();
-                }
-            }
-        }
-
-        // Update StatutRequette
-        $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
-        if ($request->statutRequette == 'OK') {
-
-            $requette->etat_tribunal = 'TR';
-            $requette->save();
-        }
-        $requette->statutrequettes()->attach([$id_staut]);
-
-        return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
-    }*/
 
     public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
     {
@@ -230,15 +107,12 @@ class RequetteController extends Controller
             }
         }
 
-        // 3. Dispatch du Job
-        if (!empty($filesToProcess)) {
-            // L'appel reste identique à celui de terminerDossierTr
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess)->onQueue('openbee_uploads');
-        }
+
 
         // 4. Finalisation des statuts (Logique métier immédiate)
         $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
-        if ($request->statutRequette == 'OK') {
+        $postActions = [];
+        /* if ($request->statutRequette == 'OK') {
             $requette->etat_tribunal = 'TR';
             $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
             $requette->user_tribunal = $request->user_tribunal;
@@ -249,8 +123,34 @@ class RequetteController extends Controller
             ]);
             $requette->save();
         }
-        $requette->statutrequettes()->attach([$id_staut]);
+        $requette->statutrequettes()->attach([$id_staut]);*/
 
+
+        if ($request->statutRequette == 'OK') {
+            /*************GENERIQUE JOB 30/03/2026******************* */
+
+            $postActions[] = [
+                'model' => Requette::class,
+                'id'    => $requette->id,
+                'data'  => [
+                    'etat_tribunal'      => 'TR',
+                    'date_etat_tribunal' => now()->format('Y-m-d H:i:s.v'),
+                    'user_tribunal'      => $request->user_tribunal,
+                ],
+                'relation' => 'statutrequettes',
+                'attach'   => [$id_staut]
+            ];
+            $postActions[] = [
+                'model' => Dossier::class,
+                'id'    => $dossier->id,
+                'data'  => ['etat' => 'OK', 'tr_tribunal' => 'OK']
+            ];
+        }
+        // 3. Dispatch du Job
+        if (!empty($filesToProcess)) {
+            // L'appel reste identique à celui de terminerDossierTr
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+        }
         // 5. Réponse Immédiate
         return response()->json([
             'message' => 'Statut mis à jour. L\'upload des documents a démarré en arrière-plan.',
@@ -335,28 +235,31 @@ class RequetteController extends Controller
                 $affaire->save();
             }
         }
+        /*************GENERIQUE JOB 30/03/2026******************* */
+
+        $postActions = [[
+            'model' => Requette::class,
+            'id'    => $requette->id,
+            'data'  => [
+                'etat_greffe'      => 'TR',
+                'date_etat_greffe' => now()->format('Y-m-d H:i:s.v'),
+                'user_greffe'      => $request->user_tribunal,
+            ]
+        ]];
+
         // 3. Dispatch du Job
         if (!empty($filesToProcess)) {
             // L'appel reste identique à celui de terminerDossierTr
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess)->onQueue('openbee_uploads');
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
         }
 
-        // 4. Finalisation des statuts (Logique métier immédiate)
-        /*$id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
-        if ($request->statutRequette == 'OK') {
-            $requette->etat_tribunal = 'TR';
-            $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
-            $requette->user_tribunal = $request->user_tribunal;
 
-            $requette->save();
-        }
-        $requette->statutrequettes()->attach([$id_staut]);*/
 
-        $requette->etat_greffe = 'TR';
+        /*$requette->etat_greffe = 'TR';
         $requette->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
         $requette->user_greffe = $request->user_tribunal;
 
-        $requette->save();
+        $requette->save();*/
 
 
         // 5. Réponse Immédiate
@@ -423,25 +326,36 @@ class RequetteController extends Controller
             }
         }
         // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+        /*************GENERIQUE JOB 30/03/2026******************* */
 
+        $postActions = [[
+            'model' => Requette::class,
+            'id'    => $requette->id,
+            'data'  => [
+                'etat_parquet'      => 'TR',
+                'date_etat_parquet' => now()->format('Y-m-d H:i:s.v'),
+                'user_parquet'      => $request->user_id,
+                'user_id'           => $request->user_id,
+            ]
+        ]];
         // 3. Dispatch du Job
         if (!empty($filesToProcess)) {
             // L'appel reste identique à celui de terminerDossierTr
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess)->onQueue('openbee_uploads');
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
         }
 
 
 
-        $requette->etat_parquet = 'TR';
+        /* $requette->etat_parquet = 'TR';
         $requette->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
         $requette->user_parquet = $request->user_id;
-        $requette->user_id = $request->user_id;
+        $requette->user_id = $request->user_id;*/
 
         $dossier->avis_id = $request->avis;
         $dossier->observations_parquet = $request->observations_parquet;
 
         $dossier->save();
-        $requette->save();
+        // $requette->save();
 
 
 
@@ -689,8 +603,19 @@ class RequetteController extends Controller
                 $requette->etat = "TR";
                 $requette->etat_greffe = "KO";
                 $requette->etat_parquet = "KO";
-                $requette->copie_demande_envoyee = $request->hasFile('copie_demande');
+                //  $requette->copie_demande_envoyee = $request->hasFile('copie_demande');
+
                 $requette->save();
+                /*************GENERIQUE JOB 30/03/2026******************* */
+
+                $postActions = [[
+                    'model' => Requette::class,
+                    'id'    => $requette->id,
+                    'data'  => [
+                        'copie_demande_envoyee'      => true,
+
+                    ]
+                ]];
 
                 // 3. Mise à jour du Dossier lié
                 // Il est préférable d'utiliser le modèle directement
@@ -738,7 +663,7 @@ class RequetteController extends Controller
 
                 // 6. Dispatch du Job
                 if (!empty($filesToProcess)) {
-                    UploadDossierPJsJob::dispatch($request->dossier_id, $filesToProcess)
+                    UploadDossierPJsJob::dispatch($request->dossier_id, $filesToProcess, $postActions)
                         ->onQueue('openbee_uploads');
                 }
 
@@ -790,12 +715,22 @@ class RequetteController extends Controller
 
 
 
-                $requette->copie_demande_envoyee = $request->hasFile('copie_demande');
+                /* $requette->copie_demande_envoyee = $request->hasFile('copie_demande');
                 $requette->user_id = $request->user_id;
 
-                $requette->save();
+                $requette->save();*/
+                /*************GENERIQUE JOB 30/03/2026******************* */
+
+                $postActions = [[
+                    'model' => Requette::class,
+                    'id'    => $requette->id,
+                    'data'  => [
+                        'copie_demande_envoyee'      => true,
+                        'user_id'      => $request->user_id,
 
 
+                    ]
+                ]];
 
 
 
@@ -830,7 +765,7 @@ class RequetteController extends Controller
 
                 // 6. Dispatch du Job
                 if (!empty($filesToProcess)) {
-                    UploadDossierPJsJob::dispatch($request->dossier_id, $filesToProcess)
+                    UploadDossierPJsJob::dispatch($request->dossier_id, $filesToProcess, $postActions)
                         ->onQueue('openbee_uploads');
                 }
 

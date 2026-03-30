@@ -534,135 +534,6 @@ class DossierController extends Controller
 
     /******************************************************** */
 
-    /*public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
-    {
-        \Log::debug('Requête reçue :', $request->all());
-
-        $dossier = Dossier::findOrFail($dossier_id);
-        $detenu = $dossier->detenu;
-
-        if (!$detenu) {
-            return response()->json(['message' => 'Detenu not found'], 404);
-        }
-
-        $detenu->nom = $request->nom;
-        $detenu->prenom = $request->prenom;
-        $detenu->datenaissance = $request->datenaissance;
-        $detenu->nompere = $request->nompere;
-        $detenu->nommere = $request->nommere;
-        $detenu->cin = $request->cin;
-        $detenu->genre = $request->genre;
-        $detenu->nationalite_id = $request->nationalite;
-        $detenu->adresse = $request->adresse ?? null;
-        $detenu->save();
-
-        $dossier->typedossier_id = $request->typedossier;
-        $dossier->naturedossiers_id = $request->naturedossier;
-        $dossier->sourcedemande_id = $request->sourcedemande;
-        $dossier->etat = 'OK';
-        $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
-        $dossier->user_id = $request->user_id;
-        $dossier->user_tribunal_id = $request->tribunal_user_id;
-        $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
-        $dossier->numeromp = $request->numeromp;
-        $dossier->prison_id = isset($request->prison) && is_numeric($request->prison) ? (int) $request->prison : null;
-        $dossier->numero_detention = $request->numerolocal;
-        $dossier->save();
-
-        $fileMappings = [
-            'copie_decision' => 5,
-            'copie_cin' => 4,
-            'copie_mp' => 3,
-            'copie_non_recours' => 2,
-            'copie_social' => 1,
-        ];
-        $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
-        
-        foreach ($fileMappings as $fieldName => $typepjId) {
-            $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
-
-            if ($request->hasFile($fieldName)) {
-                $files = $request->file($fieldName);
-
-                if (is_array($files)) {
-                    foreach ($files as $affaireId => $file) {
-                        $filename = $dossier->numero . "_" . $dossier->id . "_" . $affaireId . "_" . $fieldName . '.' . $file->getClientOriginalExtension();
-                        $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
-
-
-                        //$path = $file->storeAs('public/uploads', $filename);
-                        $path = "OPENBEE/" . $filename;
-
-                        try {
-                            $openBee->deleteIfExists($filenameSansExtension);
-                            $result = $openBee->upload($file, $filename, [
-                                'title'       => $filename,
-                                'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
-                                'path'        => config('openbee.path'),
-                            ]);
-                            $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
-                        } catch (\Exception $e) {
-                            \Log::error("Erreur d'upload Open Bee (affaire: $affaireId): " . $e->getMessage());
-                            $openbeeUrl = null;
-                        }
-
-                        $pj = Pj::firstOrNew([
-                            'dossier_id' => $dossier->id,
-                            'affaire_id' => $affaireId,
-                            'typepj_id'  => $typepjId,
-                        ]);
-                        $pj->contenu = $path;
-                        $pj->openbee_url = $openbeeUrl;
-                        $pj->observation = $insertedObservation;
-                        $pj->save();
-                    }
-                } else {
-                    $filename = $dossier->numero . "_" . $dossier->id . "_" . $fieldName . '.' . $files->getClientOriginalExtension();
-                    $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
-                    //$path = $files->storeAs('public/uploads', $filename);
-                    $path = "OPENBEE/" . $filename;
-
-
-                    try {
-                        $openBee->deleteIfExists($filenameSansExtension);
-                        $result = $openBee->upload($files, $filename, [
-                            'title'       => $filename,
-                            'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج ' . $insertedObservation,
-                            'path'        => config('openbee.path'),
-                        ]);
-                        $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
-                    } catch (\Exception $e) {
-                        \Log::error("Erreur d'upload Open Bee (sans affaire): " . $e->getMessage());
-                        $openbeeUrl = null;
-                    }
-
-                    $pj = Pj::firstOrNew([
-                        'dossier_id' => $dossier->id,
-                        'typepj_id'  => $typepjId,
-                        'affaire_id' => null
-                    ]);
-                    $pj->contenu = $path;
-                    $pj->openbee_url = $openbeeUrl;
-                    $pj->observation = $insertedObservation;
-                    $pj->save();
-                }
-            }
-        }
-
-               
-        
-
-
-
-
-
-        return response()->json([
-            'message' => 'تم تسجيل الطلب بنجاح',
-            'data' => $dossier,
-        ], 201);
-    }
-
-*/
 
     public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
     {
@@ -691,7 +562,7 @@ class DossierController extends Controller
         $dossier->typedossier_id = $request->typedossier;
         $dossier->naturedossiers_id = $request->naturedossier;
         $dossier->sourcedemande_id = $request->sourcedemande;
-        $dossier->etat = 'OK'; // Mise à jour immédiate de l'état
+        //$dossier->etat = 'OK'; // Mise à jour immédiate de l'état
         $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
         $dossier->user_id = $request->user_id;
         $dossier->user_tribunal_id = $request->tribunal_user_id;
@@ -767,12 +638,17 @@ class DossierController extends Controller
             }
         }
 
-
+        /*************GENERIQUE JOB 30/03/2026******************* */
+        $postActions = [[
+            'model' => Dossier::class,
+            'id'    => $dossier->id,
+            'data'  => ['etat' => 'OK']
+        ]];
 
         // 4. Dispatch du Job pour le traitement en arrière-plan
         if (!empty($filesToProcess)) {
             // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess)->onQueue('openbee_uploads');
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
         }
 
         // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
@@ -785,7 +661,7 @@ class DossierController extends Controller
 
     public function terminerGreffeDossierTr(UpdateDossierGreffeRequest $request, $dossier_id, OpenBeeService $openBee)
     {
-        Log::debug('Requête reçue :', $request->all());
+        Log::debug('terminerGreffeDossierTr-Requête reçue :', $request->all());
 
         $dossier = Dossier::findOrFail($dossier_id);
         $detenu = $dossier->detenu;
@@ -794,25 +670,14 @@ class DossierController extends Controller
             return response()->json(['message' => 'Detenu not found'], 404);
         }
 
-        // 1. Mise à jour et sauvegarde IMMÉDIATE du Détenu
-        /*$detenu->nom = $request->nom;
-        $detenu->prenom = $request->prenom;
-        $detenu->datenaissance = $request->datenaissance;
-        $detenu->nompere = $request->nompere;
-        $detenu->nommere = $request->nommere;
-        $detenu->cin = $request->cin;
-        $detenu->genre = $request->genre;
-        $detenu->nationalite_id = $request->nationalite;
-        $detenu->adresse = $request->adresse ?? null;
-        $detenu->save();*/
 
         // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
 
-        $dossier->etat_greffe = 'TR'; // Mise à jour immédiate de l'état
+        /*$dossier->etat_greffe = 'TR'; // Mise à jour immédiate de l'état
         $dossier->user_id = $request->user_id;
         $dossier->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
 
-        $dossier->save();
+        $dossier->save();*/
 
         // 3. Préparation et Stockage TEMPORAIRE des fichiers
         $filesToProcess = [];
@@ -875,10 +740,20 @@ class DossierController extends Controller
                 $affaire->save();
             }
         }
+        /*************GENERIQUE JOB 30/03/2026******************* */
+        $postActions = [[
+            'model' => Dossier::class,
+            'id'    => $dossier->id,
+            'data'  => [
+                'etat_greffe'      => 'TR',
+                'user_id'          => $request->user_id,
+                'date_etat_greffe' => now()->format('Y-m-d H:i:s.v')
+            ]
+        ]];
         // 4. Dispatch du Job pour le traitement en arrière-plan
         if (!empty($filesToProcess)) {
             // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess)->onQueue('openbee_uploads');
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
         }
 
         // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
@@ -915,9 +790,9 @@ class DossierController extends Controller
 
         // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
 
-        $dossier->etat_parquet = 'TR'; // Mise à jour immédiate de l'état
+        /* $dossier->etat_parquet = 'TR'; // Mise à jour immédiate de l'état
         $dossier->user_id = $request->user_id;
-        $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
+        $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');*/
         $dossier->avis_id = $request->avis;
         $dossier->observations_parquet = $request->observations_parquet;
 
@@ -983,10 +858,20 @@ class DossierController extends Controller
                 $affaire->save();
             }
         }
+        /*************GENERIQUE JOB 30/03/2026******************* */
+        $postActions = [[
+            'model' => Dossier::class,
+            'id'    => $dossier->id,
+            'data'  => [
+                'etat_parquet'      => 'TR',
+                'user_id'           => $request->user_id,
+                'date_etat_parquet' => now()->format('Y-m-d H:i:s.v')
+            ]
+        ]];
         // 4. Dispatch du Job pour le traitement en arrière-plan
         if (!empty($filesToProcess)) {
             // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess)->onQueue('openbee_uploads');
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
         }
 
         // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
