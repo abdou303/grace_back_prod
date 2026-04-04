@@ -927,7 +927,12 @@ class DossierController extends Controller
 
         // Validate incoming request (add rules as needed)
         $validated = $request->validate([
-
+            // Validation dynamique : requis si origin est 'D' + unique dans la table dossiers
+            'numero_dapg' => [
+                $request->origindossier === 'D' ? 'required' : 'nullable',
+                'string',
+                'unique:dossiers,numero_dapg,' . $id // Ignore l'enregistrement actuel
+            ],
             'numero_detention' => 'nullable|string',
             'detenu.nom' => 'nullable|string',
             'detenu.prenom' => 'nullable|string',
@@ -941,7 +946,6 @@ class DossierController extends Controller
             'tr_dapg' => 'nullable|string',
             'date_tr_tribunal' => 'nullable|string',
             'date_tr_dapg' => 'nullable|string',
-
             'user_id' => 'required|int',
             'prison' => 'nullable',
             'date_sortie' => 'nullable|string',
@@ -957,32 +961,11 @@ class DossierController extends Controller
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
         $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
-        // $dossier->tr_tribunal = "OK";
-
         $dossier->date_tr_tribunal = $validated['date_tr_tribunal'] ?? $dossier->date_tr_tribunal;
-
         $dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
         $dossier->date_tr_dapg = $validated['date_tr_dapg'] ?? $dossier->date_tr_dapg;
         $dossier->date_sortie = $validated['date_sortie'] ?? $dossier->date_sortie;
-
-
-
-        /*if ($request->filled('tr_tribunal')) {
-            $dossier->tr_tribunal = $validated['tr_tribunal'];
-            $dossier->date_tr_tribunal = now()->format('Y-m-d H:i:s.v');
-        }
-        if ($request->filled('tr_dapg')) {
-            $dossier->tr_dapg = $validated['tr_dapg'];
-            $dossier->date_tr_dapg = now()->format('Y-m-d H:i:s.v');
-        }*/
-
-
-
         $dossier->user_id = $validated['user_id'] ?? $dossier->user_id;
-        //$dossier->prison_id = $validated['prison'] ?? $dossier->prison_id;
-
-
-
         $dossier->save();
 
         // Update detenu fields
