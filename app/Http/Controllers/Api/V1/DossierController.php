@@ -797,8 +797,15 @@ class DossierController extends Controller
         /* $dossier->etat_parquet = 'TR'; // Mise à jour immédiate de l'état
         $dossier->user_id = $request->user_id;
         $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');*/
-        $dossier->avis_id = $request->avis;
-        $dossier->observations_parquet = $request->observations_parquet;
+        $dossier->has_file_mp = $request->has_file_mp;
+        if ($request->has_file_mp == '0') {
+            $dossier->avis_id = $request->avis;
+            $dossier->observations_parquet = $request->observations_parquet;
+            $dossier->etat_parquet      = 'TR';
+            $dossier->user_parquet = $request->user_id;
+            $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
+        }
+
 
 
         $dossier->save();
@@ -868,12 +875,12 @@ class DossierController extends Controller
             'id'    => $dossier->id,
             'data'  => [
                 'etat_parquet'      => 'TR',
-                'user_id'           => $request->user_id,
+                'user_parquet'           => $request->user_id,
                 'date_etat_parquet' => now()->format('Y-m-d H:i:s.v')
             ]
         ]];
         // 4. Dispatch du Job pour le traitement en arrière-plan
-        if (!empty($filesToProcess)) {
+        if (!empty($filesToProcess) && $request->has_file_mp == '1') {
             // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
             UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
         }

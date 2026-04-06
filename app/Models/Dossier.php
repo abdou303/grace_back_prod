@@ -42,7 +42,8 @@ class Dossier extends Model
         'user_parquet',
         'nbr_redirection',
         'originedossier',
-        'observation_redirection'
+        'observation_redirection',
+        'has_file_mp'
 
     ];
 
