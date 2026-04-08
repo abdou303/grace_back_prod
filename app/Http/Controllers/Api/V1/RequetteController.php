@@ -144,6 +144,7 @@ class RequetteController extends Controller
                 'model' => Dossier::class,
                 'id'    => $dossier->id,
                 'data'  => ['etat' => 'OK', 'tr_tribunal' => 'OK']
+                //A remplacer par ('data'  => ['etat' => 'OK']) seulement
             ];
         }
         // 3. Dispatch du Job

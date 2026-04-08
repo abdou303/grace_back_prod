@@ -769,9 +769,21 @@ class DossierController extends Controller
 
 
 
-    public function terminerParquetDossierTr(UpdateDossierGreffeRequest $request, $dossier_id, OpenBeeService $openBee)
+    public function terminerParquetDossierTr(Request $request, $dossier_id, OpenBeeService $openBee)
+
     {
-        Log::debug('Requête reçue :', $request->all());
+
+        $request->validate([
+
+            'tribunal_user_libelle' => 'nullable',
+            'user_id' => 'required|exists:users,id',
+            'tribunal_user_id' => 'required',
+            'avis' => 'nullable',
+            'observations_parquet' => 'nullable',
+
+
+        ]);
+        Log::debug('Requête(terminerParquetDossierTr) reçue :', $request->all());
 
         $dossier = Dossier::findOrFail($dossier_id);
         $detenu = $dossier->detenu;
