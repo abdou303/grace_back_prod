@@ -46,7 +46,7 @@ class AffaireController extends Controller
             'code' => 'required|string',
             'annee' => 'required|string',
             'datejujement' => 'required|date',
-            'conenujugement' => 'required|string',
+            'conenujugement' => 'nullable|string',
             'tribunal_id' => 'required|integer|exists:tribunaux,id',
 
         ]);
