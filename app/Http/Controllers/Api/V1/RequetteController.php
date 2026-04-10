@@ -143,7 +143,11 @@ class RequetteController extends Controller
             $postActions[] = [
                 'model' => Dossier::class,
                 'id'    => $dossier->id,
-                'data'  => ['etat' => 'OK', 'tr_tribunal' => 'OK']
+                'data'  => [
+                    'etat' => 'OK',
+                    'tr_tribunal' => 'OK',
+                    'date_tr_tribunal' => now()->format('Y-m-d H:i:s.v'),
+                ]
                 //A remplacer par ('data'  => ['etat' => 'OK']) seulement
             ];
         }
@@ -151,6 +155,20 @@ class RequetteController extends Controller
         if (!empty($filesToProcess)) {
             // L'appel reste identique à celui de terminerDossierTr
             UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+        } else {
+            if ($request->statutRequette == 'OK') {
+                $requette->etat_tribunal = 'TR';
+                $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
+                $requette->user_tribunal = $request->user_tribunal;
+                $requette->dossier()->update([
+                    'etat' => 'OK',
+                    'tr_tribunal' => 'OK',
+                    'date_tr_tribunal' => now()->format('Y-m-d H:i:s.v'),
+
+                ]);
+                $requette->save();
+            }
+            $requette->statutrequettes()->attach([$id_staut]);
         }
         // 5. Réponse Immédiate
         return response()->json([
@@ -252,8 +270,12 @@ class RequetteController extends Controller
         if (!empty($filesToProcess)) {
             // L'appel reste identique à celui de terminerDossierTr
             UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+        } else {
+            $requette->etat_greffe = 'TR';
+            $requette->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
+            $requette->user_greffe = $request->user_tribunal;
+            $requette->save();
         }
-
 
 
         /*$requette->etat_greffe = 'TR';
@@ -293,7 +315,8 @@ class RequetteController extends Controller
         // 1. Logique métier immédiate (Base de données)
         $requette = Requette::findOrFail($requette_id);
         $dossier = $requette->dossier;
-
+        $requette->has_file_mp = $request->has_file_mp;
+        $requette->save();
         if (!$dossier) {
             return response()->json(['message' => 'Dossier not found'], 404);
         }
@@ -343,10 +366,13 @@ class RequetteController extends Controller
         if (!empty($filesToProcess)) {
             // L'appel reste identique à celui de terminerDossierTr
             UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+        } else {
+            $requette->etat_parquet = 'TR';
+            $requette->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
+            $requette->user_parquet = $request->user_id;
+            $requette->user_id = $request->user_id;
+            $requette->save();
         }
-
-
-
         /* $requette->etat_parquet = 'TR';
         $requette->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
         $requette->user_parquet = $request->user_id;

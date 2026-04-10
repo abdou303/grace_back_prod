@@ -43,7 +43,8 @@ class Dossier extends Model
         'nbr_redirection',
         'originedossier',
         'observation_redirection',
-        'has_file_mp'
+        'has_file_mp',
+        'date_etat_ok'
 
     ];
 

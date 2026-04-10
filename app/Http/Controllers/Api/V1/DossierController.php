@@ -642,7 +642,7 @@ class DossierController extends Controller
         $postActions = [[
             'model' => Dossier::class,
             'id'    => $dossier->id,
-            'data'  => ['etat' => 'OK']
+            'data'  => ['etat' => 'OK', 'date_etat_ok' => now()->format('Y-m-d H:i:s.v')]
         ]];
 
         // 4. Dispatch du Job pour le traitement en arrière-plan
@@ -653,6 +653,10 @@ class DossierController extends Controller
             ]);
             // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
             UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+        } else {
+            $dossier->etat = 'OK';
+            $dossier->date_etat_ok = now()->format('Y-m-d H:i:s.v');
+            $dossier->save();
         }
 
         // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
@@ -758,6 +762,12 @@ class DossierController extends Controller
         if (!empty($filesToProcess)) {
             // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
             UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+        } else {
+            $dossier->etat_greffe = 'TR'; // Mise à jour immédiate de l'état
+            $dossier->user_id = $request->user_id;
+            $dossier->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
+
+            $dossier->save();
         }
 
         // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
@@ -810,17 +820,17 @@ class DossierController extends Controller
         $dossier->user_id = $request->user_id;
         $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');*/
         $dossier->has_file_mp = $request->has_file_mp;
-        if ($request->has_file_mp == '0') {
-            $dossier->avis_id = $request->avis;
-            $dossier->observations_parquet = $request->observations_parquet;
-            $dossier->etat_parquet      = 'TR';
+        //if ($request->has_file_mp == '0') {}
+        $dossier->avis_id = $request->avis;
+        $dossier->observations_parquet = $request->observations_parquet;
+        /*$dossier->etat_parquet      = 'TR';
             $dossier->user_parquet = $request->user_id;
-            $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
-        }
-
-
-
+            $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');*/
         $dossier->save();
+
+
+
+
 
         // 3. Préparation et Stockage TEMPORAIRE des fichiers
         $filesToProcess = [];
@@ -892,9 +902,14 @@ class DossierController extends Controller
             ]
         ]];
         // 4. Dispatch du Job pour le traitement en arrière-plan
-        if (!empty($filesToProcess) && $request->has_file_mp == '1') {
+        if (!empty($filesToProcess)) {
             // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
             UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+        } else {
+            $dossier->etat_parquet = 'TR'; // Mise à jour immédiate de l'état
+            $dossier->user_id = $request->user_id;
+            $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
+            $dossier->save();
         }
 
         // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
