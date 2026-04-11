@@ -162,6 +162,7 @@ class RequetteController extends Controller
                 $requette->user_tribunal = $request->user_tribunal;
                 $requette->dossier()->update([
                     'etat' => 'OK',
+                    'date_etat_ok' => now()->format('Y-m-d H:i:s.v'),
                     'tr_tribunal' => 'OK',
                     'date_tr_tribunal' => now()->format('Y-m-d H:i:s.v'),
 
@@ -1276,5 +1277,28 @@ class RequetteController extends Controller
             'message' => 'تم تسجيل الطلب بنجاح',
             'data' => $dossier,
         ], 201);
+    }
+
+    public function AdminMakeRequetteDone(Request $request, $requette_id)
+    {
+        $requette = Requette::findOrFail($requette_id);
+        $dossier = $requette->dossier;
+        $requette->etat_tribunal = 'TR';
+        $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
+        $requette->user_tribunal = $request->user_tribunal;
+        $requette->dossier()->update([
+            'etat' => 'OK',
+            'date_etat_ok' => now()->format('Y-m-d H:i:s.v'),
+            'tr_tribunal' => 'OK',
+            'date_tr_tribunal' => now()->format('Y-m-d H:i:s.v'),
+
+        ]);
+        $requette->save();
+
+        // 5. Réponse Immédiate
+        return response()->json([
+            'message' => 'Statut mis à jour. L\'upload des documents a démarré en arrière-plan.',
+            'data' => $requette
+        ], 200);
     }
 }

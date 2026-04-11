@@ -89,6 +89,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/nt-requettes', [RequetteController::class, 'getNTRequettes']);
         Route::get('/tr-requettes', [RequetteController::class, 'getTRRequettes']);
         Route::put('/requettes/{requette}/change-statut', [RequetteController::class, 'changeStatut']);
+        Route::put('/requettes/{requette_id}/admin-make-requette-done', [RequetteController::class, 'AdminMakeRequetteDone']);
         Route::post('/requettes/bulk-confirm', [RequetteController::class, 'bulkConfirmRequette']);
         Route::post('/requettes/{requette}', [RequetteController::class, 'confirmRequette']);
         Route::post('/requettes-add-demande/{requette}', [RequetteController::class, 'confirmRequetteAddDemande']);
