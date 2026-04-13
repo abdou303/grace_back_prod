@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>{{ $dossier->typedossier->libelle || '' }}</title>
+    <title>{{ $dossier->typedossier->libelle ?? '' }}</title>
     <style>
         /*  @font-face {
             
@@ -91,10 +91,10 @@
             <p>تاريخ التسجيل: {{ $dossier->created_at }}</p>
         </div>
         <div class="column">
-            <p>المصدر: {{ $dossier->user_tribunal_libelle || '' }}</p>
+            <p>المصدر: {{ $dossier->user_tribunal_libelle ?? '' }}</p>
         </div>
         <div class="column">
-            <p>مقدم الطلب: {{ $dossier->sourcedemande->libelle || '' }}</p>
+            <p>مقدم الطلب: {{ $dossier->sourcedemande->libelle ?? '' }}</p>
         </div>
     </div>
     <h3>معلومات حول المتابع:</h3>
@@ -124,7 +124,7 @@
         </div>
         <div class="column">
 
-            <p>الجنسية: {{ $dossier->detenu->nationalite->libelle || '' }} </p>
+            <p>الجنسية: {{ $dossier->detenu->nationalite->libelle ?? '' }} </p>
         </div>
     </div>
 
@@ -146,7 +146,7 @@
             <tr>
                 <td>{{ $affaire->annee }}/{{ $affaire->code }}/{{ $affaire->numero }}</td>
                 <td>{{ $affaire->datejujement }}</td>
-                <td>{{ $affaire->tribunal->libelle || '' }}</td>
+                <td>{{ $affaire->tribunal->libelle ?? '' }}</td>
                 <td>{{ $affaire->conenujugement }}</td>
 
             </tr>
