@@ -72,6 +72,37 @@
 </head>
 
 <body>
+    <table class="header-table" style="width: 100%; border: none; margin-bottom: 30px;">
+        <tr>
+            <td
+                style="width: 33%; border: none; text-align: center; vertical-align: middle; font-size: 13pt; line-height: 1.4; font-weight: normal; font-family:xbriyaz;">
+                <p style="margin: 0; padding-right: 15px;">المملكة المغربية</p>
+                <p style="margin: 0; padding-right: 15px;">رئاسة النيابة العامة</p>
+                <p style="margin: 0; padding-right: 15px;">{{ $dossier->LibelleTribunalUtilisateur->libelle }}</p>
+                <p style="margin: 0; padding-right: 15px; text-decoration: underline;">النيابة العامة</p>
+                <p style="margin: 0; padding-right: 15px; margin-top: 10px; font-weight: bold;">عدد:
+                    {{ $dossier->numero }}</p>
+                <p style="margin: 0; padding-right: 15px;">ملف العفو عدد:</p>
+            </td>
+            <td style="width: 33%; border: none; text-align: center; vertical-align: middle;">
+                <img src="{{ public_path('images/royaume_du_maroc.svg') }}" width="110px">
+            </td>
+            <td
+                style="width: 33%; border: none; text-align: center; vertical-align: middle; font-size: 11pt; line-height: 1.6; font-family: sans-serif;">
+                ⵜⴰⴳⵍⴷⵉⵜ ⵏ ⵍⵎⵖⵔⵉⴱ<br>
+                ⵜⴰⵙⵏⴱⴹⵜ ⵜⴰⵎⴰⵜⵜⴰⵢⵜ ⵏ ⵜⵎⵏⴰⴹⵜ<br>
+                ⵜⴰⵙⵏⴱⴹⵜ ⵜⴰⵏⴰⵎⵎⴰⵙⵜ<br>
+                ⵜⴰⵙⵏⴱⴹⵜ ⵏ ⵍⵎⵖⵔⵉⴱ<br>
+                <div style="font-size: 12pt; border-top: 2px solid black; width: 60px; text-align: left;">2025/1/357
+                    :عدد
+                </div>
+            </td>
+
+
+
+
+        </tr>
+    </table>
     <div style="text-align: center; padding: 10px;">
 
         <img src="{{ public_path('images/logo_justice.svg') }}" width="160px">

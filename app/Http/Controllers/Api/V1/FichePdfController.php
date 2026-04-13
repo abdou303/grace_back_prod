@@ -49,6 +49,7 @@ class FichePdfController extends Controller
                 'prison',
                 'objetdemande',
                 'sourcedemande',
+                'LibelleTribunalUtilisateur'
             ])
                 ->findOrFail($dossierId);
 
