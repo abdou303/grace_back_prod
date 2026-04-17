@@ -537,7 +537,7 @@ class DossierController extends Controller
 
     public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
     {
-        Log::debug('Requête reçue :', $request->all());
+        Log::debug('terminerDossierTr: Requête reçue :', $request->all());
 
         $dossier = Dossier::findOrFail($dossier_id);
         $detenu = $dossier->detenu;
