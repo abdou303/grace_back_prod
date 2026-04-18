@@ -1135,6 +1135,68 @@ class DossierController extends Controller
         return DossierResource::collection($dossiers);
     }
 
+    public function getRegistreTribunalParquetUser($id_tr, $id_user_parquet)
+    {
+        $dossiers = Dossier::with([
+            'detenu',
+            'garants',
+            'affaires',
+            'requettes' => function ($query) use ($id_user_parquet) {
+                // On filtre pour n'afficher que SES requêtes dans le dossier
+                $query->where('user_parquet', $id_user_parquet)
+                    ->whereNotNull('etat_greffe')
+                    ->where(function ($q) {
+                        $q->where('etat_greffe', '!=', 'KO')
+                            ->orWhere('etat_parquet', '!=', 'KO');
+                    })
+                    ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
+                    ->latest('id')
+                    ->limit(1)
+                    ->with('typerequette');
+            }
+        ])
+            ->where('user_tribunal_id', $id_tr)
+            ->where('categorie', 'CAT-1')
+            ->where(function ($mainQuery) use ($id_user_parquet) {
+                // CONDITION : Le dossier appartient à l'user OU il contient une requête appartenant à l'user
+                $mainQuery->where('user_parquet', $id_user_parquet)
+                    ->orWhereHas('requettes', function ($q) use ($id_user_parquet) {
+                        $q->where('user_parquet', $id_user_parquet);
+                    });
+            })
+            ->where(function ($query) {
+                // 1. DOSSIERS AYANT AU MOINS UNE REQUETTE CAT-1 VALIDE
+                $query->whereHas('requettes', function ($q) {
+                    $q->whereNotNull('etat_greffe')
+                        ->where(function ($sub) {
+                            $sub->where('etat_greffe', '!=', 'KO')
+                                ->orWhere('etat_parquet', '!=', 'KO');
+                        })
+                        ->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-1'));
+                })
+                    // 2. OU DOSSIERS SANS AUCUNE REQUETTE CAT-1 VALIDE (mais remplissant les conditions d'état)
+                    ->orWhere(function ($q) {
+                        $q->whereDoesntHave('requettes', function ($q2) {
+                            $q2->whereNotNull('etat_greffe')
+                                ->where(function ($sub) {
+                                    $sub->where('etat_greffe', '!=', 'KO')
+                                        ->orWhere('etat_parquet', '!=', 'KO');
+                                })
+                                ->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-1'));
+                        })
+                            ->whereNotNull('etat_greffe')
+                            ->where(function ($sub) {
+                                $sub->where('etat_greffe', '!=', 'KO')
+                                    ->orWhere('etat_parquet', '!=', 'KO');
+                            });
+                    });
+            })
+            ->orderByDesc('id')
+            ->get();
+
+        return DossierResource::collection($dossiers);
+    }
+
     /*
     public function getRegistreTribunal($id_tr)
     {
