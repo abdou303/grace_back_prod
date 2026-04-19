@@ -107,6 +107,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
         Route::put('/antecedent-dossiers-requette/{requette_id}', [RequetteController::class, 'storeAntecedentRequette']);
         Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
+        Route::get('/requette/{id}/pdf', [FichePdfController::class, 'generatePdfFromRequette']);
         Route::get('/dossiers/{id}/pjs', [DossierController::class, 'getPjs']);
         Route::get('/requettes/{id}/pjs', [RequetteController::class, 'getPjs']);
         Route::get('/statistiques', [StatisticsController::class, 'getDossierStats']);

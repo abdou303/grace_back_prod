@@ -15,6 +15,7 @@ use Mpdf\Config\ConfigVariables;
 
 use App\Http\Controllers\Controller;
 use App\Models\Dossier;
+use App\Models\Requette;
 use Illuminate\Http\Request;
 
 
@@ -54,17 +55,42 @@ class FichePdfController extends Controller
                 ->findOrFail($dossierId);
 
             // 2. Configuration mPDF pour l'arabe
-            $mpdf = new Mpdf([
+
+            /* $mpdf = new Mpdf([
+                'mode' => 'utf-8', // Supports Arabic text
+                'format' => 'A4',
+                'default_font' => 'Arial',
+                'margin_top' => 5,
+                'margin_bottom' => 5,
+                'margin_left' => 15,
+                'margin_right' => 15,
+            ]);
+             $mpdf = new Mpdf([
                 'mode' => 'utf-8',
                 'format' => 'A4',
                 'margin_left' => 10,
                 'margin_right' => 10,
                 'margin_top' => 10,
                 'margin_bottom' => 10,
-                'default_font' => 'xbriyaz', // Ou votre police configurée
+                'default_font' => 'changa', // Ou votre police configurée
                 'autoArabic' => true,
                 'autoScriptToLang' => true,
                 'autoLangToFont' => true,
+            ]);*/
+            // Nettoyage des variables de config
+            $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+            $fontDirs = $defaultConfig['fontDir'];
+            $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+            $fontData = $defaultFontConfig['fontdata'];
+
+            $mpdf = new Mpdf([
+                'default_font' => 'benaya-mohannad',
+                'mode' => 'utf-8', // Supports Arabic text
+                'format' => 'A4',
+                'margin_top' => 5,
+                'margin_bottom' => 5,
+                'margin_left' => 15,
+                'margin_right' => 15,
             ]);
 
             // 3. Chargement de la vue
@@ -90,5 +116,67 @@ class FichePdfController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Erreur Serveur: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function generatePdfFromRequette($requetteId)
+    {
+        // On charge le dossier ET l'utilisateur de la requête elle-même
+        $requette = Requette::with([
+            'userParquetObjet', // IMPORTANT : pour éviter l'erreur sur le nom du député
+            'dossier.detenu',
+            'dossier.detenu.profession',
+            'dossier.detenu.nationalite',
+            'dossier.garants',
+            'dossier.userParquetObjet',
+            'dossier.affaires.tribunal',
+            'dossier.typedossier',
+            'dossier.avis',
+            'dossier.LibelleTribunalUtilisateur'
+        ])->findOrFail($requetteId);
+
+        $dossier = $requette->dossier;
+
+        if (!$dossier) {
+            return response()->json(['error' => 'Dossier introuvable'], 404);
+        }
+
+        /*$mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'default_font' => 'changa',
+            'autoArabic' => true
+        ]);
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8', // Supports Arabic text
+            'format' => 'A4',
+            'default_font' => 'Arial',
+            'margin_top' => 5,
+            'margin_bottom' => 5,
+            'margin_left' => 15,
+            'margin_right' => 15,
+        ]);*/
+
+        // Nettoyage des variables de config
+
+
+        $mpdf = new Mpdf([
+            'default_font' => 'benaya-mohannad',
+            'mode' => 'utf-8', // Supports Arabic text
+            'format' => 'A4',
+            'margin_top' => 5,
+            'margin_bottom' => 5,
+            'margin_left' => 15,
+            'margin_right' => 15,
+        ]);
+
+
+        // AJOUT : On passe 'dossier' ET 'requette' à la vue
+        $html = view('pdf.dossier', compact('dossier', 'requette'))->render();
+
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->WriteHTML($html);
+
+        return response($mpdf->Output('', 'S'))->header('Content-Type', 'application/pdf');
     }
 }

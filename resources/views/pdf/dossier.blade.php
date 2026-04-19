@@ -5,19 +5,22 @@
     <meta charset="UTF-8">
     <title>{{ $dossier->typedossier->libelle ?? '' }}</title>
     <style>
-        h1 {
-            /**/
-            text-align: center;
-            font-weight: bold;
+        /* Forcer la police sur TOUS les éléments */
+        * {
+            font-family: 'benaya-mohannad', sans-serif !important;
         }
 
         body {
-
-
-            /*font-family: "Amiri" !important;
-            font-family: 'kfgqpcuthmantahanaskh', sans-serif !important;*/
             direction: rtl;
             text-align: right;
+            font-family: 'benaya-mohannad', sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24pt;
+            margin-bottom: 20px;
         }
 
         table {
@@ -25,39 +28,16 @@
             border-collapse: collapse;
         }
 
-        th,
-        td {
-            border: 1px solid black;
-            padding: 8px;
+        td,
+        th {
             text-align: right;
+            padding: 5px;
         }
 
-        /* Style for the inline data */
-        .inline-data {
-            display: grid;
-            grid-template-columns: repeat(4, 2fr);
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .inline-data p {
-            margin: 0;
-        }
-
-        .row {
-            width: 100%;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .column {
-            float: right;
-            width: 32%;
-            margin-left: 2%;
-        }
-
-        .column p {
-            margin: 0;
+        /* Style spécifique pour ton en-tête (pour éviter qu'il n'écrase la police) */
+        .header-table td p {
+            font-family: 'benaya-mohannad', sans-serif !important;
+            line-height: 1.5;
         }
     </style>
 
@@ -68,7 +48,7 @@
     <table class="header-table" style="width: 100%; border: none; margin-bottom: 30px;">
         <tr>
             <td
-                style="width: 33%; border: none; text-align: center; vertical-align: middle; font-size: 13pt; line-height: 1.4; font-weight: normal; font-family:xbriyaz;">
+                style="width: 33%; border: none; text-align: center; vertical-align: middle; font-size: 13pt; line-height: 1.4; font-weight: normal;">
                 <p style="margin: 0; padding-right: 15px;">المملكة المغربية</p>
                 <p style="margin: 0; padding-right: 15px;">رئاسة النيابة العامة</p>
                 <p style="margin: 0; padding-right: 15px;">{{ $dossier->LibelleTribunalUtilisateur->libelle }}</p>
@@ -91,7 +71,7 @@
                 <img src="{{ public_path('images/royaume_du_maroc.svg') }}" width="110px">
             </td>
             <td
-                style="width: 33%; border: none; text-align: center; vertical-align: middle; font-size: 11pt; line-height: 1.6; font-family: xbriyaz;">
+                style="width: 33%; border: none; text-align: center; vertical-align: middle; font-size: 11pt; line-height: 1.6; ">
 
                 <div style="font-size: 12pt; border-top: 2px solid black; width: 60px; text-align: left;">
 
@@ -106,10 +86,9 @@
 
 
 
-    <h1 style="font-family: xbriyaz"> ملتمس النيابة العامة</h1>
+    <h1> ملتمس النيابة العامة</h1>
 
-    <div
-        style="margin-top: 30px; line-height: 1.8; font-family: xbriyaz; text-align: justify; direction: rtl;font-size:18px">
+    <div style="margin-top: 30px; line-height: 1.8;  text-align: justify; direction: rtl;font-size:18px">
 
         <p>
             إن الوكيل العام للملك لدى {{ $dossier->user_tribunal_libelle }}
@@ -185,21 +164,20 @@
                             التاريخ:</strong> {{ now()->format('Y/m/d') }}
                     </td>
                     <td style="border: none; text-align: left; width: 50%;font-size:18px">
-                        <strong> إسم النائب:</strong> {{ $dossier->userParquetObjet->name ?? '....................' }}
+                        <strong> إسم النائب:</strong><br>
+                        @if (isset($requette))
+                            {{-- Affiche le nom de l'utilisateur de la requête, ou vide si nul --}}
+                            {{ $requette->userParquetObjet->name ?? '....................' }}
+                        @else
+                            {{-- Affiche le nom de l'utilisateur du dossier, ou vide si nul --}}
+                            {{ $dossier->userParquetObjet->name ?? '....................' }}
+                        @endif
+
                     </td>
                 </tr>
             </table>
         </div>
     </div>
-
-
-
-
-
-
-
-
-
 
 </body>
 
