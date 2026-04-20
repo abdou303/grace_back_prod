@@ -44,7 +44,10 @@ class Dossier extends Model
         'originedossier',
         'observation_redirection',
         'has_file_mp',
-        'date_etat_ok'
+        'date_etat_ok',
+        'etat_parquet',
+        'date_envoi_parquet',
+        'date_etat_parquet',
 
     ];
 

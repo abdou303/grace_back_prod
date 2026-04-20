@@ -34,7 +34,11 @@ class Requette extends Model
         'nbr_redirection',
         'observation_redirection',
         'copie_demande_envoyee',
-        'has_file_mp'
+        'has_file_mp',
+        'etat_parquet',
+        'date_envoi_parquet',
+        'date_etat_parquet',
+        'date_etat_ok'
     ];
 
     public function pjs()
