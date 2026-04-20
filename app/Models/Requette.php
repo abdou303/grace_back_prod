@@ -38,7 +38,9 @@ class Requette extends Model
         'etat_parquet',
         'date_envoi_parquet',
         'date_etat_parquet',
-        'date_etat_ok'
+        'date_etat_ok',
+        'etat_tribunal',
+        'tr_tribunal',
     ];
 
     public function pjs()
