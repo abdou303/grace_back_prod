@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Requette extends Model
 {
     use HasFactory;
-    protected $fillable = [
+    /*protected $fillable = [
 
 
         'date',
@@ -41,6 +41,35 @@ class Requette extends Model
         'date_etat_ok',
         'etat_tribunal',
         'tr_tribunal',
+    ];*/
+
+    protected $fillable = [
+        'numero',
+        'date',
+        'date_importation',
+        'etat',
+        'etat_tribunal',
+        'contenu',
+        'observations',
+        'dossier_id',
+        'partenaire_id',
+        'tribunal_id',
+        'user_id',
+        'typerequette_id',
+        'date_etat_tribunal',
+        'date_etat_greffe',
+        'date_envoi_greffe',
+        'etat_greffe',
+        'user_tribunal',
+        'user_greffe',
+        'user_parquet',
+        'nbr_redirection',
+        'date_envoi_parquet',
+        'date_etat_parquet',
+        'etat_parquet',
+        'copie_demande_envoyee',
+        'observation_redirection',
+        'has_file_mp',
     ];
 
     public function pjs()

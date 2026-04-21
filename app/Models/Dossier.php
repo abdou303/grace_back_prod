@@ -12,7 +12,7 @@ class Dossier extends Model
     protected $casts = [
         'date_sortie' => 'date:Y-m-d',
     ];
-    protected $fillable = [
+    /*protected $fillable = [
         'numero',
         'date_enregistrement',
         'avis_mp',
@@ -49,6 +49,57 @@ class Dossier extends Model
         'date_envoi_parquet',
         'date_etat_parquet',
 
+    ];*/
+
+    protected $fillable = [
+        'numero_dapg',
+        'numero',
+        'numeromp',
+        'etat',
+        'tr_tribunal',
+        'date_tr_tribunal',
+        'tr_dapg',
+        'date_tr_dapg',
+        'date_enregistrement',
+        'date_sortie',
+        'observation',
+        'has_antecedent',
+        'antecedant_id',
+        'avis_mp',
+        'avis_dgapr',
+        'avis_gouverneur',
+        'user_tribunal_id',
+        'user_tribunal_libelle',
+        'numero_detention',
+        'comportement_id',
+        'objetdemande_id',
+        'sourcedemande_id',
+        'autre_source',
+        'prison_id',
+        'user_id',
+        'typedossier_id',
+        'detenu_id',
+        'categoriedossiers_id',
+        'naturedossiers_id',
+        'typemotifdossiers_id',
+        'date_etat_tribunal',
+        'date_etat_greffe',
+        'date_envoi_greffe',
+        'etat_greffe',
+        'user_tribunal',
+        'user_greffe',
+        'user_parquet',
+        'categorie',
+        'nbr_redirection',
+        'originedossier',
+        'date_envoi_parquet',
+        'date_etat_parquet',
+        'etat_parquet',
+        'observations_parquet',
+        'avis_id',
+        'observation_redirection',
+        'has_file_mp',
+        'date_etat_ok',
     ];
 
     public function affaires()
