@@ -1301,4 +1301,19 @@ class RequetteController extends Controller
             'data' => $requette
         ], 200);
     }
+
+
+    public function reForwardRequetteToGreffe(Request $request,  Requette $requette)
+    {
+        // $dossier = Dossier::findOrFail($dossier_id);
+
+        $requette->date_envoi_greffe = now()->format('Y-m-d H:i:s.v');
+        $requette->etat_greffe = "NT";
+        $requette->nbr_redirection += 1; // Ou $dossier->nbr_redirection++
+        $requette->observation_redirection = $request->observation_redirection;
+
+        $requette->save();
+
+        return new RequetteResource($requette);
+    }
 }

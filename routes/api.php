@@ -98,6 +98,7 @@ Route::prefix('v1')->group(function () {
         Route::put('/dossiers/{dossier}/forward', [DossierController::class, 'forwardDossier']);
         Route::put('/dossiers/{dossier}/reforward-to-greffe', [DossierController::class, 'reForwardDossierToGreffe']);
         Route::put('/requettes/{requette}/forward-parquet', [RequetteController::class, 'forwardParquetRequette']);
+        Route::put('/requettes/{requette}/reforward-to-greffe', [RequetteController::class, 'reForwardRequetteToGreffe']);
         Route::put('/dossiers/{dossier}/forward-parquet', [DossierController::class, 'forwardParquetDossier']);
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
         Route::post('/requettes/reponse-greffe/{requette_id}', [RequetteController::class, 'addReponseGreffeRequette']);
