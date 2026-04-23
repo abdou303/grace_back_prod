@@ -96,6 +96,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/requettes-add-demande/{requette}', [RequetteController::class, 'confirmRequetteAddDemande']);
         Route::put('/requettes/{requette}/forward', [RequetteController::class, 'forwardRequette']);
         Route::put('/dossiers/{dossier}/forward', [DossierController::class, 'forwardDossier']);
+        Route::put('/dossiers/{dossier}/reforward-to-greffe', [DossierController::class, 'reForwardDossierToGreffe']);
         Route::put('/requettes/{requette}/forward-parquet', [RequetteController::class, 'forwardParquetRequette']);
         Route::put('/dossiers/{dossier}/forward-parquet', [DossierController::class, 'forwardParquetDossier']);
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);

@@ -80,10 +80,14 @@ class FichePdfController extends Controller
             // Nettoyage des variables de config
             $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
             $fontDirs = $defaultConfig['fontDir'];
+
             $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
             $fontData = $defaultFontConfig['fontdata'];
 
             $mpdf = new Mpdf([
+                'fontDir' => array_merge($fontDirs, [
+                    public_path('fonts'), // Chemin vers D:\xampp\htdocs\app_production\public\fonts
+                ]),
                 'default_font' => 'benaya-mohannad',
                 'mode' => 'utf-8', // Supports Arabic text
                 'format' => 'A4',

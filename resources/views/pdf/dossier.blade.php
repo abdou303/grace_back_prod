@@ -13,7 +13,7 @@
         body {
             direction: rtl;
             text-align: right;
-            font-family: 'benaya-mohannad', sans-serif;
+            font-family: 'benaya-mohannad', sans-serif !important;
         }
 
         h1 {

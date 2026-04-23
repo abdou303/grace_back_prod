@@ -1401,4 +1401,18 @@ class DossierController extends Controller
 
         return new DossierResource($dossier);
     }
+
+    public function reForwardDossierToGreffe(Request $request,  Dossier $dossier)
+    {
+        // $dossier = Dossier::findOrFail($dossier_id);
+
+        $dossier->date_envoi_greffe = now()->format('Y-m-d H:i:s.v');
+        $dossier->etat_greffe = "NT";
+        $dossier->nbr_redirection += 1; // Ou $dossier->nbr_redirection++
+        $dossier->observation_redirection = $request->observation_redirection;
+
+        $dossier->save();
+
+        return new DossierResource($dossier);
+    }
 }
