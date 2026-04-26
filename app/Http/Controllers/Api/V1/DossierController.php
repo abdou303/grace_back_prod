@@ -1415,4 +1415,38 @@ class DossierController extends Controller
 
         return new DossierResource($dossier);
     }
+
+    public function uploadOnePj(Request $request, $dossier_id)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:pdf|max:20480',
+            'type' => 'required|string'
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('temp/openbee_uploads');
+
+        // Mappage du type vers l'ID OpenBee (comme dans votre controller actuel)
+        $fileMappings = [
+            'copie_demande' => 7,
+            'copie_decision' => 5,
+            'copie_cin' => 4,
+            'copie_mp' => 3,
+            'copie_non_recours' => 2,
+            'copie_social' => 1,
+        ];
+
+        $fileData = [[
+            'path' => $path,
+            'typepjId' => $fileMappings[$request->type],
+            'affaireId' => $request->affaire_id,
+            'fieldName' => $request->type,
+            'originalName' => $file->getClientOriginalName(),
+        ]];
+
+        // Lancer le job immédiatement pour ce fichier seul
+        UploadDossierPJsJob::dispatch($dossier_id, $fileData, [])->onQueue('openbee_uploads');
+
+        return response()->json(['message' => 'Fichier en cours de traitement']);
+    }
 }
