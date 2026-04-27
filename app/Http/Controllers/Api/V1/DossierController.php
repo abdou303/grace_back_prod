@@ -132,6 +132,7 @@ class DossierController extends Controller
             'comportement',
             'affaires',
             'requettes',
+            'requettes.typerequette',
             'affaires.tribunal',
             'affaires.peine',
             'affaires.peine.prisons',
