@@ -1316,4 +1316,42 @@ class RequetteController extends Controller
 
         return new RequetteResource($requette);
     }
+
+    public function uploadOnePj(Request $request, $requette_id)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:pdf|max:20480',
+            'type' => 'required|string',
+            'affaire_id' => 'nullable|integer'
+        ]);
+
+        $requette = Requette::findOrFail($requette_id);
+        $dossier_id = $requette->dossier_id; // On récupère le dossier parent
+
+        $file = $request->file('file');
+        $path = $file->store('temp/openbee_uploads');
+
+        $fileMappings = [
+            'copie_demande' => 7,
+            'copie_decision' => 5,
+            'copie_cin' => 4,
+            'copie_mp' => 3,
+            'copie_non_recours' => 2,
+            'copie_social' => 1,
+        ];
+
+        $fileData = [[
+            'path' => $path,
+            'typepjId' => $fileMappings[$request->type],
+            'affaireId' => $request->affaire_id,
+            'fieldName' => $request->type,
+            'originalName' => $file->getClientOriginalName(),
+            'context_requette_id' => $requette->id, // Important pour le suivi
+        ]];
+
+        // Lancer le job immédiatement
+        UploadDossierPJsJob::dispatch($dossier_id, $fileData, [])->onQueue('openbee_uploads');
+
+        return response()->json(['message' => 'Fichier en cours de traitement']);
+    }
 }

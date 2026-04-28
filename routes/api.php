@@ -105,6 +105,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/requettes/terminer-tr-parquet/{requette_id}', [RequetteController::class, 'addReponseParquetRequette']);
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
         Route::post('/dossiers/upload-one-pj/{dossier_id}', [DossierController::class, 'uploadOnePj']);
+        Route::post('/requettes/upload-one-pj/{requette_id}', [RequetteController::class, 'uploadOnePj']);
         Route::post('/dossiers/terminer-tr-greffe/{dossier_id}', [DossierController::class, 'terminerGreffeDossierTr']);
         Route::post('/dossiers/terminer-tr-parquet/{dossier_id}', [DossierController::class, 'terminerParquetDossierTr']);
         Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
