@@ -1345,7 +1345,10 @@ class DossierController extends Controller
             'prison',
             'objetdemande',
             'sourcedemande',
-        ])->where('categorie', 'CAT-1')->where('user_tribunal_id', $user_tribunal);
+        ])->where('categorie', 'CAT-1')->where('user_tribunal_id', $user_tribunal)->where(function ($q) {
+            $q->where('has_antecedent', '!=', 'OUI')
+                ->orWhereNull('has_antecedent');
+        });
 
         $query->where(function ($q) use ($nom, $prenom, $cin, $num_det, $aff_num, $aff_code, $aff_annee) {
 
