@@ -563,12 +563,14 @@ class DossierController extends Controller
         $dossier->typedossier_id = $request->typedossier;
         $dossier->naturedossiers_id = $request->naturedossier;
         $dossier->sourcedemande_id = $request->sourcedemande;
+
         //$dossier->etat = 'OK'; // Mise à jour immédiate de l'état
         $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
         $dossier->user_id = $request->user_id;
         $dossier->user_tribunal_id = $request->tribunal_user_id;
         $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
         $dossier->numeromp = $request->numeromp;
+        $dossier->numero_dapg = $request->numero_dapg;
         $dossier->prison_id = isset($request->prison) && is_numeric($request->prison) ? (int) $request->prison : null;
         $dossier->numero_detention = $request->numerolocal;
         $dossier->save();
