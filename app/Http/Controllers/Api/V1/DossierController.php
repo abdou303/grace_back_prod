@@ -36,11 +36,11 @@ class DossierController extends Controller
         $request->validate([
             'statutRequette' => 'required|exists:statut_requettes,code',
             'numeromp' => 'required',
-            'copie_decision' => 'nullable|file|mimes:pdf|max:25600',
-            'copie_cin' => 'nullable|file|mimes:pdf|max:25600',
-            'copie_mp' => 'nullable|file|mimes:pdf|max:25600',
-            'copie_non_recours' => 'nullable|file|mimes:pdf|max:25600',
-            'copie_social' => 'nullable|file|mimes:pdf|max:25600',
+            'copie_decision' => 'nullable|file|mimes:pdf|max:153600',
+            'copie_cin' => 'nullable|file|mimes:pdf|max:153600',
+            'copie_mp' => 'nullable|file|mimes:pdf|max:153600',
+            'copie_non_recours' => 'nullable|file|mimes:pdf|max:153600',
+            'copie_social' => 'nullable|file|mimes:pdf|max:153600',
         ]);
 
         $dossier->numeromp = $request->numeromp;

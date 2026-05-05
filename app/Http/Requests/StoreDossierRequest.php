@@ -47,11 +47,11 @@ class StoreDossierRequest extends FormRequest
             'affaires.*.tribunal' => 'required|numeric',
             'affaires.*.datejujement' => 'required|string',
             'affaires.*.conenujugement' => 'nullable|string',
-            'affaires.*.copie_decision' => 'file|mimes:pdf|max:25600', // Each file must be valid
-            'affaires.*.copie_non_recours' => 'file|mimes:pdf|max:25600', // Each file must be valid
-            'copie_cin' => 'nullable|file|mimes:pdf|max:25600',
-            'copie_mp' => 'nullable|file|mimes:pdf|max:25600',
-            'copie_social' => 'nullable|file|mimes:pdf|max:25600',
+            'affaires.*.copie_decision' => 'file|mimes:pdf|max:153600', // Each file must be valid
+            'affaires.*.copie_non_recours' => 'file|mimes:pdf|max:153600', // Each file must be valid
+            'copie_cin' => 'nullable|file|mimes:pdf|max:153600',
+            'copie_mp' => 'nullable|file|mimes:pdf|max:153600',
+            'copie_social' => 'nullable|file|mimes:pdf|max:153600',
             'prison' => 'nullable',
             'numerolocal' => 'nullable|numeric',
             /* 'copie_decision' => 'nullable',
@@ -59,8 +59,8 @@ class StoreDossierRequest extends FormRequest
             'copie_mp' => 'nullable',
             'copie_non_recours' => 'nullable',
             'copie_social' => 'nullable',*/
-            /*'copie_decision' => 'nullable|file|mimes:pdf|max:25600',
-            'copie_non_recours' => 'nullable|file|mimes:pdf|max:25600',*/
+            /*'copie_decision' => 'nullable|file|mimes:pdf|max:153600',
+            'copie_non_recours' => 'nullable|file|mimes:pdf|max:153600',*/
 
 
         ];

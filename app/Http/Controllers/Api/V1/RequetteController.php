@@ -30,6 +30,7 @@ class RequetteController extends Controller
         // L'injection de OpenBeeService n'est plus nécessaire ici.
 
         // 1. Logique métier immédiate (Base de données)
+        /**/
         $requette = Requette::findOrFail($requette_id);
         $dossier = $requette->dossier;
         $detenu = $dossier->detenu;
@@ -44,6 +45,42 @@ class RequetteController extends Controller
         $detenu->save();
         $dossier->save();
 
+        /******************************************** */
+        // 1. Logique métier immédiate (Base de données)
+       /* $requette = Requette::findOrFail($requette_id);
+        $dossier = $requette->dossier;
+
+        if (!$dossier) {
+            return response()->json(['message' => 'Dossier not found'], 404);
+        }
+
+        $detenu = $dossier->detenu;
+
+        // --- MODIFICATIONS ICI : Mise à jour des informations du DÉTENU ---
+        $detenu->nom = $request->nom;
+        $detenu->prenom = $request->prenom;
+        $detenu->datenaissance = $request->datenaissance;
+        $detenu->nompere = $request->nompere;
+        $detenu->nommere = $request->nommere;
+        $detenu->cin = $request->cin;
+        $detenu->adresse = $request->adresse;
+        $detenu->genre = $request->genre;
+
+        // Si nationalite est un objet envoyé par ng-select (contenant un id)
+        if ($request->has('nationalite')) {
+            $detenu->nationalite_id = is_array($request->nationalite) ? $request->nationalite['id'] : $request->nationalite;
+        }
+        $detenu->save();
+
+        // --- MODIFICATIONS ICI : Mise à jour des informations du DOSSIER ---
+        $dossier->numeromp = $request->numeromp;
+
+        // Si prison est un objet envoyé par ng-select
+        if ($request->has('prison')) {
+            $dossier->prison_id = is_array($request->prison) ? $request->prison['id'] : $request->prison;
+        }
+        $dossier->save();*/
+        /******************************************** */
         // 2. Préparation et Stockage TEMPORAIRE des fichiers (Logique similaire à terminerDossierTr)
         $filesToProcess = [];
         $fileMappings = [
@@ -482,7 +519,7 @@ class RequetteController extends Controller
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
-            // 'copie_demande' => 'nullable|file|mimes:pdf|max:25600', // Validation du fichier
+            // 'copie_demande' => 'nullable|file|mimes:pdf|max:153600', // Validation du fichier
             'copie_demande' => [
                 Rule::requiredIf($request->categorie === 'CAT-1'),
                 'file',
@@ -593,7 +630,7 @@ class RequetteController extends Controller
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
-            'copie_demande' => 'nullable|file|mimes:pdf|max:25600', // Validation du fichier
+            'copie_demande' => 'nullable|file|mimes:pdf|max:153600', // Validation du fichier
             /*'copie_demande' => [
                 Rule::requiredIf($request->categorie === 'CAT-1'),
                 'file',
@@ -729,7 +766,7 @@ class RequetteController extends Controller
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
-            'copie_demande' => 'required|file|mimes:pdf|max:25600', // Validation du fichier
+            'copie_demande' => 'required|file|mimes:pdf|max:153600', // Validation du fichier
             /*'copie_demande' => [
                 Rule::requiredIf($request->categorie === 'CAT-1'),
                 'file',
@@ -1353,5 +1390,38 @@ class RequetteController extends Controller
         UploadDossierPJsJob::dispatch($dossier_id, $fileData, [])->onQueue('openbee_uploads');
 
         return response()->json(['message' => 'Fichier en cours de traitement']);
+    }
+
+    public function updateInfosOnly(Request $request, $id)
+
+    {
+
+        \Log::debug('***********Modification Personelle des Requettes **************** :', $request->all());
+
+
+        $requette = Requette::findOrFail($id);
+        $dossier = $requette->dossier;
+        $detenu = $dossier->detenu;
+
+        // Mise à jour Détenu
+        $detenu->update($request->only([
+            'nom',
+            'prenom',
+            'datenaissance',
+            'nompere',
+            'nommere',
+            'cin',
+            'adresse',
+            'genre',
+            'nationalite_id'
+        ]));
+
+        // Mise à jour Dossier
+        $dossier->update($request->only([
+            'numeromp',
+            'prison_id'
+        ]));
+
+        return response()->json(['message' => 'Mise à jour réussie']);
     }
 }
