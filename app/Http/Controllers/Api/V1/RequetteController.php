@@ -756,6 +756,12 @@ class RequetteController extends Controller
 
             // Optionnel : si vous voulez être sûr de couvrir tous les cas
             'copie_demande.required_if' => "المرجو رفع الطلب",
+
+            'copie_demande.required_without' => "المرجو رفع الطلب أو نسخة من الحالة الجنائية",
+            'copie_dgapr.required_without'   => "المرجو رفع الطلب أو نسخة من الحالة الجنائية",
+            'copie_dgapr.mimes'              => "الملف يجب أن يكون بصيغة PDF",
+            'copie_dgapr.max' => "الملف يجب أن لا يتعدى 25 ميغابايت",
+
         ];
 
         $data = $request->validate([
@@ -766,7 +772,9 @@ class RequetteController extends Controller
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
-            'copie_demande' => 'required|file|mimes:pdf|max:153600', // Validation du fichier
+            // 'copie_demande' => 'required|file|mimes:pdf|max:153600', // Validation du fichier
+            'copie_demande' => 'required_without:copie_dgapr|nullable|file|mimes:pdf|max:153600',
+            'copie_dgapr'   => 'required_without:copie_demande|nullable|file|mimes:pdf|max:153600',
             /*'copie_demande' => [
                 Rule::requiredIf($request->categorie === 'CAT-1'),
                 'file',
@@ -803,6 +811,7 @@ class RequetteController extends Controller
                 $filesToProcess = [];
                 $fileMappings = [
                     'copie_demande' => 7,
+                    'copie_dgapr'   => 8,
                 ];
 
                 foreach ($fileMappings as $fieldName => $typepjId) {
