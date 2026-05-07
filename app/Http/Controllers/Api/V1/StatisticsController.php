@@ -16,22 +16,33 @@ class StatisticsController extends Controller
         $to = $request->input('to');
 
         $query = Dossier::query();
+        $query_dossier = Dossier::query()->where(function ($query) {
+            $query->where('has_antecedent', '!=', 'OUI')
+                ->orWhereNull('has_antecedent');
+        });
         $query_requette = Requette::query();
+
 
 
         if ($range === 'current_year') {
             $query->whereYear('created_at', now()->year);
             $query_requette->whereYear('created_at', now()->year);
+            $query_dossier->whereYear('created_at', now()->year);
         } elseif ($range === 'current_month') {
             $query->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year);
+            $query_dossier->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year);
             $query_requette->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year);
         } elseif ($range === 'current_week') {
             $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+            $query_dossier->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+
             $query_requette->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
         } elseif ($from && $to) {
             $query->whereBetween('created_at', [$from, $to]);
+            $query_dossier->whereBetween('created_at', [$from, $to]);
             $query_requette->whereBetween('created_at', [$from, $to]);
         }
 
@@ -51,6 +62,7 @@ class StatisticsController extends Controller
                     })
                     ->count(),
             ],
+
             /*'requettes_per_tribunal' => $query_requette->select('tribunal_id')->with('tribunal:id,libelle')
                 ->where('etat', 'TR')
                 ->selectRaw('count(*) as count')
@@ -66,7 +78,31 @@ class StatisticsController extends Controller
     ')
                 ->groupBy('tribunal_id')
                 ->get(),
+            /**************************************************** */
+            'total_dossiers' => $query_dossier->where('originedossier', '=', 'D')->count(),
+            'dossiers_traites_stats' => [
+                'non_traites' => (clone $query_dossier)->where('etat', '!=', 'OK')->count(),
+                'traites' => (clone $query_dossier)->where('etat', 'OK')->count(),
+                'recus_dapg' => (clone $query_dossier)->where('tr_dapg', 'OK')->count(),
 
+            ],
+            'dossiers_per_tribunal' => $query_dossier->select('user_tribunal_id')
+                ->with('LibelleTribunalUtilisateur:id,libelle')
+                ->where('originedossier', 'D')
+                ->where(function ($query) {
+                    $query->where('has_antecedent', '!=', 'OUI')
+                        ->orWhereNull('has_antecedent');
+                })
+                ->selectRaw('
+        count(*) as count,
+        SUM(CASE WHEN etat = \'OK\' THEN 1 ELSE 0 END) as count_ok,
+        SUM(CASE WHEN etat != \'OK\'  THEN 1 ELSE 0 END) as count_ko_or_null,
+        SUM(CASE WHEN tr_dapg = \'OK\'  THEN 1 ELSE 0 END) as count_recus_dapg
+
+    ')
+                ->groupBy('user_tribunal_id')
+                ->get(),
+            /****************************************** */
             /*
                'per_tribunal' => $query->select('user_tribunal_libelle')
                 ->selectRaw('count(*) as count')
@@ -111,7 +147,10 @@ class StatisticsController extends Controller
 
         $query = Dossier::query();
         $query_dossier = Dossier::query();
-        $query_dossier->where('user_tribunal_id', $tr_id);
+        $query_dossier->where('user_tribunal_id', $tr_id)->where(function ($query) {
+            $query->where('has_antecedent', '!=', 'OUI')
+                ->orWhereNull('has_antecedent');
+        });
         $query_requette = Requette::query();
         $query_requette->where('tribunal_id', $tr_id);
 
