@@ -100,3 +100,6 @@ DB::table('roles')->insert([
     'libelle' => 'TR-LC',
     'active' => 1
 ]);
+
+/***************************08/05/2026************************/
+DB::unprepared(" SET IDENTITY_INSERT [dbo].[statut_requettes] ON; INSERT INTO [dbo].[statut_requettes] (id, libelle, code, active, created_at, updated_at) VALUES (5, N'لازال رائجا', 'EN-COURS', 1, GETDATE(), GETDATE()); SET IDENTITY_INSERT [dbo].[statut_requettes] OFF; ");

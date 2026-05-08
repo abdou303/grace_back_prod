@@ -161,7 +161,12 @@
             <table style="width: 100%; border: none;">
                 <tr>
                     <td style="border: none; text-align: right; width: 50%;font-size:18px"><strong>
-                            التاريخ:</strong> {{ now()->format('Y/m/d') }}
+                            التاريخ:</strong>
+                        @if (isset($requette))
+                            {{ \Carbon\Carbon::parse($requette->date_etat_parquet)->format('Y/m/d') ?? '....................' }}
+                        @else
+                            {{ \Carbon\Carbon::parse($dossier->date_etat_parquet)->format('Y/m/d') ?? '....................' }}
+                        @endif
                     </td>
                     <td style="border: none; text-align: left; width: 50%;font-size:18px">
                         <strong> إسم النائب:</strong><br>
