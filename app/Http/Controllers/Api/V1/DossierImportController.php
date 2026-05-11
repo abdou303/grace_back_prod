@@ -51,14 +51,17 @@ class DossierImportController extends Controller
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,csv',
+            'import_user_id' => 'required',
+            'import_tribunal_id' => 'nullable',
         ]);
 
         // On démarre la transaction globale
         DB::beginTransaction();
 
         try {
-            Excel::import(new DossierImport, $request->file('file'));
-
+            //Excel::import(new DossierImport, $request->file('file'));
+            // On passe les paramètres au constructeur de la classe
+            Excel::import(new DossierImport($request->import_user_id, $request->import_tribunal_id), $request->file('file'));
             // Si on arrive ici, tout s'est bien passé
             DB::commit();
 

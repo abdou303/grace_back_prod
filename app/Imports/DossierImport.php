@@ -6,6 +6,7 @@ use App\Models\Dossier;
 use App\Models\Detenu;
 use App\Models\Affaire;
 use App\Models\Requette;
+use App\Services\OperationService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB; // Important pour la sécurité des données
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -14,6 +15,20 @@ use Carbon\Carbon;
 
 class DossierImport implements ToCollection, WithHeadingRow
 {
+
+    private $userId;
+    private $tribunalId;
+    protected $operationService;
+
+
+    // Le constructeur reçoit les données du contrôleur
+    public function __construct($userId, $tribunalId)
+    {
+        $this->userId = $userId;
+        $this->tribunalId = $tribunalId;
+        $this->operationService = new OperationService(); // Instanciation directe
+
+    }
     /*  public function collection(Collection $rows)
     {
         foreach ($rows as $row) {
@@ -135,7 +150,13 @@ class DossierImport implements ToCollection, WithHeadingRow
 
                 if ($existingDossier) {
                     // Si le dossier existe, on ajoute seulement la requête
-                    $this->createRequette($existingDossier->id, $row);
+                    $requette = $this->createRequette($existingDossier->id, $row);
+                    $this->operationService->logOperation(
+                        $existingDossier->id,
+                        'DAPG-GET-DEMANDE', // Mettez l'ID correspondant à "Ajout requête"
+                        $requette->id ?? null,
+                        $this->userId
+                    );
                 } else {
                     // 1. Création du Détenu (avec transformation de la date de naissance)
                     $detenu = Detenu::create([
@@ -147,7 +168,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'cin'                    => $row['cin'],
                         'datenaissance'          => $this->transformDate($row['datenaissance']),
                         'numero_national_detenu' => $row['numero_detention_national'],
-                        'nationalite_id'         => $row['nationality'] ?? 100,
+                        'nationalite_id'         => $row['nationality'] ?? 99,
                     ]);
 
                     // 2. Préparation des données du Dossier
@@ -158,7 +179,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'typedossier_id'      => $row['typedossier_id'],
                         'naturedossiers_id'   => $row['naturedossiers_id'],
                         'detenu_id'           => $detenu->id,
-                        'user_id'             => $row['user_id'],
+                        //  'user_id'             => $row['user_id'],
+                        'user_id'             =>  $this->userId,
                         'originedossier'      => 'R'
                     ];
 
@@ -223,7 +245,13 @@ class DossierImport implements ToCollection, WithHeadingRow
                     }
 
                     // 4. Création de la requête initiale
-                    $this->createRequette($dossier->id, $row);
+                    $requette = $this->createRequette($dossier->id, $row);
+                    $this->operationService->logOperation(
+                        $dossier->id,
+                        'DAPG-GET-DEMANDE', // Mettez l'ID correspondant à "Ajout requête"
+                        $requette->id ?? null,
+                        $this->userId
+                    );
                 }
             });
         }

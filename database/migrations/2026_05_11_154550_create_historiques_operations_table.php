@@ -13,19 +13,22 @@ return new class extends Migration
     {
         Schema::create('historiques_operations', function (Blueprint $table) {
             $table->id();
-            // Clés étrangères (assurez-vous que les tables parentes existent)
-            $table->foreignId('dossier_id')->constrained();
 
-            // nullable() car vous avez précisé que c'est possible
-            $table->foreignId('requette_id')->nullable()->constrained();
+            // On garde un seul CASCADE (le parent principal)
+            $table->foreignId('dossier_id')->constrained()->onDelete('cascade');
 
-            $table->foreignId('user_id')->constrained();
-            $table->foreignId('operation_id')->constrained();
+            // Pour tous les autres, on utilise 'no action' (ou on retire simplement onDelete)
+            // SQL Server acceptera car il n'y a plus de risques de cycles automatiques
+            $table->foreignId('requette_id')->nullable()->constrained()->onDelete('no action');
+            $table->foreignId('user_id')->constrained()->onDelete('no action');
+            $table->foreignId('operation_id')->constrained()->onDelete('no action');
+
             $table->unsignedBigInteger('tribunal_id')->nullable();
-            $table->foreign('tribunal_id')->references('id')->on('tribunaux')->onDelete('cascade');
+            $table->foreign('tribunal_id')
+                ->references('id')
+                ->on('tribunaux')
+                ->onDelete('no action');
 
-
-            // Date de l'action
             $table->dateTime('date_action');
             $table->timestamps();
         });
