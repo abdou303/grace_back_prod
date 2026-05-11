@@ -103,3 +103,26 @@ DB::table('roles')->insert([
 
 /***************************08/05/2026************************/
 DB::unprepared(" SET IDENTITY_INSERT [dbo].[statut_requettes] ON; INSERT INTO [dbo].[statut_requettes] (id, libelle, code, active, created_at, updated_at) VALUES (5, N'لازال رائجا', 'EN-COURS', 1, GETDATE(), GETDATE()); SET IDENTITY_INSERT [dbo].[statut_requettes] OFF; ");
+
+/**********************************************************************/
+$data = [
+    ['code' => 'DAPG-GET-DEMANDE', 'libelle' => 'تحميل الطلب', 'niveau' => 'DAPG'],
+    ['code' => 'DAPG-ENVOYER-DEMANDE', 'libelle' => 'إرسال الطلب للنيابة العامة', 'niveau' => 'DAPG'],
+    ['code' => 'DAPG-EDIT-INFOS-DOSSIER', 'libelle' => 'تعديل معلومات الملف', 'niveau' => 'DAPG'],
+    ['code' => 'DAPG-JOINT-D-SP-DOSSIER', 'libelle' => 'إرفاق الطلب او الحالة الجنائية', 'niveau' => 'DAPG'],
+    ['code' => 'TR-CONSULTER-REQUETTE', 'libelle' => 'الاطلاع على الاجراء', 'niveau' => 'TR'],
+    ['code' => 'TR-TRAITER-REQUETTE', 'libelle' => 'معالجة الاجراء', 'niveau' => 'TR'],
+    ['code' => 'TR-ENVOI-TO-GREFFE', 'libelle' => 'الاحالة على الرئاسة', 'niveau' => 'TR'],
+    ['code' => 'TR-TRAITE-PAR-GREFFE', 'libelle' => 'أنجز من طرف الرئاسة', 'niveau' => 'TR'],
+    ['code' => 'TR-ENVOI-TO-PARQUET', 'libelle' => 'الاحالة على ممثل النيابة العامة', 'niveau' => 'TR'],
+    ['code' => 'TR-TRAITE-PAR-PARQUET', 'libelle' => 'أنجز من طرف ممثل النيابة العامة', 'niveau' => 'TR'],
+    ['code' => 'TR-TERMINER-REQUETTE', 'libelle' => 'إتمام الاجراء', 'niveau' => 'TR'],
+    ['code' => 'TR-OPEN-DEMANDE', 'libelle' => 'فتح الطلب', 'niveau' => 'TR'],
+    ['code' => 'TR-TERMINER-DOSSIER', 'libelle' => 'اتمام الملف', 'niveau' => 'TR'],
+    ['code' => 'TR-TERMINER-ET-ENVOYER-DOSSIER', 'libelle' => 'إتمام وإرسال الملف', 'niveau' => 'TR'],
+    ['code' => 'DAPG-RECEVOIR-DOSSIER', 'libelle' => 'استلام الملف/ الاجراء', 'niveau' => 'DAPG'],
+    ['code' => 'TR-EDIT-INFOS-DOSSIER', 'libelle' => 'تعديل معلومات الملف', 'niveau' => 'TR']
+];
+
+DB::table('operations')->insert(array_map(fn($row) => array_merge($row, ['created_at' => now(), 'updated_at' => now()]), $data));
+/**********************************************************************/
