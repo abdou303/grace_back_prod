@@ -958,10 +958,10 @@ class DossierController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //Log::debug('Requête reçue UPDATE DOSSIER:', $request->all());
+        Log::debug('Requête reçue UPDATE DOSSIER:', $request->all());
 
         $dossier = Dossier::with(['detenu', 'affaires', 'prison'])->findOrFail($id);
-
+        $detenu = $dossier->detenu;
         // Validate incoming request (add rules as needed)
         $validated = $request->validate([
             // Validation dynamique : requis si origin est 'D' + unique dans la table dossiers
@@ -979,6 +979,8 @@ class DossierController extends Controller
             'detenu.cin' => 'nullable|string',
             'detenu.genre' => 'nullable|string',
             'detenu.datenaissance' => 'nullable|string',
+            'detenu.nationalite_id' => 'nullable|int',
+
             'tr_tribunal' => 'nullable|string',
             'tr_dapg' => 'nullable|string',
             'date_tr_tribunal' => 'nullable|string',
@@ -994,6 +996,17 @@ class DossierController extends Controller
 
         ]);
 
+
+        $detenu->nom = $validated['detenu.nom'] ?? $detenu->nom;
+        $detenu->prenom = $validated['detenu.prenom'] ?? $detenu->prenom;
+        $detenu->datenaissance = $validated['detenu.datenaissance'] ?? $detenu->datenaissance;
+        $detenu->nompere = $validated['detenu.nompere'] ?? $detenu->nompere;
+        $detenu->nommere = $validated['detenu.nommere'] ?? $detenu->nommere;
+        $detenu->cin = $validated['detenu.cin'] ?? $detenu->cin;
+        $detenu->genre = $validated['detenu.genre'] ?? $detenu->genre;
+        $detenu->nationalite_id = $validated['detenu.nationalite_id'] ?? $detenu->nationalite_id;
+        $detenu->adresse = $validated['detenu.adresse'] ?? $detenu->adresse;
+        $detenu->save();
         // Update main dossier fields
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;

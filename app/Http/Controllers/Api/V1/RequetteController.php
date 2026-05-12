@@ -15,6 +15,7 @@ use App\Models\TypePj;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Services\OpenBeeService;
+use App\Services\OperationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -487,14 +488,23 @@ class RequetteController extends Controller
     }
 */
 
-    public function changeStatut(Request $request, Requette $requette)
+    public function changeStatut(Request $request, Requette $requette, OperationService $operationService)
     {
         $request->validate([
             'statutRequette' => 'required|exists:statut_requettes,code',
         ]);
         $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
         $requette->statutrequettes()->attach([$id_staut]);
-
+        // [MODIF] : Capture de l'ID utilisateur pour la transaction
+        $userId = (int) Auth::id();
+        // [MODIF] : INSERTION DANS L'HISTORIQUE
+        // Code opération : TR-CONSULTER-REQUETTE
+        $operationService->logOperation(
+            $requette->dossier_id,
+            'TR-CONSULTER-REQUETTE',
+            $requette->id,
+            $userId
+        );
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
     }
 
@@ -608,7 +618,7 @@ class RequetteController extends Controller
     }*/
 
 
-    public function confirmRequette(Request $request, Requette $requette)
+    public function confirmRequette(Request $request, Requette $requette, OperationService $operationService)
     {
 
 
@@ -631,16 +641,16 @@ class RequetteController extends Controller
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
             'copie_demande' => 'nullable|file|mimes:pdf|max:153600', // Validation du fichier
-            /*'copie_demande' => [
-                Rule::requiredIf($request->categorie === 'CAT-1'),
-                'file',
-                'mimes:pdf',
-                'max:2048'
-            ],*/
+
         ], $messages);
 
+        // [MODIF] : Capture de l'ID utilisateur pour la transaction
+        $userId = (int) Auth::id();
+
         try {
-            return DB::transaction(function () use ($request, $requette, $data) {
+            //return DB::transaction(function () use ($request, $requette, $data) {
+            // [MODIF] : On ajoute $operationService et $userId dans le "use"
+            return DB::transaction(function () use ($request, $requette, $data, $operationService, $userId) {
 
                 // 1. Génération du numéro avec verrouillage (Lock)
                 $currentYear = now()->format('Y');
@@ -696,6 +706,14 @@ class RequetteController extends Controller
                 if ($id_statut) {
                     $requette->statutrequettes()->attach($id_statut);
                 }
+
+                // [MODIF] : INSERTION DANS L'HISTORIQUE
+                $operationService->logOperation(
+                    $requette->dossier_id,
+                    'DAPG-ENVOYER-DEMANDE',
+                    $requette->id,
+                    $userId
+                );
 
                 // 5. Préparation des fichiers pour le Job
                 $filesToProcess = [];
@@ -853,7 +871,7 @@ class RequetteController extends Controller
             ], 500);
         }
     }
-    public function bulkConfirmRequette(Request $request)
+    public function bulkConfirmRequette(Request $request, OperationService $operationService)
     {
         // On décode les IDs envoyés depuis Angular
         $ids = json_decode($request->input('ids'));
@@ -861,9 +879,12 @@ class RequetteController extends Controller
         if (empty($ids)) {
             return response()->json(['message' => 'Aucun ID fourni'], 400);
         }
-
+        // [FIX 4] On récupère l'ID via la Façade pour éviter l'erreur Intelephense
+        $userId = (int) Auth::id();
         try {
-            $count = DB::transaction(function () use ($ids, $request) {
+            // $count = DB::transaction(function () use ($ids, $request) {
+            // [FIX 5] On passe $operationService et $userId dans le "use"
+            $count = DB::transaction(function () use ($ids, $request, $operationService, $userId) {
                 $processedCount = 0;
                 $currentYear = now()->format('Y');
 
@@ -907,6 +928,14 @@ class RequetteController extends Controller
                         $requette->statutrequettes()->syncWithoutDetaching([$id_statut]);
                     }
 
+                    // [MODIF] : INSERTION DANS L'HISTORIQUE
+                    // On utilise le code de l'opération et l'ID de la requête traitée
+                    $operationService->logOperation(
+                        $requette->dossier_id,
+                        'DAPG-ENVOYER-DEMANDE',
+                        $requette->id,
+                        $userId
+                    );
                     $processedCount++;
                 }
                 return $processedCount;
