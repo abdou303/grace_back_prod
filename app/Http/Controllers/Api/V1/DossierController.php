@@ -570,7 +570,6 @@ class DossierController extends Controller
         $dossier->user_tribunal_id = $request->tribunal_user_id;
         $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
         $dossier->numeromp = $request->numeromp;
-        $dossier->numero_dapg = $request->numero_dapg;
         $dossier->prison_id = isset($request->prison) && is_numeric($request->prison) ? (int) $request->prison : null;
         $dossier->numero_detention = $request->numerolocal;
         $dossier->save();
