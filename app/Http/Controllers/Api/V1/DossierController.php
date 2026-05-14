@@ -1028,8 +1028,8 @@ class DossierController extends Controller
             $requette = $dossier->requettes()
                 ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
                 ->first();
-            \Log::alert("requette est :" . $requette->numero);
-            \Log::alert("validated[\'tr_dapg\'] :" . $validated['tr_dapg']);
+            /*  \Log::alert("requette est :" . $requette->numero);
+            \Log::alert("validated[\'tr_dapg\'] :" . $validated['tr_dapg']);*/
 
 
             $requette->tr_dapg = $validated['tr_dapg'] ?? $requette->tr_dapg;
