@@ -70,6 +70,8 @@ class Requette extends Model
         'copie_demande_envoyee',
         'observation_redirection',
         'has_file_mp',
+        'tr_dapg',
+        'date_tr_dapg'
     ];
 
     public function pjs()

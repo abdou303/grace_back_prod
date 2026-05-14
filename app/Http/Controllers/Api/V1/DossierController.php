@@ -1012,16 +1012,30 @@ class DossierController extends Controller
         $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
         $dossier->date_tr_tribunal = $validated['date_tr_tribunal'] ?? $dossier->date_tr_tribunal;
         $dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
-        $dossier->date_tr_dapg = $validated['date_tr_dapg'] ?? $dossier->date_tr_dapg;
+        $dossier->date_tr_dapg = now()->format('Y-m-d H:i:s.v') ?? $dossier->date_tr_dapg;
         $dossier->date_sortie = $validated['date_sortie'] ?? $dossier->date_sortie;
         $dossier->user_id = $validated['user_id'] ?? $dossier->user_id;
         $dossier->save();
+
 
         // Update detenu fields
         if (isset($validated['detenu'])) {
             $dossier->detenu->update($validated['detenu']);
         }
+        /************************************************************ */
+        if ($dossier->originedossier == "R") {
 
+            $requette = $dossier->requettes()
+                ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
+                ->first();
+            \Log::alert("requette est :" . $requette->numero);
+            \Log::alert("validated[\'tr_dapg\'] :" . $validated['tr_dapg']);
+
+
+            $requette->tr_dapg = $validated['tr_dapg'] ?? $requette->tr_dapg;
+            $requette->date_tr_dapg = now()->format('Y-m-d H:i:s.v') ?? $requette->date_tr_dapg;
+            $requette->save();
+        }
 
 
         return response()->json([
