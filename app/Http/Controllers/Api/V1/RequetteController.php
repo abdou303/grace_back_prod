@@ -954,7 +954,7 @@ class RequetteController extends Controller
     public function forwardRequette(Request $request, Requette $requette)
     {
 
-        \Log::debug('Forward greffe Requête reçue :', $request->all());
+        //   \Log::debug('Forward greffe Requête reçue :', $request->all());
         $data = $request->validate([
 
             'observations' => 'nullable|string',
@@ -1307,6 +1307,12 @@ class RequetteController extends Controller
         // 1. Logique métier immédiate (Base de données)
         $requette = Requette::findOrFail($requette_id);
         $dossier = $requette->dossier;
+        $dossier_original = Dossier::findOrFail($request->antecedant_id);
+        if (is_null($dossier_original->numero_dapg)) {
+
+            $dossier_original->numero_dapg = $dossier->numero_dapg;
+            $dossier_original->save();
+        }
 
         if (!$dossier) {
             return response()->json(['message' => 'Dossier not found'], 404);
@@ -1434,7 +1440,7 @@ class RequetteController extends Controller
 
     {
 
-        \Log::debug('***********Modification Personelle des Requettes **************** :', $request->all());
+        //   \Log::debug('***********Modification Personelle des Requettes **************** :', $request->all());
 
 
         $requette = Requette::findOrFail($id);

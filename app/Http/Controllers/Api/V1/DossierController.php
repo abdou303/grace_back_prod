@@ -1481,4 +1481,37 @@ class DossierController extends Controller
 
         return response()->json(['message' => 'Fichier en cours de traitement']);
     }
+
+    public function updateInfosOnly(Request $request, $id)
+
+    {
+
+        \Log::debug('***********Modification Personelle des Dossier **************** :', $request->all());
+
+
+        //$dossier = $requette->dossier;
+        $dossier = Dossier::findOrFail($id);
+        $detenu = $dossier->detenu;
+
+        // Mise à jour Détenu
+        $detenu->update($request->only([
+            'nom',
+            'prenom',
+            'datenaissance',
+            'nompere',
+            'nommere',
+            'cin',
+            'adresse',
+            'genre',
+            'nationalite_id'
+        ]));
+
+        // Mise à jour Dossier
+        $dossier->update($request->only([
+            'numeromp',
+            'prison_id'
+        ]));
+
+        return response()->json(['message' => 'Mise à jour réussie']);
+    }
 }

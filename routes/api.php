@@ -102,6 +102,7 @@ Route::prefix('v1')->group(function () {
         Route::put('/dossiers/{dossier}/forward-parquet', [DossierController::class, 'forwardParquetDossier']);
         Route::post('/requettes/reponse-tr/{requette_id}', [RequetteController::class, 'addReponseRequette']);
         Route::post('requettes/{id}/update-infos', [RequetteController::class, 'updateInfosOnly']);
+        Route::post('dossiers/{id}/update-infos', [DossierController::class, 'updateInfosOnly']);
         Route::post('/requettes/reponse-greffe/{requette_id}', [RequetteController::class, 'addReponseGreffeRequette']);
         Route::post('/requettes/terminer-tr-parquet/{requette_id}', [RequetteController::class, 'addReponseParquetRequette']);
         Route::post('/dossiers/terminer-tr/{dossier_id}', [DossierController::class, 'terminerDossierTr']);
