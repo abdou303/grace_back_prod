@@ -1237,7 +1237,7 @@ class RequetteController extends Controller
             'statutrequettes' => function ($query) {
                 $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
             },
-        ])->get();
+        ])->orderBy('id', 'desc')->get();
 
         return new RequetteResource($requettes);
     }

@@ -19,6 +19,7 @@ use App\Models\Requette;
 use App\Models\StatutRequette;
 use App\Models\TypePj;
 use Illuminate\Support\Facades\Log; // Import Log facade
+use Illuminate\Validation\Rule;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -964,10 +965,21 @@ class DossierController extends Controller
         // Validate incoming request (add rules as needed)
         $validated = $request->validate([
             // Validation dynamique : requis si origin est 'D' + unique dans la table dossiers
-            'numero_dapg' => [
+            /*  'numero_dapg' => [
                 $request->origindossier === 'D' ? 'required' : 'nullable',
                 'string',
                 'unique:dossiers,numero_dapg,' . $id // Ignore l'enregistrement actuel
+            ],*/
+            // Validation dynamique et unique par type de dossier
+            'numero_dapg' => [
+                $request->origindossier === 'D' ? 'required' : 'nullable',
+                'string',
+                Rule::unique('dossiers', 'numero_dapg')
+                    ->ignore($id) // Ignore le dossier actuel pour éviter les faux positifs lors de la modification
+                    ->where(function ($query) use ($dossier) {
+                        // Force l'unicité SEULEMENT au sein du même type de dossier
+                        return $query->where('typedossier_id', $dossier->typedossier_id);
+                    })
             ],
             'numero_detention' => 'nullable|string',
             'detenu.nom' => 'nullable|string',
@@ -1009,6 +1021,8 @@ class DossierController extends Controller
         // Update main dossier fields
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
+        $dossier->numero_dapg = $validated['numero_dapg'] ?? $dossier->numero_dapg;
+
         $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
         $dossier->date_tr_tribunal = $validated['date_tr_tribunal'] ?? $dossier->date_tr_tribunal;
         $dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
