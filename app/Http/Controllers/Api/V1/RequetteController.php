@@ -1284,6 +1284,9 @@ class RequetteController extends Controller
 
         try {
             return DB::transaction(function () use ($requette) {
+                // --- NOUVEAU : Nettoyage de l'historique de la requête ---
+                DB::table('historiques_operations')->where('requette_id', $requette->id)->delete();
+                // --------------------------------------------------------
                 // 1. Supprimer les relations dans la table pivot (statuts)
                 $requette->statutrequettes()->detach();
 

@@ -45,7 +45,16 @@ class StatisticsController extends Controller
             $query_dossier->whereBetween('created_at', [$from, $to]);
             $query_requette->whereBetween('created_at', [$from, $to]);
         }
-
+        // --- DÉBUT DE LA MODIFICATION ---
+        $typeDossier = $request->input('typedossier_filter');
+        if ($typeDossier && in_array($typeDossier, [1, 2])) {
+            $query->where('typedossier_id', $typeDossier);
+            $query_dossier->where('typedossier_id', $typeDossier);
+            $query_requette->whereHas('dossier', function ($q) use ($typeDossier) {
+                $q->where('typedossier_id', $typeDossier);
+            });
+        }
+        // --- FIN DE LA MODIFICATION ---
         return response()->json([
             'total' => $query->count(),
             'total_tribunaux' => $query->WhereNotNull('numero')->count(),
@@ -176,6 +185,17 @@ class StatisticsController extends Controller
             $query_requette->whereBetween('created_at', [$from, $to]);
             $query_dossier->whereBetween('created_at', [$from, $to]);
         }
+
+        // --- DÉBUT DE LA MODIFICATION ---
+        $typeDossier = $request->input('typedossier_filter');
+        if ($typeDossier && in_array($typeDossier, [1, 2])) {
+            $query->where('typedossier_id', $typeDossier);
+            $query_dossier->where('typedossier_id', $typeDossier);
+            $query_requette->whereHas('dossier', function ($q) use ($typeDossier) {
+                $q->where('typedossier_id', $typeDossier);
+            });
+        }
+        // --- FIN DE LA MODIFICATION ---
 
         return response()->json([
             'total' => $query->count(),

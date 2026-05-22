@@ -610,6 +610,7 @@ class DossierController extends Controller
         // 3. Préparation et Stockage TEMPORAIRE des fichiers
         $filesToProcess = [];
         $fileMappings = [
+            'copie_dgapr' => 8,
             'copie_demande' => 7,
             'copie_decision' => 5,
             'copie_cin' => 4,
@@ -971,7 +972,7 @@ class DossierController extends Controller
                 'unique:dossiers,numero_dapg,' . $id // Ignore l'enregistrement actuel
             ],*/
             // Validation dynamique et unique par type de dossier
-            'numero_dapg' => [
+            /* 'numero_dapg' => [
                 $request->origindossier === 'D' ? 'required' : 'nullable',
                 'string',
                 Rule::unique('dossiers', 'numero_dapg')
@@ -979,6 +980,17 @@ class DossierController extends Controller
                     ->where(function ($query) use ($dossier) {
                         // Force l'unicité SEULEMENT au sein du même type de dossier
                         return $query->where('typedossier_id', $dossier->typedossier_id);
+                    })
+            ],*/
+            'numero_dapg' => [
+                $request->origindossier === 'D' ? 'required' : 'nullable',
+                'string',
+                Rule::unique('dossiers', 'numero_dapg')
+                    ->ignore($id) // Ignore le dossier actuel pour éviter les faux positifs lors de la modification
+                    ->where(function ($query) use ($dossier) {
+                        // Force l'unicité au sein du même type de dossier ET du même originedossier
+                        return $query->where('typedossier_id', $dossier->typedossier_id)
+                            ->where('originedossier', $dossier->originedossier); // ou 'originedossier' selon le nom exact de ta colonne en BDD
                     })
             ],
             'numero_detention' => 'nullable|string',
@@ -1091,6 +1103,21 @@ class DossierController extends Controller
 
         try {
             return DB::transaction(function () use ($dossier) {
+
+
+                // --- NOUVEAU : Nettoyage des historiques liés ---
+                // 1. Supprimer l'historique lié aux requêtes de ce dossier
+                if (method_exists($dossier, 'requettes')) {
+                    $requetteIds = $dossier->requettes()->pluck('id');
+                    DB::table('historiques_operations')->whereIn('requette_id', $requetteIds)->delete();
+
+                    // Supprimer ensuite les requêtes elles-mêmes
+                    $dossier->requettes()->delete();
+                }
+
+                // 2. Supprimer l'historique directement lié au dossier
+                DB::table('historiques_operations')->where('dossier_id', $dossier->id)->delete();
+                // ------------------------------------------------
 
                 // 3. Nettoyage des relations qui bloquent la suppression
 
@@ -1474,6 +1501,7 @@ class DossierController extends Controller
 
         // Mappage du type vers l'ID OpenBee (comme dans votre controller actuel)
         $fileMappings = [
+            'copie_dgapr' => 8,
             'copie_demande' => 7,
             'copie_decision' => 5,
             'copie_cin' => 4,
