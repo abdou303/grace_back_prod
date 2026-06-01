@@ -1471,4 +1471,63 @@ class RequetteController extends Controller
 
         return response()->json(['message' => 'Mise à jour réussie']);
     }
+
+    public function recevoirRequetteCAT2(Request $request, $id)
+    {
+        // 1. Validation des données de base envoyées par Angular
+        $validatedData = $request->validate([
+            'tr_dapg'      => 'required|string|in:OK',
+            'date_tr_dapg' => 'required|date_format:Y-m-d H:i:s.v', // Supporte le format avec millisecondes (.SSS)
+            'dossier_id'   => 'required|integer',
+            'user_id'      => 'required|integer',
+        ]);
+
+        // 2. Récupération de la requête avec sa relation type pour vérification
+        $requette = Requette::with('typerequette')->findOrFail($id);
+
+        // 3. Sécurité / Règle métier : On s'assure que c'est bien une requête CAT-2
+        if (!$requette->typerequette || $requette->typerequette->cat !== 'CAT-2') {
+            return response()->json([
+                'message' => 'Action non autorisée. Cette opération est réservée aux requêtes de catégorie CAT-2.'
+            ], 403);
+        }
+
+        // 4. Mise à jour de la requête de manière transactionnelle
+        try {
+            DB::beginTransaction();
+
+            // Ajustez les assignations selon la structure exacte de votre table `requettes`
+            // Si tr_dapg et date_tr_dapg sont directement sur la table requettes :
+            $requette->tr_dapg = $validatedData['tr_dapg'];
+            $requette->date_tr_dapg = $validatedData['date_tr_dapg'];
+
+            // On change aussi l'état général de la requête si nécessaire
+            // $requette->etat = 'OK';
+
+            // Sauvegarde en base de données
+            $requette->save();
+
+            DB::commit();
+
+            // 5. Retour de la réponse attendue par le souscripteur Angular
+            return response()->json([
+                'success' => true,
+                'message' => 'La requête a été validée et reçue avec succès.',
+                'data' => [
+                    'id' => $requette->id,
+                    'numero' => $requette->numero,
+                    'etat' => $requette->etat,
+                    'tr_dapg' => $requette->tr_dapg,
+                    'date_tr_dapg' => $requette->date_tr_dapg
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de la mise à jour de la requête.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

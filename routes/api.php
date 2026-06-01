@@ -125,5 +125,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/utilisateurs/tribunal/{tribunal_id}', [UtilisateurController::class, 'getUsersByTribunal']);
         Route::post('/tr-utilisateurs', [UtilisateurController::class, 'storeTrUser']);
         Route::put('/tr-utilisateurs/{id}', [UtilisateurController::class, 'updateTrUser']);
+        Route::put('/requettes/{id}/recevoir-dapg', [RequetteController::class, 'recevoirRequetteCAT2']);
     });
 });
