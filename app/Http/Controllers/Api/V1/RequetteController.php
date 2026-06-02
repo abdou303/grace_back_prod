@@ -499,12 +499,14 @@ class RequetteController extends Controller
         $userId = (int) Auth::id();
         // [MODIF] : INSERTION DANS L'HISTORIQUE
         // Code opération : TR-CONSULTER-REQUETTE
-        $operationService->logOperation(
-            $requette->dossier_id,
-            'TR-CONSULTER-REQUETTE',
-            $requette->id,
-            $userId
-        );
+        if ($request->statutRequette == "VU") {
+            $operationService->logOperation(
+                $requette->dossier_id,
+                'TR-CONSULTER-REQUETTE',
+                $requette->id,
+                $userId
+            );
+        }
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
     }
 
@@ -762,7 +764,7 @@ class RequetteController extends Controller
     }
 
 
-    public function confirmRequetteAddDemande(Request $request, Requette $requette)
+    public function confirmRequetteAddDemande(Request $request, Requette $requette, OperationService $operationService)
     {
 
 
@@ -802,7 +804,7 @@ class RequetteController extends Controller
         ], $messages);
 
         try {
-            return DB::transaction(function () use ($request, $requette, $data) {
+            return DB::transaction(function () use ($request, $requette, $data, $operationService) {
 
 
 
@@ -857,8 +859,17 @@ class RequetteController extends Controller
 
                 // 6. Dispatch du Job
                 if (!empty($filesToProcess)) {
+
                     UploadDossierPJsJob::dispatch($request->dossier_id, $filesToProcess, $postActions)
                         ->onQueue('openbee_uploads');
+
+                    $userId = (int) Auth::id();
+                    $operationService->logOperation(
+                        $requette->dossier_id,
+                        'DAPG-JOINT-D-SP-DOSSIER',
+                        $requette->id ?? null,
+                        $userId
+                    );
                 }
 
                 return new RequetteResource($requette);

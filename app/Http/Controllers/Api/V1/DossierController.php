@@ -18,6 +18,7 @@ use App\Models\Prison;
 use App\Models\Requette;
 use App\Models\StatutRequette;
 use App\Models\TypePj;
+use App\Services\OperationService;
 use Illuminate\Support\Facades\Log; // Import Log facade
 use Illuminate\Validation\Rule;
 
@@ -957,7 +958,7 @@ class DossierController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id, OperationService $operationService)
     {
         Log::debug('Requête reçue UPDATE DOSSIER:', $request->all());
 
@@ -965,6 +966,7 @@ class DossierController extends Controller
         $detenu = $dossier->detenu;
         // Validate incoming request (add rules as needed)
         $validated = $request->validate([
+            'operation_code' => 'nullable|string', // <-- Validation du code d'opération
             // Validation dynamique : requis si origin est 'D' + unique dans la table dossiers
             /*  'numero_dapg' => [
                 $request->origindossier === 'D' ? 'required' : 'nullable',
@@ -1063,7 +1065,13 @@ class DossierController extends Controller
             $requette->save();
         }
 
-
+        $userId = (int) Auth::id();
+        $operationService->logOperation(
+            $dossier->id,
+            $validated['operation_code'] ?? null, // Mettez l'ID correspondant à "Ajout requête"
+            $requette->id ?? null,
+            $userId
+        );
         return response()->json([
             'message' => 'Dossier updated successfully',
             'data' => $dossier->load(['detenu', 'affaires', 'prison']),
