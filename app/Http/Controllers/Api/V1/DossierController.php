@@ -966,7 +966,7 @@ class DossierController extends Controller
         $detenu = $dossier->detenu;
         // Validate incoming request (add rules as needed)
         $validated = $request->validate([
-            'operation_code' => 'nullable|string', // <-- Validation du code d'opération
+            //'operation_code' => 'nullable|string', // <-- Validation du code d'opération
             // Validation dynamique : requis si origin est 'D' + unique dans la table dossiers
             /*  'numero_dapg' => [
                 $request->origindossier === 'D' ? 'required' : 'nullable',
@@ -1064,14 +1064,16 @@ class DossierController extends Controller
             $requette->date_tr_dapg = now()->format('Y-m-d H:i:s.v') ?? $requette->date_tr_dapg;
             $requette->save();
         }
+        /*if ($validated['operation_code'] !== null) {
+            $userId = (int) Auth::id();
+            $operationService->logOperation(
+                $dossier->id,
+                $validated['operation_code'] ?? null, // Mettez l'ID correspondant à "Ajout requête"
+                $requette->id ?? null,
+                $userId
+            );
+        }*/
 
-        $userId = (int) Auth::id();
-        $operationService->logOperation(
-            $dossier->id,
-            $validated['operation_code'] ?? null, // Mettez l'ID correspondant à "Ajout requête"
-            $requette->id ?? null,
-            $userId
-        );
         return response()->json([
             'message' => 'Dossier updated successfully',
             'data' => $dossier->load(['detenu', 'affaires', 'prison']),
@@ -1474,16 +1476,22 @@ class DossierController extends Controller
         ]);
     }
 
-    public function forwardDossier(Request $request, Dossier $dossier)
+    public function forwardDossier(Request $request, Dossier $dossier, OperationService $operationService)
     {
         $dossier->date_envoi_greffe = now()->format('Y-m-d H:i:s.v');
         $dossier->etat_greffe = "NT";
         $dossier->save();
-
+        $userId = (int) Auth::id();
+        $operationService->logOperation(
+            $dossier->id,
+            'TR-ENVOI-TO-GREFFE', // Mettez l'ID correspondant à "Ajout requête"
+            $requette->id ?? null,
+            $userId
+        );
         return new DossierResource($dossier);
     }
 
-    public function reForwardDossierToGreffe(Request $request,  Dossier $dossier)
+    public function reForwardDossierToGreffe(Request $request,  Dossier $dossier, OperationService $operationService)
     {
         // $dossier = Dossier::findOrFail($dossier_id);
 
@@ -1491,9 +1499,15 @@ class DossierController extends Controller
         $dossier->etat_greffe = "NT";
         $dossier->nbr_redirection += 1; // Ou $dossier->nbr_redirection++
         $dossier->observation_redirection = $request->observation_redirection;
-
         $dossier->save();
 
+        $userId = (int) Auth::id();
+        $operationService->logOperation(
+            $dossier->id,
+            'TR-ENVOI-TO-GREFFE', // Mettez l'ID correspondant à "Ajout requête"
+            $requette->id ?? null,
+            $userId
+        );
         return new DossierResource($dossier);
     }
 
