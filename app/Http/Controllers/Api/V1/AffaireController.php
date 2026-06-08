@@ -93,8 +93,22 @@ class AffaireController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'dossier_id' => 'required|integer|exists:dossiers,id',
+        ]);
+
+        $affaire = Affaire::findOrFail($id);
+
+        $affaire->dossiers()->detach($request->dossier_id);
+
+        if ($affaire->dossiers()->count() === 0) {
+            $affaire->delete();
+        }
+
+        return response()->json([
+            'message' => 'Affaire supprimée avec succès',
+        ]);
     }
 }
