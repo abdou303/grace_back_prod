@@ -21,7 +21,32 @@ class AffaireController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'numero' => 'required|string',
+            'code' => 'required|string',
+            'annee' => 'required|string',
+            'datejujement' => 'required|date',
+            'conenujugement' => 'nullable|string',
+            'tribunal_id' => 'required|integer|exists:tribunaux,id',
+            'dossier_id' => 'required|integer|exists:dossiers,id',
+        ]);
+
+        $affaire = Affaire::create([
+            'numero' => $request->numero,
+            'code' => $request->code,
+            'annee' => $request->annee,
+            'datejujement' => $request->datejujement,
+            'conenujugement' => $request->conenujugement,
+            'numeroaffaire' => $request->numero . '/' . $request->code . '/' . $request->annee,
+            'tribunal_id' => $request->tribunal_id,
+        ]);
+
+        $affaire->dossiers()->attach($request->dossier_id);
+
+        return response()->json(
+            $affaire->load('tribunal'),
+            201
+        );
     }
 
     /**
