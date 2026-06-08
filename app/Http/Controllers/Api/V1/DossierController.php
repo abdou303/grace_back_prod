@@ -1578,4 +1578,59 @@ class DossierController extends Controller
 
         return response()->json(['message' => 'Mise à jour réussie']);
     }
+
+    public function addPjs(Request $request, Dossier $dossier, OpenBeeService $openBee)
+    {
+        $request->validate([
+            'pjs' => 'required|array|min:1',
+            'pjs.*.typepj_id' => 'required|exists:typespjs,id',
+        ]);
+
+        $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
+
+        foreach ($request->pjs as $index => $pjData) {
+            $fileKey = 'copie_' . $index;
+
+            if (!$request->hasFile($fileKey)) {
+                continue;
+            }
+
+            $file = $request->file($fileKey);
+
+            $request->validate([
+                $fileKey => 'file|mimes:pdf|max:153600',
+            ]);
+
+            $typepjId = (int) $pjData['typepj_id'];
+            $filename = $dossier->numero . '_' . $fileKey . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = 'OPENBEE/' . $filename;
+
+            $openbeeUrl = null;
+
+            try {
+                $result = $openBee->upload($file, $filename, [
+                    'title' => $filename,
+                    'description' => 'تطبيق تبادل الملفات الإلكتروني للعفو والإفراج',
+                    'path' => config('openbee.path'),
+                ]);
+
+                $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
+            } catch (\Exception $e) {
+                Log::error("Erreur OpenBee ($fileKey): " . $e->getMessage());
+            }
+
+            Pj::create([
+                'contenu' => $path,
+                'openbee_url' => $openbeeUrl,
+                'dossier_id' => $dossier->id,
+                'typepj_id' => $typepjId,
+                'observation' => $typepjLabels[$typepjId] ?? 'أخرى',
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'تمت إضافة المرفقات بنجاح',
+            'data' => $dossier->load(['pjs', 'pjs.requette', 'pjs.affaire']),
+        ]);
+    }
 }

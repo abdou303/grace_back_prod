@@ -126,5 +126,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/tr-utilisateurs', [UtilisateurController::class, 'storeTrUser']);
         Route::put('/tr-utilisateurs/{id}', [UtilisateurController::class, 'updateTrUser']);
         Route::put('/requettes/{id}/recevoir-dapg', [RequetteController::class, 'recevoirRequetteCAT2']);
+        Route::post('/dossiers/{dossier}/pjs', [DossierController::class, 'addPjs']);
+        Route::get('/types-pjs', function () {
+            return response()->json([
+                'data' => \App\Models\TypePj::orderBy('id')->get()
+            ]);
+        });
     });
 });
