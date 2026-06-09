@@ -1578,4 +1578,69 @@ class DossierController extends Controller
 
         return response()->json(['message' => 'Mise à jour réussie']);
     }
+
+
+    public function addPjsFromDetails(Request $request, Dossier $dossier)
+    {
+        $request->validate([
+            'originedossier' => 'required|in:D,R',
+            'pjs' => 'required|array|min:1',
+            'pjs.*.typepj_id' => 'required|exists:typespjs,id',
+            'pjs.*.requette_id' => 'nullable|required_if:originedossier,R|exists:requettes,id',
+            'pjs.*.autre_observation' => 'nullable|string|max:255',
+        ]);
+
+        $autreTypePjId = TypePj::where('libelle', 'آخر')->value('id');
+        $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
+
+        $filesToProcess = [];
+
+        foreach ($request->pjs as $index => $pjData) {
+            $fileKey = 'copie_' . $index;
+
+            $request->validate([
+                $fileKey => 'required|file|mimes:pdf|max:102400',
+            ]);
+
+            $typepjId = (int) $pjData['typepj_id'];
+
+            if ($typepjId === (int) $autreTypePjId && empty($pjData['autre_observation'])) {
+                return response()->json([
+                    'message' => 'تسمية الوثيقة إجبارية عند اختيار آخر'
+                ], 422);
+            }
+
+            $observation = $typepjId === (int) $autreTypePjId
+                ? $pjData['autre_observation']
+                : ($typepjLabels[$typepjId] ?? 'أخرى');
+
+            $file = $request->file($fileKey);
+            $tempPath = $file->store('temp/openbee_uploads');
+
+            $fileData = [
+                'path' => $tempPath,
+                'typepjId' => $typepjId,
+                'affaireId' => null,
+                'fieldName' => $fileKey,
+                'originalName' => $file->getClientOriginalName(),
+                'observation' => $observation,
+            ];
+
+            if ($request->originedossier === 'R') {
+                $fileData['context_requette_id'] = (int) $pjData['requette_id'];
+            }
+
+            $filesToProcess[] = $fileData;
+        }
+
+        if (!empty($filesToProcess)) {
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, [])
+                ->onQueue('openbee_uploads');
+        }
+
+        return response()->json([
+            'message' => 'تم تسجيل المرفقات بنجاح. تتم معالجة الملفات في الخلفية.',
+            'data' => $dossier->load(['pjs', 'pjs.requette', 'pjs.affaire']),
+        ], 201);
+    }
 }
