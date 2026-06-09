@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\V1\TypeMotifDossierController;
 use App\Http\Controllers\Api\V1\OpenBeeController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\UtilisateurController;
+use App\Models\TypePj;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -126,7 +127,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/tr-utilisateurs', [UtilisateurController::class, 'storeTrUser']);
         Route::put('/tr-utilisateurs/{id}', [UtilisateurController::class, 'updateTrUser']);
         Route::put('/requettes/{id}/recevoir-dapg', [RequetteController::class, 'recevoirRequetteCAT2']);
-        Route::post('/dossiers/{dossier}/pjs', [DossierController::class, 'addPjs']);
+        Route::post('/dossiers/{dossier}/pjs-details', [DossierController::class, 'addPjsFromDetails']);
+
         Route::get('/types-pjs', function () {
             return response()->json([
                 'data' => \App\Models\TypePj::orderBy('id')->get()

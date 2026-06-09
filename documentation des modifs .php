@@ -126,3 +126,39 @@ $data = [
 
 DB::table('operations')->insert(array_map(fn($row) => array_merge($row, ['created_at' => now(), 'updated_at' => now()]), $data));
 /**********************************************************************/
+DB::unprepared("
+    SET IDENTITY_INSERT typespjs ON;
+    INSERT INTO typespjs (id, libelle, active, created_at, updated_at) 
+    VALUES (9, N'نسخة تنازل أو صلح', 1, GETDATE(), GETDATE());
+    SET IDENTITY_INSERT typespjs OFF;
+");
+DB::unprepared("
+    SET IDENTITY_INSERT typespjs ON;
+    INSERT INTO typespjs (id, libelle, active, created_at, updated_at) 
+    VALUES (10, N'نسخة من شهادة دراسية أو دبلوم', 1, GETDATE(), GETDATE());
+    SET IDENTITY_INSERT typespjs OFF;
+");
+DB::unprepared("
+    SET IDENTITY_INSERT typespjs ON;
+    INSERT INTO typespjs (id, libelle, active, created_at, updated_at) 
+    VALUES (11, N'نسخة من وصل الأداء', 1, GETDATE(), GETDATE());
+    SET IDENTITY_INSERT typespjs OFF;
+");
+DB::unprepared("
+    SET IDENTITY_INSERT typespjs ON;
+    INSERT INTO typespjs (id, libelle, active, created_at, updated_at) 
+    VALUES (12, N'نسخة من تقرير طبي', 1, GETDATE(), GETDATE());
+    SET IDENTITY_INSERT typespjs OFF;
+");
+DB::unprepared("
+    SET IDENTITY_INSERT typespjs ON;
+    INSERT INTO typespjs (id, libelle, active, created_at, updated_at) 
+    VALUES (13, N'نسخة من شهادة إدارية', 1, GETDATE(), GETDATE());
+    SET IDENTITY_INSERT typespjs OFF;
+");
+DB::unprepared("
+    SET IDENTITY_INSERT typespjs ON;
+    INSERT INTO typespjs (id, libelle, active, created_at, updated_at) 
+    VALUES (99, N'آخر', 1, GETDATE(), GETDATE());
+    SET IDENTITY_INSERT typespjs OFF;
+");
