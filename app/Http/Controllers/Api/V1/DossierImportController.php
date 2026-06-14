@@ -50,33 +50,57 @@ class DossierImportController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,csv',
-            'import_user_id' => 'required',
+            'file'               => 'required|mimes:xlsx,csv',
+            'import_user_id'     => 'required',
             'import_tribunal_id' => 'nullable',
         ]);
 
-        // On démarre la transaction globale
+        // Créer le log AVANT l'import
+        $importLog = \App\Models\ImportLog::create([
+            'nomdufichier' => $request->file('file')->getClientOriginalName(),
+            'date'         => now(),
+            'statut'       => 'EN_COURS',
+            'user_id'      => $request->import_user_id,
+            'tribunal_id'  => $request->import_tribunal_id,
+        ]);
+
         DB::beginTransaction();
 
         try {
-            //Excel::import(new DossierImport, $request->file('file'));
-            // On passe les paramètres au constructeur de la classe
-            Excel::import(new DossierImport($request->import_user_id, $request->import_tribunal_id), $request->file('file'));
-            // Si on arrive ici, tout s'est bien passé
+            $importer = new DossierImport($request->import_user_id, $request->import_tribunal_id, $importLog->id);
+            Excel::import($importer, $request->file('file'));
             DB::commit();
 
             return response()->json([
-                'message' => 'تم استيراد الملفات بنجاح !!!!'
+                'message'             => 'تم استيراد الملفات بنجاح !!!!',
+                'nomdufichier'        => $importLog->nomdufichier,
+                'nb_lignes_total'     => $importer->nbTotal,
+                'nb_lignes_importees' => $importer->nbImportees,
+                'nb_lignes_ignorees'  => $importer->nbTotal - $importer->nbImportees,
             ], 200);
         } catch (\Exception $e) {
-            // En cas d'erreur, on annule tout (évite les erreurs de rollback SQL Server)
             DB::rollBack();
 
+            // Marquer le log comme échoué
+            $importLog->update([
+                'statut'         => 'ECHEC',
+                'message_erreur' => $e->getMessage(),
+            ]);
+
             return response()->json([
-                'error' => 'هناك خطأ في الاستيراد: ' . $e->getMessage(),
+                'error'   => 'هناك خطأ في الاستيراد: ' . $e->getMessage(),
                 'details' => 'Ligne: ' . $e->getLine()
             ], 500);
         }
+    }
+    public function historique(Request $request)
+    {
+        $query = \App\Models\ImportLog::orderBy('date', 'desc');
+
+        if ($request->tribunal_id) $query->where('tribunal_id', $request->tribunal_id);
+        if ($request->user_id)     $query->where('user_id', $request->user_id);
+
+        return response()->json($query->paginate(20), 200);
     }
     /**
      * Display a listing of the resource.

@@ -128,6 +128,8 @@ Route::prefix('v1')->group(function () {
         Route::put('/tr-utilisateurs/{id}', [UtilisateurController::class, 'updateTrUser']);
         Route::put('/requettes/{id}/recevoir-dapg', [RequetteController::class, 'recevoirRequetteCAT2']);
         Route::post('/dossiers/{dossier}/pjs-details', [DossierController::class, 'addPjsFromDetails']);
+        Route::get('/import-historique', [DossierImportController::class, 'historique']);
+
 
         Route::get('/types-pjs', function () {
             return response()->json([

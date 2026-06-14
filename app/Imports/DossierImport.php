@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB; // Important pour la sécurité des données
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Carbon\Carbon;
+use App\Models\ImportLog;
+
 
 class DossierImport implements ToCollection, WithHeadingRow
 {
@@ -19,15 +21,17 @@ class DossierImport implements ToCollection, WithHeadingRow
     private $userId;
     private $tribunalId;
     protected $operationService;
-
+    private $importLogId;
+    public int $nbTotal     = 0;
+    public int $nbImportees = 0;
 
     // Le constructeur reçoit les données du contrôleur
-    public function __construct($userId, $tribunalId)
+    public function __construct($userId, $tribunalId, $importLogId = null)
     {
-        $this->userId = $userId;
-        $this->tribunalId = $tribunalId;
-        $this->operationService = new OperationService(); // Instanciation directe
-
+        $this->userId      = $userId;
+        $this->tribunalId  = $tribunalId;
+        $this->importLogId = $importLogId;
+        $this->operationService = new OperationService();
     }
     /*  public function collection(Collection $rows)
     {
@@ -139,7 +143,13 @@ class DossierImport implements ToCollection, WithHeadingRow
     {
         foreach ($rows as $row) {
             // On ignore les lignes vides
-            if (empty($row['numero_dossier']) && empty($row['nom'])) continue;
+            if (empty($row['numero_dossier']) && empty($row['nom'])) {
+                $this->nbTotal++; // compter même les lignes ignorées
+
+                continue;
+            }
+            $this->nbTotal++;
+
 
             DB::transaction(function () use ($row) {
                 /*
@@ -157,6 +167,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                         $requette->id ?? null,
                         $this->userId
                     );
+
+                    $this->nbImportees++;
                 } else {
                     // 1. Création du Détenu (avec transformation de la date de naissance)
                     $detenu = Detenu::create([
@@ -252,8 +264,19 @@ class DossierImport implements ToCollection, WithHeadingRow
                         $requette->id ?? null,
                         $this->userId
                     );
+                    $this->nbImportees++;
                 }
             });
+        }
+
+        // Mise à jour du log avec les stats finales
+        if ($this->importLogId) {
+            ImportLog::where('id', $this->importLogId)->update([
+                'nb_lignes_total'     => $this->nbTotal,
+                'nb_lignes_importees' => $this->nbImportees,
+                'nb_lignes_ignorees'  => $this->nbTotal - $this->nbImportees,
+                'statut'              => 'SUCCES',
+            ]);
         }
     }
     /**
