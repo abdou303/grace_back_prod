@@ -1265,6 +1265,17 @@ class RequetteController extends Controller
     public function show(string $id)
     {
         //
+
+        $requette = Requette::with([
+            'tribunal',
+            'typerequette',
+            'statutrequettes',
+            'dossier',
+            'pjs',
+            'pjs.affaire',
+        ])->findOrFail($id);
+
+        return new RequetteResource($requette);
     }
 
     /**

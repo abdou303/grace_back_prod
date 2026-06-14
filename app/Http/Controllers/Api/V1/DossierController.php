@@ -122,33 +122,16 @@ class DossierController extends Controller
 
     public function dossiersTr()
     {
-
         $dossiers = Dossier::with([
             'detenu',
-            'detenu.profession',
-            'detenu.nationalite',
-            'garants',
-            'LibelleTribunalUtilisateur:id,libelle',
-            'garants.province',
-            'garants.tribunal',
-            'comportement',
             'affaires',
-            'requettes',
-            'requettes.typerequette',
-            'affaires.tribunal',
-            'affaires.peine',
-            'affaires.peine.prisons',
-            'categoriedossier',
-            'naturedossier',
-            'typemotifdossier',
             'typedossier',
-            'pjs',
-            'pjs.requette',
-            'pjs.affaire',
-            'prison',
+            'naturedossier',
             'objetdemande',
             'sourcedemande',
-        ])->whereNotNull('user_tribunal_id')->orderBy('id', 'desc')
+            'LibelleTribunalUtilisateur',
+        ])->whereNotNull('user_tribunal_id')
+            ->orderBy('id', 'desc')
             ->get();
 
         return new DossierResource($dossiers);
@@ -929,29 +912,26 @@ class DossierController extends Controller
      */
     public function show(string $id)
     {
-        //
         $dossier = Dossier::with([
             'detenu',
-            'detenu.profession',
             'detenu.nationalite',
-            'garants',
-            'garants.province',
-            'garants.tribunal',
-            'comportement',
             'affaires',
-            'requettes',
             'affaires.tribunal',
             'affaires.peine',
             'affaires.peine.prisons',
-            'categoriedossier',
-            'naturedossier',
-            'sourcedemande',
-            'typemotifdossier',
             'typedossier',
+            'naturedossier',
+            'objetdemande',
+            'sourcedemande',
             'pjs',
             'pjs.requette',
             'pjs.affaire',
+            'requettes',
+            'requettes.typerequette',
+            'prison',
+            'LibelleTribunalUtilisateur',
         ])->findOrFail($id);
+
         return new DossierResource($dossier);
     }
 
