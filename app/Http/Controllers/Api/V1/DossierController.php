@@ -1581,12 +1581,25 @@ class DossierController extends Controller
 
                 $tempPath = $file->store('temp/openbee_uploads');
 
-                $filesToProcess[] = [
+                /*$filesToProcess[] = [
                     'path' => $tempPath,
                     'typepjId' => $pjData['typepj_id'],
                     'fieldName' => $fieldName,
                     'originalName' => $file->getClientOriginalName(),
                     'observation' => !empty($pjData['autre_observation'])
+                        ? $pjData['autre_observation']
+                        : ($typepjLabels[$pjData['typepj_id']] ?? 'PJ'),
+                ];*/
+
+                // APRÈS (avec les clés manquantes) :
+                $filesToProcess[] = [
+                    'path'                => $tempPath,
+                    'typepjId'            => $pjData['typepj_id'],
+                    'fieldName'           => $fieldName,
+                    'originalName'        => $file->getClientOriginalName(),
+                    'affaireId'           => $pjData['affaire_id'] ?? null,        // ← AJOUT
+                    'context_requette_id' => $pjData['requette_id'] ?? null,       // ← AJOUT
+                    'observation'         => !empty($pjData['autre_observation'])
                         ? $pjData['autre_observation']
                         : ($typepjLabels[$pjData['typepj_id']] ?? 'PJ'),
                 ];

@@ -84,7 +84,7 @@ class UploadDossierPJsJob implements ShouldQueue
                 $requette = $contextRequetteId ? Requette::find($contextRequetteId) : null;
                 $typepjId = $fileData['typepjId'];
 
-                if ($requette) {
+                /* if ($requette) {
                     $insertedObservation = ($requette->typerequette->cat == "CAT-1")
                         ? ($typepjLabels[$typepjId] ?? 'أخرى')
                         : ($requette->typerequette->libelle ?? 'أخرى');
@@ -92,11 +92,28 @@ class UploadDossierPJsJob implements ShouldQueue
                 } else {
                     $insertedObservation = $typepjLabels[$typepjId] ?? 'أخرى';
                     $baseNumero = $dossier->numero;
+                }*/
+                // APRÈS — on prioritise ce que le controller a transmis :
+                if ($requette) {
+                    $insertedObservation = !empty($fileData['observation'])
+                        ? $fileData['observation']                                  // ← valeur saisie "آخر"
+                        : (($requette->typerequette->cat == "CAT-1")
+                            ? ($typepjLabels[$typepjId] ?? 'أخرى')
+                            : ($requette->typerequette->libelle ?? 'أخرى'));
+                    $baseNumero = $requette->numero;
+                } else {
+                    $insertedObservation = !empty($fileData['observation'])
+                        ? $fileData['observation']                                  // ← valeur saisie "آخر"
+                        : ($typepjLabels[$typepjId] ?? 'أخرى');
+                    $baseNumero = $dossier->numero;
                 }
 
                 // 3. Préparation du nom de fichier
                 $extension = pathinfo($fileData['originalName'], PATHINFO_EXTENSION);
-                $affairePart = $fileData['affaireId'] ? "_" . $fileData['affaireId'] : "";
+                //$affairePart = $fileData['affaireId'] ? "_" . $fileData['affaireId'] : "";
+
+                // APRÈS :
+                $affairePart = !empty($fileData['affaireId']) ? "_" . $fileData['affaireId'] : "";
                 $filename = $baseNumero . "_" . $dossier->id . $affairePart . "_" . $fileData['fieldName'] . '.' . $extension;
                 $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
 
