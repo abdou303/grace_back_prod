@@ -1568,6 +1568,12 @@ class DossierController extends Controller
         $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
 
         foreach ($request->input('pjs', []) as $index => $pjData) {
+            // Juste après la ligne 1570 (début du foreach) — temporaire pour debug :
+            Log::info('PJ DATA REÇU', [
+                'typepj_id'         => $pjData['typepj_id'],
+                'autre_observation' => $pjData['autre_observation'] ?? 'VIDE',
+                'fieldname'         => $pjData['fieldname'] ?? 'VIDE',
+            ]);
             // Préréquis 2 & 4 : On récupère le nom dynamique généré par le Front
             $fieldName = $pjData['fieldname'];
 

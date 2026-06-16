@@ -95,16 +95,25 @@ class UploadDossierPJsJob implements ShouldQueue
                 }*/
                 // APRÈS — on prioritise ce que le controller a transmis :
                 if ($requette) {
-                    $insertedObservation = !empty($fileData['observation'])
-                        ? $fileData['observation']                                  // ← valeur saisie "آخر"
-                        : (($requette->typerequette->cat == "CAT-1")
-                            ? ($typepjLabels[$typepjId] ?? 'أخرى')
-                            : ($requette->typerequette->libelle ?? 'أخرى'));
+                    Log::info('FILE DATA DANS JOB', [
+                        'typepjId'    => $fileData['typepjId'],
+                        'observation' => $fileData['observation'] ?? 'VIDE',
+                    ]);
+                    $insertedObservation = ($requette->typerequette->cat == "CAT-1")
+                        ? (($typepjId == 99 && !empty($fileData['observation']))
+                            ? $fileData['observation']
+                            : ($typepjLabels[$typepjId] ?? 'أخرى'))
+                        : ($requette->typerequette->libelle ?? 'أخرى');
                     $baseNumero = $requette->numero;
                 } else {
-                    $insertedObservation = !empty($fileData['observation'])
-                        ? $fileData['observation']                                  // ← valeur saisie "آخر"
-                        : ($typepjLabels[$typepjId] ?? 'أخرى');
+                    Log::info('FILE DATA DANS JOB', [
+                        'typepjId'    => $fileData['typepjId'],
+                        'observation' => $fileData['observation'] ?? 'VIDE',
+                    ]);
+                    $insertedObservation = ($typepjId == 99 && !empty($fileData['observation']))
+                        ? $fileData['observation']           // ← valeur saisie par l'utilisateur
+                        : ($typepjLabels[$typepjId] ?? 'أخرى');  // ← ancienne logique inchangée
+
                     $baseNumero = $dossier->numero;
                 }
 
@@ -114,11 +123,20 @@ class UploadDossierPJsJob implements ShouldQueue
 
                 // APRÈS :
                 $affairePart = !empty($fileData['affaireId']) ? "_" . $fileData['affaireId'] : "";
+                Log::info('BASE NUMERO', [
+                    'dossier_id'  => $dossier->id,
+                    'numero'      => $dossier->numero,
+                    'baseNumero'  => $baseNumero,
+                ]);
                 $filename = $baseNumero . "_" . $dossier->id . $affairePart . "_" . $fileData['fieldName'] . '.' . $extension;
                 $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
 
                 // 4. Action OpenBee (La méthode upload() du service gère déjà son propre retry interne)
-                $openBee->deleteIfExists($filenameSansExtension);
+                // $openBee->deleteIfExists($filenameSansExtension);
+                // APRÈS :
+                if ($typepjId != 99) {
+                    $openBee->deleteIfExists($filenameSansExtension);
+                }
 
                 $result = $openBee->upload($uploadedFile, $filename, [
                     'title'       => $filename,
@@ -129,14 +147,28 @@ class UploadDossierPJsJob implements ShouldQueue
                 $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
 
                 // 5. Enregistrement en base de données (firstOrNew pour éviter les doublons au retry)
-                $pj = Pj::firstOrNew([
+                /* $pj = Pj::firstOrNew([
                     'dossier_id' => $dossier->id,
                     'affaire_id' => $fileData['affaireId'],
                     'typepj_id'  => $typepjId,
                     'requette_id' => $contextRequetteId,
-                ]);
-
-                $pj->contenu = "OPENBEE/" . $filename;
+                ]);*/
+                // APRÈS :
+                if ($typepjId == 99) {
+                    $pj = new Pj();
+                } else {
+                    $pj = Pj::firstOrNew([
+                        'dossier_id'  => $dossier->id,
+                        'affaire_id'  => $fileData['affaireId'],
+                        'typepj_id'   => $typepjId,
+                        'requette_id' => $contextRequetteId,
+                    ]);
+                }
+                $pj->dossier_id  = $dossier->id;                    // ← AJOUT
+                $pj->affaire_id  = $fileData['affaireId'] ?? null;  // ← AJOUT
+                $pj->typepj_id   = $typepjId;                       // ← AJOUT (manquait pour آخر)
+                $pj->requette_id = $contextRequetteId ?? null;       // ← AJOUT
+                $pj->contenu     = "OPENBEE/" . $filename;
                 $pj->openbee_url = $openbeeUrl;
                 $pj->observation = $insertedObservation;
                 $pj->save();
