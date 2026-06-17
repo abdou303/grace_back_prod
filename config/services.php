@@ -36,7 +36,7 @@ return [
     ],
 
 
-    'openbee' => [
+    /* 'openbee' => [
         'base_url' => env('OPENBEE_BASE_URL'),
         'username' => env('OPENBEE_USERNAME'),
         'password' => env('OPENBEE_PASSWORD'),
@@ -45,6 +45,18 @@ return [
 		'infos_document' => env('OPENBEE_INFOS_DOCUMENT'),
 
 
-    ],
+    ],*/
+    'openbee' => [
+        'base_url' => env('APP_LOCATION') === 'home'
+            ? 'http://localhost:8001/api'          // mock local
+            : env('OPENBEE_BASE_URL'),         // ← déjà dans ton .env
+        'username' => env('OPENBEE_USERNAME'),
+        'password' => env('OPENBEE_PASSWORD'),
+        'api_key' => env('OPENBEE_API_KEY'),
+        'get_document' => env('OPENBEE_GET_DOCUMENT'),
+        'infos_document' => env('OPENBEE_INFOS_DOCUMENT'),
 
+
+
+    ],
 ];

@@ -35,10 +35,12 @@ class OpenBeeController extends Controller
     public function download($id)
     {
         // ce sont des infos de l url de connexion 
-        $url = "http://192.168.26.54:8000/ws/v2/file/$id";
+        /* $url = "http://192.168.26.54:8000/ws/v2/file/$id";
         $infos_url = "http://192.168.26.54:8000/ws/v2/document/$id";
-
-
+*/
+        // ✅ Remplacer par
+        $url = "{$this->baseUrl}/ws/v2/file/{$id}";
+        $infos_url = "{$this->baseUrl}/ws/v2/document/{$id}";
         /* $url = $this->$baseUrl. $this->$getDocument.$id;
 
        $infos_url= $this->$baseUrl. $this->$infoDocument.$id;
