@@ -17,7 +17,7 @@ class StatisticsController extends Controller
 
         $query = Dossier::query();
         $query_dossier = Dossier::query()->where(function ($query) {
-            $query->where('has_antecedent', '!=', 'OUI')
+            $query->where('originedossier', 'D')->where('has_antecedent', '!=', 'OUI')
                 ->orWhereNull('has_antecedent');
         });
         $query_requette = Requette::query();
@@ -81,7 +81,7 @@ class StatisticsController extends Controller
                 ->groupBy('tribunal_id')
                 ->get(),
 
-            'total_dossiers' => (clone $query_dossier)->where('originedossier', 'D')->count(),
+            'total_dossiers' => (clone $query_dossier)->count(),
 
             'dossiers_traites_stats' => [
                 'non_traites' => (clone $query_dossier)->where('etat', '!=', 'OK')->count(),
@@ -147,7 +147,7 @@ class StatisticsController extends Controller
         $query_dossier = Dossier::query()
             ->where('user_tribunal_id', $tr_id)
             ->where(function ($query) {
-                $query->where('has_antecedent', '!=', 'OUI')
+                $query->where('originedossier', 'D')->where('has_antecedent', '!=', 'OUI')
                     ->orWhereNull('has_antecedent');
             });
         $query_requette = Requette::query()
@@ -199,7 +199,7 @@ class StatisticsController extends Controller
                     })->count(),
             ],
 
-            'total_dossiers' => (clone $query_dossier)->where('originedossier', 'D')->count(),
+            'total_dossiers' => (clone $query_dossier)->count(),
 
             'dossiers_traites_stats' => [
                 'non_traites' => (clone $query_dossier)->where('etat', '!=', 'OK')->count(),
