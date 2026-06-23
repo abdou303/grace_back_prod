@@ -129,6 +129,8 @@ Route::prefix('v1')->group(function () {
         Route::put('/requettes/{id}/recevoir-dapg', [RequetteController::class, 'recevoirRequetteCAT2']);
         Route::post('/dossiers/{dossier}/pjs-details', [DossierController::class, 'addPjsFromDetails']);
         Route::get('/import-historique', [DossierImportController::class, 'historique']);
+        Route::post('/import-dossiers-encours',  [DossierImportController::class, 'importEncours']);
+        Route::get('/import-historique-encours', [DossierImportController::class, 'historiqueEncours']);
 
 
         Route::get('/types-pjs', function () {
