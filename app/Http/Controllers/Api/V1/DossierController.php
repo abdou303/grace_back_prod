@@ -61,7 +61,40 @@ class DossierController extends Controller
         return response()->json(['message' => 'Statut updated successfully', 'requette' => $requette->load('statutrequettes')]);
     }
 
+
     public function dossierByTr($tr_id)
+    {
+        $dossiers = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'userParquetObjet:id,name',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'pjs.requette',
+            'pjs.affaire',
+            'avis',
+            'prison',
+            'objetdemande',
+            'sourcedemande',
+        ])->where('user_tribunal_id', $tr_id)->where('categorie', 'CAT-1')->where('originedossier', '!=', 'DAPG-ENCOURS')->orderBy('id', 'desc')->get();
+
+        return new DossierResource($dossiers);
+    }
+
+    public function dossierAntecedantByTr($tr_id)
     {
         $dossiers = Dossier::with([
             'detenu',

@@ -16,9 +16,18 @@ class StatisticsController extends Controller
         $to = $request->input('to');
 
         $query = Dossier::query();
-        $query_dossier = Dossier::query()->where(function ($query) {
+        /* $query_dossier = Dossier::query()->where(function ($query) {
             $query->where('originedossier', 'D')->where('has_antecedent', '!=', 'OUI')
                 ->orWhereNull('has_antecedent');
+        });*/
+
+
+        $query_dossier = Dossier::query()->where(function ($query) {
+            $query->where('originedossier', 'D')
+                ->where(function ($q) {
+                    $q->where('has_antecedent', '!=', 'OUI')
+                        ->orWhereNull('has_antecedent');
+                });
         });
         $query_requette = Requette::query();
 
@@ -144,11 +153,21 @@ class StatisticsController extends Controller
         $to = $request->input('to');
 
         $query = Dossier::query();
-        $query_dossier = Dossier::query()
+        /* $query_dossier = Dossier::query()
             ->where('user_tribunal_id', $tr_id)
             ->where(function ($query) {
                 $query->where('originedossier', 'D')->where('has_antecedent', '!=', 'OUI')
                     ->orWhereNull('has_antecedent');
+            });*/
+
+        $query_dossier = Dossier::query()
+            ->where('user_tribunal_id', $tr_id)
+            ->where(function ($query) {
+                $query->where('originedossier', 'D')
+                    ->where(function ($q) {
+                        $q->where('has_antecedent', '!=', 'OUI')
+                            ->orWhereNull('has_antecedent');
+                    });
             });
         $query_requette = Requette::query()
             ->where('tribunal_id', $tr_id);

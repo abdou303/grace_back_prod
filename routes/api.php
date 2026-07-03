@@ -84,6 +84,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/tribunaux/ca/{ca_id}', [TribunalController::class, 'getByCa']);
         Route::post('/import-dossiers', [DossierImportController::class, 'import']);
         Route::get('/dossiers/tribunal/{tr_id}', [DossierController::class, 'dossierByTr']);
+        Route::get('/dossiers/tribunal-antecedant/{tr_id}', [DossierController::class, 'dossierAntecedantByTr']);
         Route::get('/dossiers-registre/{tr_id}', [DossierController::class, 'getRegistreTribunal']);
         Route::get('/dossiers-registre/{id_tr}/{id_user_parquet}', [DossierController::class, 'getRegistreTribunalParquetUser']);
         Route::get('/requettes/tribunal/{tr_id}', [RequetteController::class, 'requetteByTr']);

@@ -74,6 +74,8 @@ class DossierImportEncours implements ToCollection, WithHeadingRow
                     'detenu_id'           => $detenu->id,
                     'user_id'             => $this->userId,
                     'originedossier'      => 'DAPG-ENCOURS',  // ← Spécifique à cet import
+                    'user_tribunal_id'   => $row['tribunal_requette'],
+
                 ];
 
                 // Logique spécifique selon le type de dossier
