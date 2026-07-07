@@ -1230,7 +1230,9 @@ class RequetteController extends Controller
     public function getTRRequettes()
     {
         //
-        $requettes = Requette::where('etat', 'TR')->with([
+        $requettes = Requette::where('etat', 'TR')->whereHas('typerequette', function ($query) {
+            $query->where('cat', 'CAT-2');
+        })->with([
             'dossier',
             'dossier.detenu',
             'dossier.detenu.profession',
