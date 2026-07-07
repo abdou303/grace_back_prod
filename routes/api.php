@@ -139,5 +139,14 @@ Route::prefix('v1')->group(function () {
                 'data' => \App\Models\TypePj::orderBy('id')->get()
             ]);
         });
+
+        Route::post('/dossiers-tribunaux/server-side', [DossierController::class, 'dossiersTrServerSide']);
+        Route::post('/dossiers-tribunaux/export', [DossierController::class, 'exportDossiersTr']);
+        Route::post('/dossiers-tribunaux-recus/server-side', [DossierController::class, 'allReceivedDossiersTrServerSide']);
+        Route::post('/dossiers-tribunaux-recus/export', [DossierController::class, 'exportAllReceivedDossiersTr']);
+        Route::post('/dossiers-tribunal-mine/server-side', [DossierController::class, 'dossiersTribunalServerSide']);
+        Route::post('/dossiers-tribunal-mine/export', [DossierController::class, 'exportDossiersTribunal']);
+        Route::post('/requettes-a-traiter-tr/server-side', [RequetteController::class, 'requettesATraiterTrServerSide']);
+        Route::post('/requettes-a-traiter-tr/export', [RequetteController::class, 'exportRequettesATraiterTr']);
     });
 });

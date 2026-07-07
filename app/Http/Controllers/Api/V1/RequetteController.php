@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateGreffeRequetteRequest;
 use App\Http\Requests\UpdateRequetteRequest;
-use App\Http\Resources\RequetteResource;
 use App\Jobs\UploadDossierPJsJob;
 use App\Models\Dossier;
 use App\Models\Pj;
@@ -13,18 +12,134 @@ use App\Models\Requette;
 use App\Models\StatutRequette;
 use App\Models\TypePj;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Http\Request;
 use App\Services\OpenBeeService;
 use App\Services\OperationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use App\Http\Traits\HasServerSideRowModel;
+use App\Http\Resources\RequetteResource;
+use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Excel;
+use App\Exports\RequettesATraiterTrExport;
 
 class RequetteController extends Controller
 {
 
 
+    use HasServerSideRowModel;
 
+    public function requettesATraiterTrServerSide(Request $request)
+    {
+        $query = $this->buildRequettesATraiterTrQuery($request->input('filters', []));
+
+        return $this->serverSideRowsWithResource(
+            $request,
+            $query,
+            RequetteResource::class,
+            ['numero', 'date'], // colonnes triables autorisées
+            ['numero', 'desc'],
+        );
+    }
+
+    public function exportRequettesATraiterTr(Request $request)
+    {
+        $filters   = $request->input('filters', []);
+        $requettes = $this->buildRequettesATraiterTrQuery($filters)
+            ->orderBy('numero', 'desc')
+            ->get();
+
+        return Excel::download(
+            new RequettesATraiterTrExport($requettes),
+            'liste-requettes.xlsx',
+        );
+    }
+
+    private function buildRequettesATraiterTrQuery(array $f): Builder
+    {
+        // ⚠️ tribunal_id vient du frontend (tribunal de l'utilisateur connecté),
+        // pas d'un formulaire de recherche — c'est une contrainte de sécurité,
+        // pas un filtre optionnel.
+        $trId = $f['tribunal_id'] ?? null;
+
+        $query = \App\Models\Requette::with([
+            'dossier',
+            'dossier.pjs',
+            'dossier.avis',
+            'dossier.pjs.affaire',
+            'dossier.detenu',
+            'dossier.affaires',
+            'userParquetObjet:id,name',
+            'dossier.affaires.tribunal',
+            'statutrequettes' => function ($q) {
+                $q->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+            'dossier.naturedossier',
+            'dossier.typedossier',
+            'dossier.objetdemande',
+            'dossier.detenu.nationalite',
+            'dossier.prison',
+            'dossier.garants',
+            'tribunal',
+            'typerequette',
+        ])
+            ->where('tribunal_id', $trId)
+            ->where('etat', 'TR')
+            ->where(function ($q) {
+                $q->where('etat_tribunal', '!=', 'TR')->orWhereNull('etat_tribunal');
+            });
+
+        // Filtre d'onglet (remplace le split client-side nonTraites/envoyeGreffe/traiteGreffe)
+        if (!empty($f['etat_greffe'])) {
+            $query->where('etat_greffe', $f['etat_greffe']);
+        }
+
+        if (!empty($f['numero'])) {
+            $query->where('numero', 'like', '%' . $f['numero'] . '%');
+        }
+
+        if (!empty($f['numeromp'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('numeromp', 'like', '%' . $f['numeromp'] . '%');
+            });
+        }
+
+        if (!empty($f['numero_dapg'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+            });
+        }
+
+        if (!empty($f['nom_detenu'])) {
+            $query->whereHas('dossier.detenu', function ($q) use ($f) {
+                $q->where('nom', 'like', '%' . $f['nom_detenu'] . '%')
+                    ->orWhere('prenom', 'like', '%' . $f['nom_detenu'] . '%');
+            });
+        }
+
+        if (!empty($f['typedossier_id'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('typedossier_id', $f['typedossier_id']);
+            });
+        }
+
+        if (!empty($f['naturedossier_id'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+            });
+        }
+
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('date', '>=', $f['dateDebut']);
+        }
+
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('date', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
 
     public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
     {
@@ -1230,7 +1345,9 @@ class RequetteController extends Controller
     public function getTRRequettes()
     {
         //
-        $requettes = Requette::where('etat', 'TR')->with([
+        $requettes = Requette::where('etat', 'TR')->whereHas('typerequette', function ($query) {
+            $query->where('cat', 'CAT-2');
+        })->with([
             'dossier',
             'dossier.detenu',
             'dossier.detenu.profession',

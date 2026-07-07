@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Traits\HasServerSideRowModel;
+use App\Exports\DossiersTribunalExport;
+use App\Exports\AllReceivedDossiersTrExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAntecedentDossierRequest;
 use App\Http\Requests\StoreDossierRequest;
@@ -25,9 +28,130 @@ use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\DossiersTrExport;
 
 class DossierController extends Controller
 {
+
+
+
+    use HasServerSideRowModel;
+
+    public function dossiersTribunalServerSide(Request $request)
+    {
+        $query = $this->buildDossiersTribunalQuery($request->input('filters', []));
+
+        return $this->serverSideRowsWithResource(
+            $request,
+            $query,
+            DossierResource::class,
+            ['numero', 'created_at', 'id'],
+            ['id', 'desc'],
+        );
+    }
+
+    public function exportDossiersTribunal(Request $request)
+    {
+        $filters  = $request->input('filters', []);
+        $dossiers = $this->buildDossiersTribunalQuery($filters)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return Excel::download(
+            new DossiersTribunalExport($dossiers),
+            'liste-dossiers-tribunal.xlsx',
+        );
+    }
+
+    private function buildDossiersTribunalQuery(array $f): Builder
+    {
+        // ⚠️ tribunal_id vient du frontend (tribunal de l'utilisateur connecté),
+        // contrainte de sécurité, pas un filtre optionnel du formulaire.
+        $trId = $f['tribunal_id'] ?? null;
+
+        $query = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'userParquetObjet:id,name',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'pjs.requette',
+            'pjs.affaire',
+            'avis',
+            'prison',
+            'objetdemande',
+            'sourcedemande',
+        ])
+            ->where('user_tribunal_id', $trId)
+            ->where('categorie', 'CAT-1')
+            ->where('originedossier', '!=', 'DAPG-ENCOURS')
+            // Reprise des 2 conditions qui étaient en JS
+            ->where(function ($q) {
+                $q->whereNull('has_antecedent')->orWhere('has_antecedent', '!=', 'OUI');
+            })
+            ->where(function ($q) {
+                $q->whereNull('tr_tribunal')->orWhere('tr_tribunal', '!=', 'OK');
+            });
+
+        // Filtre d'onglet (remplace le split client-side nonTraites/envoyeGreffe/traiteGreffe)
+        if (!empty($f['etat_greffe'])) {
+            $query->where('etat_greffe', $f['etat_greffe']);
+        }
+
+        if (!empty($f['numero'])) {
+            $query->where('numero', 'like', '%' . $f['numero'] . '%');
+        }
+
+        if (!empty($f['numeromp'])) {
+            $query->where('numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+
+        if (!empty($f['typedossier_id'])) {
+            $query->where('typedossier_id', $f['typedossier_id']);
+        }
+
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+
+        if (!empty($f['cin'])) {
+            $query->whereHas('detenu', function ($q) use ($f) {
+                $q->where('cin', 'like', '%' . $f['cin'] . '%');
+            });
+        }
+
+        if (!empty($f['nom'])) {
+            $query->whereHas('detenu', function ($q) use ($f) {
+                $q->where('nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('created_at', '>=', $f['dateDebut']);
+        }
+
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('created_at', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -153,7 +277,7 @@ class DossierController extends Controller
         return new DossierResource($dossiers);
     }
 
-    public function dossiersTr()
+    /*public function dossiersTr()
     {
         $dossiers = Dossier::with([
             'detenu',
@@ -168,7 +292,12 @@ class DossierController extends Controller
             ->get();
 
         return new DossierResource($dossiers);
-    }
+    }*/
+
+
+
+
+
 
     public function dossiersDapg()
     {
@@ -1653,4 +1782,233 @@ class DossierController extends Controller
 
         return response()->json(['message' => 'Traitement lancé'], 200);
     }
+
+
+    // ========================================================================
+    // ÉCRAN 1 : demandes.component (liste "toujours en attente")
+    // ========================================================================
+
+    public function dossiersTrServerSide(Request $request)
+    {
+        $startRow = (int) $request->input('startRow', 0);
+        $endRow   = (int) $request->input('endRow', 20);
+        $perPage  = max(1, $endRow - $startRow);
+        $page     = (int) floor($startRow / $perPage) + 1;
+
+        $query = $this->buildDossiersTrQuery($request->input('filters', []));
+        $this->applyDossiersTrSorting($query, $request->input('sortModel', []));
+
+        $dossiers = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'rows'    => DossierResource::collection($dossiers->items()),
+            'lastRow' => $dossiers->total(),
+        ]);
+    }
+
+    public function exportDossiersTr(Request $request)
+    {
+        $filters  = $request->input('filters', []);
+        $dossiers = $this->buildDossiersTrQuery($filters)->get();
+
+        return Excel::download(new DossiersTrExport($dossiers), 'liste-demandes.xlsx');
+    }
+
+    /** Conservée pour compatibilité descendante si un autre écran l'appelle encore. */
+    public function dossiersTr(Request $request)
+    {
+        $dossiers = $this->buildDossiersTrQuery($request->input('filters', []))
+            ->orderBy('id', 'desc')
+            ->paginate($request->input('per_page', 50));
+
+        return new DossierResource($dossiers);
+    }
+
+    private function buildDossiersTrQuery(array $f): Builder
+    {
+        $query = Dossier::with([
+            'detenu',
+            'affaires',
+            'typedossier',
+            'naturedossier',
+            'objetdemande',
+            'sourcedemande',
+            'LibelleTribunalUtilisateur',
+        ])
+            ->whereNotNull('user_tribunal_id')
+            ->where(function ($q) {
+                $q->whereNull('has_antecedent')->orWhere('has_antecedent', '!=', 'OUI');
+            })
+            // Spécifique à cet écran : dossiers PAS encore reçus par la DAPG
+            // et provenant uniquement d'une demande (D) ou d'une requête (R)
+            ->where(function ($q) {
+                $q->whereNull('tr_dapg')->orWhere('tr_dapg', '!=', 'OK');
+            })
+            ->whereIn('originedossier', ['D', 'R']);
+
+        $this->applyCommonDossierTrFilters($query, $f);
+
+        return $query;
+    }
+
+    // ========================================================================
+    // ÉCRAN 2 : all-received-dossiers-from-tr.component (liste complète,
+    // avec switch "dossiers reçus")
+    // ========================================================================
+
+    public function allReceivedDossiersTrServerSide(Request $request)
+    {
+        $startRow = (int) $request->input('startRow', 0);
+        $endRow   = (int) $request->input('endRow', 20);
+        $perPage  = max(1, $endRow - $startRow);
+        $page     = (int) floor($startRow / $perPage) + 1;
+
+        $query = $this->buildAllReceivedDossiersTrQuery($request->input('filters', []));
+        $this->applyDossiersTrSorting($query, $request->input('sortModel', []));
+
+        $dossiers = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'rows'    => DossierResource::collection($dossiers->items()),
+            'lastRow' => $dossiers->total(),
+        ]);
+    }
+
+    public function exportAllReceivedDossiersTr(Request $request)
+    {
+        $filters  = $request->input('filters', []);
+        $dossiers = $this->buildAllReceivedDossiersTrQuery($filters)->get();
+
+        return Excel::download(
+            new AllReceivedDossiersTrExport($dossiers),
+            'liste-dossiers-recus-tribunaux.xlsx',
+        );
+    }
+
+    private function buildAllReceivedDossiersTrQuery(array $f): Builder
+    {
+        $query = Dossier::with([
+            'detenu',
+            'affaires',        // conservé : nécessaire au master/detail (numeroaffaire, tribunal, jugement...)
+            'affaires.tribunal',
+            'typedossier',
+            'naturedossier',
+            'objetdemande',
+            'sourcedemande',
+            'LibelleTribunalUtilisateur',
+        ])
+            ->whereNotNull('user_tribunal_id')
+            ->where(function ($q) {
+                $q->whereNull('has_antecedent')->orWhere('has_antecedent', '!=', 'OUI');
+            });
+        // NOTE : contrairement à dossiersTr(), on ne filtre PAS sur tr_dapg
+        // ni originedossier ici — cet écran affiche tout, avec un switch
+        // "dossiers_recus" optionnel géré ci-dessous.
+
+        $this->applyCommonDossierTrFilters($query, $f);
+
+        if (!empty($f['dossiers_recus'])) {
+            $query->where('tr_dapg', 'OK');
+        }
+
+        return $query;
+    }
+
+    // ========================================================================
+    // Logique de filtrage PARTAGÉE entre les deux écrans
+    // (reprend exactement le formulaire filterForm des deux composants Angular)
+    // ========================================================================
+
+    private function applyCommonDossierTrFilters(Builder $query, array $f): void
+    {
+        if (!empty($f['numero'])) {
+            $query->where('numero', 'like', '%' . $f['numero'] . '%');
+        }
+
+        if (!empty($f['numero_dapg'])) {
+            $query->where('numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+
+        if (!empty($f['numero_affaire'])) {
+            $query->whereHas('affaires', function ($q) use ($f) {
+                $q->where('numeroaffaire', 'like', '%' . $f['numero_affaire'] . '%');
+            });
+        }
+
+        if (!empty($f['nom_detenu'])) {
+            $query->whereHas('detenu', function ($q) use ($f) {
+                $q->where('nom', 'like', '%' . $f['nom_detenu'] . '%')
+                    ->orWhere('prenom', 'like', '%' . $f['nom_detenu'] . '%');
+            });
+        }
+
+        if (!empty($f['user_tribunal_libelle'])) {
+            $query->where('user_tribunal_id', $f['user_tribunal_libelle']);
+        }
+
+        if (!empty($f['typedossier'])) {
+            $query->where('typedossier_id', $f['typedossier']);
+        }
+
+        if (!empty($f['naturedossier'])) {
+            $query->where('naturedossiers_id', $f['naturedossier']);
+        }
+
+        if (!empty($f['etat'])) {
+            if ($f['etat'] === 'NT') {
+                $query->where('etat', 'NT');
+            } elseif ($f['etat'] === 'OK_not_ready') {
+                $query->where('etat', 'OK')
+                    ->where(function ($q) {
+                        $q->where(function ($q2) {
+                            $q2->whereNull('tr_tribunal');
+                        })->orWhere(function ($q2) {
+                            $q2->where('tr_tribunal', '!=', 'OK');
+                        });
+                    });
+            } elseif ($f['etat'] === 'OK_ready') {
+                $query->where('etat', 'OK')->where('tr_tribunal', 'OK');
+            }
+        }
+
+        if (!empty($f['date_debut'])) {
+            $query->whereDate('created_at', '>=', $f['date_debut']);
+        }
+
+        if (!empty($f['date_fin'])) {
+            $query->whereDate('created_at', '<=', $f['date_fin']);
+        }
+
+        if (!empty($f['date_sortie'])) {
+            $query->where(function ($q) use ($f) {
+                $q->whereNull('date_sortie')
+                    ->orWhereDate('date_sortie', '>', $f['date_sortie']);
+            });
+        }
+    }
+
+    private function applyDossiersTrSorting($query, array $sortModel): void
+    {
+        $allowedColumns = ['numero', 'numero_dapg', 'etat', 'created_at', 'id'];
+
+        if (empty($sortModel)) {
+            $query->orderBy('id', 'desc');
+            return;
+        }
+
+        foreach ($sortModel as $sort) {
+            $colId     = $sort['colId'] ?? null;
+            $direction = ($sort['sort'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+
+            if (in_array($colId, $allowedColumns, true)) {
+                $query->orderBy($colId, $direction);
+            }
+        }
+    }
+
+    // ========================================================================
+    // Suppression : conservée telle quelle, ne dépend pas du chargement
+    // complet en mémoire — aucun changement nécessaire ici.
+    // (déjà présente dans ton controller, non dupliquée dans ce fichier)
+    // ========================================================================
 }
