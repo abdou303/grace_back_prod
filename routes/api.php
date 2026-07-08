@@ -148,5 +148,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/dossiers-tribunal-mine/export', [DossierController::class, 'exportDossiersTribunal']);
         Route::post('/requettes-a-traiter-tr/server-side', [RequetteController::class, 'requettesATraiterTrServerSide']);
         Route::post('/requettes-a-traiter-tr/export', [RequetteController::class, 'exportRequettesATraiterTr']);
+        Route::post('/dossiers-requettes-greffe/server-side', [DossierController::class, 'dossiersRequettesGreffeServerSide']);
+        Route::post('/dossiers-requettes-parquet/server-side', [DossierController::class, 'dossiersRequettesParquetServerSide']);
     });
 });

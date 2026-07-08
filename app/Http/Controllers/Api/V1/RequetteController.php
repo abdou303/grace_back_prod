@@ -23,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Excel;
 use App\Exports\RequettesATraiterTrExport;
+use Illuminate\Support\Facades\Cache;
 
 class RequetteController extends Controller
 {
@@ -337,113 +338,130 @@ class RequetteController extends Controller
 
         // 1. Logique métier immédiate (Base de données)
         $requette = Requette::findOrFail($requette_id);
-        $dossier = $requette->dossier;
-
-        if (!$dossier) {
-            return response()->json(['message' => 'Dossier not found'], 404);
+        // --- VERROU + GARDE ---
+        $lockKey = "greffe_requette_lock_{$requette_id}";
+        $lock = Cache::lock($lockKey, 30);
+        if (!$lock->get()) {
+            return response()->json(['message' => 'Un traitement est déjà en cours pour cette requête.'], 409);
         }
+        if ($requette->etat_greffe === 'TR') {
+            $lock->release();
+            return response()->json([
+                'message' => 'Cette requête a déjà été traitée.',
+                'requette' => $requette->load('statutrequettes')
+            ], 200);
+        }
+        try {
+            $dossier = $requette->dossier;
 
-        $dossier->numeromp = $request->numeromp;
-        $dossier->save();
+            if (!$dossier) {
+                return response()->json(['message' => 'Dossier not found'], 404);
+            }
 
-        // 2. Préparation et Stockage TEMPORAIRE des fichiers (Logique similaire à terminerDossierTr)
-        $filesToProcess = [];
-        $fileMappings = [
-            'copie_cat2' => 6,
-            'copie_decision' => 5,
-            'copie_cin' => 4,
-            'copie_mp' => 3,
-            'copie_non_recours' => 2,
-            'copie_social' => 1,
-        ];
+            $dossier->numeromp = $request->numeromp;
+            $dossier->save();
 
-        foreach ($fileMappings as $fieldName => $typepjId) {
-            if ($request->hasFile($fieldName)) {
-                $files = $request->file($fieldName);
-                $filesArray = is_array($files) ? $files : [null => $files];
+            // 2. Préparation et Stockage TEMPORAIRE des fichiers (Logique similaire à terminerDossierTr)
+            $filesToProcess = [];
+            $fileMappings = [
+                'copie_cat2' => 6,
+                'copie_decision' => 5,
+                'copie_cin' => 4,
+                'copie_mp' => 3,
+                'copie_non_recours' => 2,
+                'copie_social' => 1,
+            ];
 
-                foreach ($filesArray as $affaireIdKey => $file) {
-                    if ($file) {
-                        // **Stockage temporaire**
-                        $path = $file->store('temp/openbee_uploads');
-                        $filesToProcess[] = [
-                            'path' => $path,
-                            'typepjId' => $typepjId,
-                            'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
-                            'fieldName' => $fieldName,
-                            'originalName' => $file->getClientOriginalName(),
-                            // DONNÉE CLÉ pour le Job : Indiquer l'ID de la Requette
-                            'context_requette_id' => $requette->id,
-                        ];
+            foreach ($fileMappings as $fieldName => $typepjId) {
+                if ($request->hasFile($fieldName)) {
+                    $files = $request->file($fieldName);
+                    $filesArray = is_array($files) ? $files : [null => $files];
+
+                    foreach ($filesArray as $affaireIdKey => $file) {
+                        if ($file) {
+                            // **Stockage temporaire**
+                            $path = $file->store('temp/openbee_uploads');
+                            $filesToProcess[] = [
+                                'path' => $path,
+                                'typepjId' => $typepjId,
+                                'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                                'fieldName' => $fieldName,
+                                'originalName' => $file->getClientOriginalName(),
+                                // DONNÉE CLÉ pour le Job : Indiquer l'ID de la Requette
+                                'context_requette_id' => $requette->id,
+                            ];
+                        }
                     }
                 }
             }
-        }
-        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
-        if ($request->has('has_non_recours')) {
-            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+            // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+            if ($request->has('has_non_recours')) {
+                foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
 
-                $affaire = $dossier->affaires()
-                    ->where('affaires.id', $affaireId)
-                    ->first();
+                    $affaire = $dossier->affaires()
+                        ->where('affaires.id', $affaireId)
+                        ->first();
 
-                if (!$affaire) {
-                    continue;
+                    if (!$affaire) {
+                        continue;
+                    }
+
+                    $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+
+                    $affaire->has_non_recours = $hasNonRecoursBool;
+
+                    if (!$hasNonRecoursBool) {
+                        $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                        $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                        $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                    } else {
+                        $affaire->numero_cassation = null;
+                        $affaire->numero_envoi_cassation = null;
+                        $affaire->date_envoi_cassation = null;
+                    }
+
+                    $affaire->save();
                 }
-
-                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
-
-                $affaire->has_non_recours = $hasNonRecoursBool;
-
-                if (!$hasNonRecoursBool) {
-                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
-                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
-                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
-                } else {
-                    $affaire->numero_cassation = null;
-                    $affaire->numero_envoi_cassation = null;
-                    $affaire->date_envoi_cassation = null;
-                }
-
-                $affaire->save();
             }
-        }
-        /*************GENERIQUE JOB 30/03/2026******************* */
+            /*************GENERIQUE JOB 30/03/2026******************* */
 
-        $postActions = [[
-            'model' => Requette::class,
-            'id'    => $requette->id,
-            'data'  => [
-                'etat_greffe'      => 'TR',
-                'date_etat_greffe' => now()->format('Y-m-d H:i:s.v'),
-                'user_greffe'      => $request->user_tribunal,
-            ]
-        ]];
+            $postActions = [[
+                'model' => Requette::class,
+                'id'    => $requette->id,
+                'data'  => [
+                    'etat_greffe'      => 'TR',
+                    'date_etat_greffe' => now()->format('Y-m-d H:i:s.v'),
+                    'user_greffe'      => $request->user_tribunal,
+                ]
+            ]];
 
-        // 3. Dispatch du Job
-        if (!empty($filesToProcess)) {
-            // L'appel reste identique à celui de terminerDossierTr
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
-        } else {
-            $requette->etat_greffe = 'TR';
-            $requette->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
-            $requette->user_greffe = $request->user_tribunal;
-            $requette->save();
-        }
+            // 3. Dispatch du Job
+            if (!empty($filesToProcess)) {
+                // L'appel reste identique à celui de terminerDossierTr
+                UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+            } else {
+                $requette->etat_greffe = 'TR';
+                $requette->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
+                $requette->user_greffe = $request->user_tribunal;
+                $requette->save();
+            }
 
 
-        /*$requette->etat_greffe = 'TR';
+            /*$requette->etat_greffe = 'TR';
         $requette->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
         $requette->user_greffe = $request->user_tribunal;
 
         $requette->save();*/
 
 
-        // 5. Réponse Immédiate
-        return response()->json([
-            'message' => 'Statut mis à jour. L\'upload des documents a démarré en arrière-plan.',
-            'requette' => $requette->load('statutrequettes')
-        ], 200);
+            // 5. Réponse Immédiate
+            return response()->json([
+                'message' => 'Statut mis à jour. L\'upload des documents a démarré en arrière-plan.',
+                'requette' => $requette->load('statutrequettes')
+            ], 200);
+        } finally {
+            $lock->release();
+        }
     }
 
 

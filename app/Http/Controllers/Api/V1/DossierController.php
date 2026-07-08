@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\DossiersTrExport;
+use Illuminate\Support\Facades\Cache;
 
 class DossierController extends Controller
 {
@@ -688,132 +689,146 @@ class DossierController extends Controller
         Log::debug('terminerDossierTr: Requête reçue :', $request->all());
 
         $dossier = Dossier::findOrFail($dossier_id);
-        $detenu = $dossier->detenu;
-
-        if (!$detenu) {
-            return response()->json(['message' => 'Detenu not found'], 404);
+        // --- VERROU + GARDE ---
+        $lockKey = "terminer_dossier_tr_lock_{$dossier_id}";
+        $lock = Cache::lock($lockKey, 30);
+        if (!$lock->get()) {
+            return response()->json(['message' => 'Traitement déjà en cours.'], 409);
         }
+        if ($dossier->etat === 'OK') {
+            $lock->release();
+            return response()->json(['message' => 'Dossier déjà traité.', 'data' => $dossier], 200);
+        }
+        try {
+            $detenu = $dossier->detenu;
 
-        // 1. Mise à jour et sauvegarde IMMÉDIATE du Détenu
-        $detenu->nom = $request->nom;
-        $detenu->prenom = $request->prenom;
-        $detenu->datenaissance = $request->datenaissance;
-        $detenu->nompere = $request->nompere;
-        $detenu->nommere = $request->nommere;
-        $detenu->cin = $request->cin;
-        $detenu->genre = $request->genre;
-        $detenu->nationalite_id = $request->nationalite;
-        $detenu->adresse = $request->adresse ?? null;
-        $detenu->save();
-
-        // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
-        $dossier->typedossier_id = $request->typedossier;
-        $dossier->naturedossiers_id = $request->naturedossier;
-        $dossier->sourcedemande_id = $request->sourcedemande;
-
-        //$dossier->etat = 'OK'; // Mise à jour immédiate de l'état
-        $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
-        $dossier->user_id = $request->user_id;
-        $dossier->user_tribunal_id = $request->tribunal_user_id;
-        $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
-        $dossier->numeromp = $request->numeromp;
-        $dossier->prison_id = isset($request->prison) && is_numeric($request->prison) ? (int) $request->prison : null;
-        $dossier->numero_detention = $request->numerolocal;
-        $dossier->save();
-
-        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
-        if ($request->has('has_non_recours')) {
-            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
-
-                $affaire = $dossier->affaires()
-                    ->where('affaires.id', $affaireId)
-                    ->first();
-
-                if (!$affaire) {
-                    continue;
-                }
-
-                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
-
-                $affaire->has_non_recours = $hasNonRecoursBool;
-
-                if (!$hasNonRecoursBool) {
-                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
-                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
-                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
-                } else {
-                    $affaire->numero_cassation = null;
-                    $affaire->numero_envoi_cassation = null;
-                    $affaire->date_envoi_cassation = null;
-                }
-
-                $affaire->save();
+            if (!$detenu) {
+                return response()->json(['message' => 'Detenu not found'], 404);
             }
-        }
+
+            // 1. Mise à jour et sauvegarde IMMÉDIATE du Détenu
+            $detenu->nom = $request->nom;
+            $detenu->prenom = $request->prenom;
+            $detenu->datenaissance = $request->datenaissance;
+            $detenu->nompere = $request->nompere;
+            $detenu->nommere = $request->nommere;
+            $detenu->cin = $request->cin;
+            $detenu->genre = $request->genre;
+            $detenu->nationalite_id = $request->nationalite;
+            $detenu->adresse = $request->adresse ?? null;
+            $detenu->save();
+
+            // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
+            $dossier->typedossier_id = $request->typedossier;
+            $dossier->naturedossiers_id = $request->naturedossier;
+            $dossier->sourcedemande_id = $request->sourcedemande;
+
+            //$dossier->etat = 'OK'; // Mise à jour immédiate de l'état
+            $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
+            $dossier->user_id = $request->user_id;
+            $dossier->user_tribunal_id = $request->tribunal_user_id;
+            $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
+            $dossier->numeromp = $request->numeromp;
+            $dossier->prison_id = isset($request->prison) && is_numeric($request->prison) ? (int) $request->prison : null;
+            $dossier->numero_detention = $request->numerolocal;
+            $dossier->save();
+
+            // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+            if ($request->has('has_non_recours')) {
+                foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+
+                    $affaire = $dossier->affaires()
+                        ->where('affaires.id', $affaireId)
+                        ->first();
+
+                    if (!$affaire) {
+                        continue;
+                    }
+
+                    $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+
+                    $affaire->has_non_recours = $hasNonRecoursBool;
+
+                    if (!$hasNonRecoursBool) {
+                        $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                        $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                        $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                    } else {
+                        $affaire->numero_cassation = null;
+                        $affaire->numero_envoi_cassation = null;
+                        $affaire->date_envoi_cassation = null;
+                    }
+
+                    $affaire->save();
+                }
+            }
 
 
 
-        // 3. Préparation et Stockage TEMPORAIRE des fichiers
-        $filesToProcess = [];
-        $fileMappings = [
-            'copie_dgapr' => 8,
-            'copie_demande' => 7,
-            'copie_decision' => 5,
-            'copie_cin' => 4,
-            'copie_mp' => 3,
-            'copie_non_recours' => 2,
-            'copie_social' => 1,
-        ];
+            // 3. Préparation et Stockage TEMPORAIRE des fichiers
+            $filesToProcess = [];
+            $fileMappings = [
+                'copie_dgapr' => 8,
+                'copie_demande' => 7,
+                'copie_decision' => 5,
+                'copie_cin' => 4,
+                'copie_mp' => 3,
+                'copie_non_recours' => 2,
+                'copie_social' => 1,
+            ];
 
-        foreach ($fileMappings as $fieldName => $typepjId) {
-            if ($request->hasFile($fieldName)) {
-                $files = $request->file($fieldName);
+            foreach ($fileMappings as $fieldName => $typepjId) {
+                if ($request->hasFile($fieldName)) {
+                    $files = $request->file($fieldName);
 
-                // Gérer les fichiers multiples (si affaireId est la clé) ou unique
-                $filesArray = is_array($files) ? $files : [null => $files];
+                    // Gérer les fichiers multiples (si affaireId est la clé) ou unique
+                    $filesArray = is_array($files) ? $files : [null => $files];
 
-                foreach ($filesArray as $affaireIdKey => $file) {
-                    if ($file) {
-                        // Stocker le fichier dans un emplacement temporaire de Laravel
-                        $path = $file->store('temp/openbee_uploads');
-                        $filesToProcess[] = [
-                            'path' => $path, // Chemin d'accès temporaire
-                            'typepjId' => $typepjId,
-                            'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
-                            'fieldName' => $fieldName,
-                            'originalName' => $file->getClientOriginalName(),
-                        ];
+                    foreach ($filesArray as $affaireIdKey => $file) {
+                        if ($file) {
+                            // Stocker le fichier dans un emplacement temporaire de Laravel
+                            $path = $file->store('temp/openbee_uploads');
+                            $filesToProcess[] = [
+                                'path' => $path, // Chemin d'accès temporaire
+                                'typepjId' => $typepjId,
+                                'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                                'fieldName' => $fieldName,
+                                'originalName' => $file->getClientOriginalName(),
+                            ];
+                        }
                     }
                 }
             }
+
+            /*************GENERIQUE JOB 30/03/2026******************* */
+            $postActions = [[
+                'model' => Dossier::class,
+                'id'    => $dossier->id,
+                'data'  => ['etat' => 'OK', 'date_etat_ok' => now()->format('Y-m-d H:i:s.v')]
+            ]];
+
+            // 4. Dispatch du Job pour le traitement en arrière-plan
+            if (!empty($filesToProcess)) {
+                Log::info("## DEBUG: Envoi au Job pour Dossier ID: {$dossier->id}", [
+                    'files_count' => count($filesToProcess),
+                    'post_actions' => $postActions
+                ]);
+                // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
+                UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+            } else {
+                $dossier->etat = 'OK';
+                $dossier->date_etat_ok = now()->format('Y-m-d H:i:s.v');
+                $dossier->save();
+            }
+
+            // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
+            return response()->json([
+                'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
+                'data' => $dossier,
+            ], 201);
+        } finally {
+            $lock->release();
         }
-
-        /*************GENERIQUE JOB 30/03/2026******************* */
-        $postActions = [[
-            'model' => Dossier::class,
-            'id'    => $dossier->id,
-            'data'  => ['etat' => 'OK', 'date_etat_ok' => now()->format('Y-m-d H:i:s.v')]
-        ]];
-
-        // 4. Dispatch du Job pour le traitement en arrière-plan
-        if (!empty($filesToProcess)) {
-            Log::info("## DEBUG: Envoi au Job pour Dossier ID: {$dossier->id}", [
-                'files_count' => count($filesToProcess),
-                'post_actions' => $postActions
-            ]);
-            // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
-        } else {
-            $dossier->etat = 'OK';
-            $dossier->date_etat_ok = now()->format('Y-m-d H:i:s.v');
-            $dossier->save();
-        }
-
-        // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
-        return response()->json([
-            'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
-            'data' => $dossier,
-        ], 201);
     }
 
 
@@ -822,109 +837,122 @@ class DossierController extends Controller
         Log::debug('terminerGreffeDossierTr-Requête reçue :', $request->all());
 
         $dossier = Dossier::findOrFail($dossier_id);
-        $detenu = $dossier->detenu;
-
-        if (!$detenu) {
-            return response()->json(['message' => 'Detenu not found'], 404);
+        $lockKey = "terminer_greffe_dossier_lock_{$dossier_id}";
+        $lock = Cache::lock($lockKey, 30);
+        if (!$lock->get()) {
+            return response()->json(['message' => 'Traitement déjà en cours.'], 409);
         }
+        if ($dossier->etat_greffe === 'TR') {
+            $lock->release();
+            return response()->json(['message' => 'Dossier déjà traité.', 'data' => $dossier], 200);
+        }
+        try {
+            $detenu = $dossier->detenu;
+
+            if (!$detenu) {
+                return response()->json(['message' => 'Detenu not found'], 404);
+            }
 
 
-        // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
+            // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
 
-        /*$dossier->etat_greffe = 'TR'; // Mise à jour immédiate de l'état
+            /*$dossier->etat_greffe = 'TR'; // Mise à jour immédiate de l'état
         $dossier->user_id = $request->user_id;
         $dossier->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
 
         $dossier->save();*/
 
-        // 3. Préparation et Stockage TEMPORAIRE des fichiers
-        $filesToProcess = [];
-        $fileMappings = [
-            'copie_decision' => 5,
-            'copie_cin' => 4,
-            'copie_mp' => 3,
-            'copie_non_recours' => 2,
-            'copie_social' => 1,
-        ];
+            // 3. Préparation et Stockage TEMPORAIRE des fichiers
+            $filesToProcess = [];
+            $fileMappings = [
+                'copie_decision' => 5,
+                'copie_cin' => 4,
+                'copie_mp' => 3,
+                'copie_non_recours' => 2,
+                'copie_social' => 1,
+            ];
 
-        foreach ($fileMappings as $fieldName => $typepjId) {
-            if ($request->hasFile($fieldName)) {
-                $files = $request->file($fieldName);
+            foreach ($fileMappings as $fieldName => $typepjId) {
+                if ($request->hasFile($fieldName)) {
+                    $files = $request->file($fieldName);
 
-                // Gérer les fichiers multiples (si affaireId est la clé) ou unique
-                $filesArray = is_array($files) ? $files : [null => $files];
+                    // Gérer les fichiers multiples (si affaireId est la clé) ou unique
+                    $filesArray = is_array($files) ? $files : [null => $files];
 
-                foreach ($filesArray as $affaireIdKey => $file) {
-                    if ($file) {
-                        // Stocker le fichier dans un emplacement temporaire de Laravel
-                        $path = $file->store('temp/openbee_uploads');
-                        $filesToProcess[] = [
-                            'path' => $path, // Chemin d'accès temporaire
-                            'typepjId' => $typepjId,
-                            'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
-                            'fieldName' => $fieldName,
-                            'originalName' => $file->getClientOriginalName(),
-                        ];
+                    foreach ($filesArray as $affaireIdKey => $file) {
+                        if ($file) {
+                            // Stocker le fichier dans un emplacement temporaire de Laravel
+                            $path = $file->store('temp/openbee_uploads');
+                            $filesToProcess[] = [
+                                'path' => $path, // Chemin d'accès temporaire
+                                'typepjId' => $typepjId,
+                                'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                                'fieldName' => $fieldName,
+                                'originalName' => $file->getClientOriginalName(),
+                            ];
+                        }
                     }
                 }
             }
-        }
-        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
-        if ($request->has('has_non_recours')) {
-            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+            // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+            if ($request->has('has_non_recours')) {
+                foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
 
-                $affaire = $dossier->affaires()
-                    ->where('affaires.id', $affaireId)
-                    ->first();
+                    $affaire = $dossier->affaires()
+                        ->where('affaires.id', $affaireId)
+                        ->first();
 
-                if (!$affaire) {
-                    continue;
+                    if (!$affaire) {
+                        continue;
+                    }
+
+                    $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+
+                    $affaire->has_non_recours = $hasNonRecoursBool;
+
+                    if (!$hasNonRecoursBool) {
+                        $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                        $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                        $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                    } else {
+                        $affaire->numero_cassation = null;
+                        $affaire->numero_envoi_cassation = null;
+                        $affaire->date_envoi_cassation = null;
+                    }
+
+                    $affaire->save();
                 }
-
-                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
-
-                $affaire->has_non_recours = $hasNonRecoursBool;
-
-                if (!$hasNonRecoursBool) {
-                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
-                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
-                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
-                } else {
-                    $affaire->numero_cassation = null;
-                    $affaire->numero_envoi_cassation = null;
-                    $affaire->date_envoi_cassation = null;
-                }
-
-                $affaire->save();
             }
-        }
-        /*************GENERIQUE JOB 30/03/2026******************* */
-        $postActions = [[
-            'model' => Dossier::class,
-            'id'    => $dossier->id,
-            'data'  => [
-                'etat_greffe'      => 'TR',
-                'user_id'          => $request->user_id,
-                'date_etat_greffe' => now()->format('Y-m-d H:i:s.v')
-            ]
-        ]];
-        // 4. Dispatch du Job pour le traitement en arrière-plan
-        if (!empty($filesToProcess)) {
-            // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
-        } else {
-            $dossier->etat_greffe = 'TR'; // Mise à jour immédiate de l'état
-            $dossier->user_id = $request->user_id;
-            $dossier->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
+            /*************GENERIQUE JOB 30/03/2026******************* */
+            $postActions = [[
+                'model' => Dossier::class,
+                'id'    => $dossier->id,
+                'data'  => [
+                    'etat_greffe'      => 'TR',
+                    'user_id'          => $request->user_id,
+                    'date_etat_greffe' => now()->format('Y-m-d H:i:s.v')
+                ]
+            ]];
+            // 4. Dispatch du Job pour le traitement en arrière-plan
+            if (!empty($filesToProcess)) {
+                // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
+                UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+            } else {
+                $dossier->etat_greffe = 'TR'; // Mise à jour immédiate de l'état
+                $dossier->user_id = $request->user_id;
+                $dossier->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
 
-            $dossier->save();
-        }
+                $dossier->save();
+            }
 
-        // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
-        return response()->json([
-            'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
-            'data' => $dossier,
-        ], 201);
+            // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
+            return response()->json([
+                'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
+                'data' => $dossier,
+            ], 201);
+        } finally {
+            $lock->release();
+        }
     }
 
 
@@ -946,14 +974,24 @@ class DossierController extends Controller
         Log::debug('Requête(terminerParquetDossierTr) reçue :', $request->all());
 
         $dossier = Dossier::findOrFail($dossier_id);
-        $detenu = $dossier->detenu;
-
-        if (!$detenu) {
-            return response()->json(['message' => 'Detenu not found'], 404);
+        $lockKey = "terminer_parquet_dossier_lock_{$dossier_id}";
+        $lock = Cache::lock($lockKey, 30);
+        if (!$lock->get()) {
+            return response()->json(['message' => 'Traitement déjà en cours.'], 409);
         }
+        if ($dossier->etat_parquet === 'TR') {
+            $lock->release();
+            return response()->json(['message' => 'Dossier déjà traité.', 'data' => $dossier], 200);
+        }
+        try {
+            $detenu = $dossier->detenu;
 
-        // 1. Mise à jour et sauvegarde IMMÉDIATE du Détenu
-        /*$detenu->nom = $request->nom;
+            if (!$detenu) {
+                return response()->json(['message' => 'Detenu not found'], 404);
+            }
+
+            // 1. Mise à jour et sauvegarde IMMÉDIATE du Détenu
+            /*$detenu->nom = $request->nom;
         $detenu->prenom = $request->prenom;
         $detenu->datenaissance = $request->datenaissance;
         $detenu->nompere = $request->nompere;
@@ -964,109 +1002,112 @@ class DossierController extends Controller
         $detenu->adresse = $request->adresse ?? null;
         $detenu->save();*/
 
-        // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
+            // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
 
-        /* $dossier->etat_parquet = 'TR'; // Mise à jour immédiate de l'état
+            /* $dossier->etat_parquet = 'TR'; // Mise à jour immédiate de l'état
         $dossier->user_id = $request->user_id;
         $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');*/
-        $dossier->has_file_mp = $request->has_file_mp;
-        //if ($request->has_file_mp == '0') {}
-        $dossier->avis_id = $request->avis;
-        $dossier->observations_parquet = $request->observations_parquet;
-        /*$dossier->etat_parquet      = 'TR';
+            $dossier->has_file_mp = $request->has_file_mp;
+            //if ($request->has_file_mp == '0') {}
+            $dossier->avis_id = $request->avis;
+            $dossier->observations_parquet = $request->observations_parquet;
+            /*$dossier->etat_parquet      = 'TR';
             $dossier->user_parquet = $request->user_id;
             $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');*/
-        $dossier->save();
+            $dossier->save();
 
 
 
 
 
-        // 3. Préparation et Stockage TEMPORAIRE des fichiers
-        $filesToProcess = [];
-        $fileMappings = [
+            // 3. Préparation et Stockage TEMPORAIRE des fichiers
+            $filesToProcess = [];
+            $fileMappings = [
 
-            'copie_mp' => 3,
+                'copie_mp' => 3,
 
-        ];
+            ];
 
-        foreach ($fileMappings as $fieldName => $typepjId) {
-            if ($request->hasFile($fieldName)) {
-                $files = $request->file($fieldName);
+            foreach ($fileMappings as $fieldName => $typepjId) {
+                if ($request->hasFile($fieldName)) {
+                    $files = $request->file($fieldName);
 
-                // Gérer les fichiers multiples (si affaireId est la clé) ou unique
-                $filesArray = is_array($files) ? $files : [null => $files];
+                    // Gérer les fichiers multiples (si affaireId est la clé) ou unique
+                    $filesArray = is_array($files) ? $files : [null => $files];
 
-                foreach ($filesArray as $affaireIdKey => $file) {
-                    if ($file) {
-                        // Stocker le fichier dans un emplacement temporaire de Laravel
-                        $path = $file->store('temp/openbee_uploads');
-                        $filesToProcess[] = [
-                            'path' => $path, // Chemin d'accès temporaire
-                            'typepjId' => $typepjId,
-                            'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
-                            'fieldName' => $fieldName,
-                            'originalName' => $file->getClientOriginalName(),
-                        ];
+                    foreach ($filesArray as $affaireIdKey => $file) {
+                        if ($file) {
+                            // Stocker le fichier dans un emplacement temporaire de Laravel
+                            $path = $file->store('temp/openbee_uploads');
+                            $filesToProcess[] = [
+                                'path' => $path, // Chemin d'accès temporaire
+                                'typepjId' => $typepjId,
+                                'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                                'fieldName' => $fieldName,
+                                'originalName' => $file->getClientOriginalName(),
+                            ];
+                        }
                     }
                 }
             }
-        }
-        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
-        if ($request->has('has_non_recours')) {
-            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+            // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+            if ($request->has('has_non_recours')) {
+                foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
 
-                $affaire = $dossier->affaires()
-                    ->where('affaires.id', $affaireId)
-                    ->first();
+                    $affaire = $dossier->affaires()
+                        ->where('affaires.id', $affaireId)
+                        ->first();
 
-                if (!$affaire) {
-                    continue;
+                    if (!$affaire) {
+                        continue;
+                    }
+
+                    $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+
+                    $affaire->has_non_recours = $hasNonRecoursBool;
+
+                    if (!$hasNonRecoursBool) {
+                        $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                        $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                        $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                    } else {
+                        $affaire->numero_cassation = null;
+                        $affaire->numero_envoi_cassation = null;
+                        $affaire->date_envoi_cassation = null;
+                    }
+
+                    $affaire->save();
                 }
-
-                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
-
-                $affaire->has_non_recours = $hasNonRecoursBool;
-
-                if (!$hasNonRecoursBool) {
-                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
-                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
-                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
-                } else {
-                    $affaire->numero_cassation = null;
-                    $affaire->numero_envoi_cassation = null;
-                    $affaire->date_envoi_cassation = null;
-                }
-
-                $affaire->save();
             }
-        }
-        /*************GENERIQUE JOB 30/03/2026******************* */
-        $postActions = [[
-            'model' => Dossier::class,
-            'id'    => $dossier->id,
-            'data'  => [
-                'etat_parquet'      => 'TR',
-                'user_parquet'           => $request->user_id,
-                'date_etat_parquet' => now()->format('Y-m-d H:i:s.v')
-            ]
-        ]];
-        // 4. Dispatch du Job pour le traitement en arrière-plan
-        if (!empty($filesToProcess)) {
-            // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
-            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
-        } else {
-            $dossier->etat_parquet = 'TR'; // Mise à jour immédiate de l'état
-            $dossier->user_id = $request->user_id;
-            $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
-            $dossier->save();
-        }
+            /*************GENERIQUE JOB 30/03/2026******************* */
+            $postActions = [[
+                'model' => Dossier::class,
+                'id'    => $dossier->id,
+                'data'  => [
+                    'etat_parquet'      => 'TR',
+                    'user_parquet'           => $request->user_id,
+                    'date_etat_parquet' => now()->format('Y-m-d H:i:s.v')
+                ]
+            ]];
+            // 4. Dispatch du Job pour le traitement en arrière-plan
+            if (!empty($filesToProcess)) {
+                // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
+                UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+            } else {
+                $dossier->etat_parquet = 'TR'; // Mise à jour immédiate de l'état
+                $dossier->user_id = $request->user_id;
+                $dossier->date_etat_parquet = now()->format('Y-m-d H:i:s.v');
+                $dossier->save();
+            }
 
-        // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
-        return response()->json([
-            'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
-            'data' => $dossier,
-        ], 201);
+            // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
+            return response()->json([
+                'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
+                'data' => $dossier,
+            ], 201);
+        } finally {
+            $lock->release();
+        }
     }
     /******************************************************** */
     /**
@@ -2011,4 +2052,479 @@ class DossierController extends Controller
     // complet en mémoire — aucun changement nécessaire ici.
     // (déjà présente dans ton controller, non dupliquée dans ce fichier)
     // ========================================================================
+
+
+
+    /**
+     * ============================================================================
+     * À AJOUTER dans App\Http\Controllers\Api\V1\DossierController
+     * ============================================================================
+     *
+     * ⚠️ CE ENDPOINT N'UTILISE PAS le trait HasServerSideRowModel — il ne
+     * s'applique pas ici. Le trait suppose UNE SEULE requête Eloquent paginable ;
+     * cet écran combine deux tables (dossiers ET requettes), donc la pagination
+     * doit être faite manuellement via une UNION SQL.
+     *
+     * PRINCIPE :
+     * 1. On construit 2 requêtes légères (juste id + type + date), une par table,
+     *    avec TOUS les filtres déjà appliqués en SQL.
+     * 2. On les combine avec un UNION ALL, on trie et on découpe UNIQUEMENT ce
+     *    UNION (id/type/date = quelques octets par ligne, pas les relations).
+     * 3. Seulement pour les ~20 lignes de la page demandée, on va chercher les
+     *    objets complets (avec relations) dans Dossier et Requette séparément.
+     * 4. On réassemble dans le bon ordre.
+     *
+     * ⚠️ Colonnes vérifiées dans ton code existant :
+     * - dossiers.detenu_id (FK vers detenus.id)
+     * - requettes.dossier_id (FK vers dossiers.id)
+     * - naturedossiers_id (avec le "s")
+     *
+     * ⚠️ Limite assumée : le tri ne se fait que sur une colonne "date" commune
+     * (created_at pour les dossiers, date pour les requettes), pas sur les
+     * colonnes cliquables de la grille — trier une UNION de 2 tables
+     * différentes par une colonne arbitraire n'a pas de sens structurel.
+     * L'ancien code ne triait déjà pas explicitement (juste une concaténation
+     * de tableaux), donc ce n'est pas une régression.
+     */
+
+    public function dossiersRequettesGreffeServerSide(Request $request)
+    {
+        $f          = $request->input('filters', []);
+        $trId       = $f['tribunal_id'] ?? null;
+        $etatGreffe = $f['etat_greffe'] ?? 'NT';
+
+        $startRow = (int) $request->input('startRow', 0);
+        $endRow   = (int) $request->input('endRow', 20);
+        $limit    = max(1, $endRow - $startRow);
+        $offset   = $startRow;
+
+        $dossierIdsQuery  = $this->buildDossierGreffeIdsQuery($trId, $etatGreffe, $f);
+        $requetteIdsQuery = $this->buildRequetteGreffeIdsQuery($trId, $etatGreffe, $f);
+
+        // Totaux (comptage léger, chaque requête ne compte que des ids)
+        $total = (clone $dossierIdsQuery)->count() + (clone $requetteIdsQuery)->count();
+
+        // UNION triée + paginée — seule cette étape touche potentiellement
+        // beaucoup de lignes, mais avec seulement 3 colonnes chacune.
+        $unionQuery = $dossierIdsQuery->unionAll($requetteIdsQuery);
+
+        $page = DB::query()
+            ->fromSub($unionQuery, 'combined')
+            ->orderBy('sort_date', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+
+        $dossierIds  = $page->where('row_type', 'dossier')->pluck('id')->all();
+        $requetteIds = $page->where('row_type', 'requette')->pluck('id')->all();
+
+        // Hydratation complète UNIQUEMENT pour les ids de cette page
+        $dossiers = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'userParquetObjet:id,name',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'pjs.requette',
+            'pjs.affaire',
+            'avis',
+            'prison',
+            'objetdemande',
+            'sourcedemande',
+        ])->whereIn('id', $dossierIds)->get()->keyBy('id');
+
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.pjs',
+            'dossier.avis',
+            'dossier.pjs.affaire',
+            'dossier.detenu',
+            'dossier.affaires',
+            'userParquetObjet:id,name',
+            'dossier.affaires.tribunal',
+            'statutrequettes' => function ($q) {
+                $q->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+            'dossier.naturedossier',
+            'dossier.typedossier',
+            'dossier.objetdemande',
+            'dossier.detenu.nationalite',
+            'dossier.prison',
+            'dossier.garants',
+            'tribunal',
+            'typerequette',
+        ])->whereIn('id', $requetteIds)->get()->keyBy('id');
+
+        // Réassemblage dans l'ordre exact renvoyé par l'UNION triée
+        $rows = $page->map(function ($row) use ($dossiers, $requettes) {
+            if ($row->row_type === 'dossier') {
+                $model = $dossiers->get($row->id);
+                if (!$model) return null;
+                $arr = $model->toArray();
+                $arr['rowType'] = 'dossier';
+                return $arr;
+            }
+
+            $model = $requettes->get($row->id);
+            if (!$model) return null;
+            $arr = $model->toArray();
+            $arr['rowType'] = 'requette';
+            return $arr;
+        })->filter()->values();
+
+        return response()->json([
+            'rows'    => $rows,
+            'lastRow' => $total,
+        ]);
+    }
+
+    private function buildDossierGreffeIdsQuery($trId, string $etatGreffe, array $f)
+    {
+        $query = DB::table('dossiers')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'dossiers.id as id',
+                DB::raw("'dossier' as row_type"),
+                'dossiers.created_at as sort_date',
+            ])
+            ->where('dossiers.user_tribunal_id', $trId)
+            ->where('dossiers.categorie', 'CAT-1')
+            ->where('dossiers.originedossier', '!=', 'DAPG-ENCOURS')
+            ->where(function ($q) {
+                $q->whereNull('dossiers.has_antecedent')->orWhere('dossiers.has_antecedent', '!=', 'OUI');
+            })
+            ->where(function ($q) {
+                $q->whereNull('dossiers.tr_tribunal')->orWhere('dossiers.tr_tribunal', '!=', 'OK');
+            })
+            ->where('dossiers.etat_greffe', $etatGreffe);
+
+        if (!empty($f['numero'])) {
+            $query->where('dossiers.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numeromp'])) {
+            $query->where('dossiers.numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('dossiers.created_at', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('dossiers.created_at', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
+
+    private function buildRequetteGreffeIdsQuery($trId, string $etatGreffe, array $f)
+    {
+        $query = DB::table('requettes')
+            ->join('dossiers', 'requettes.dossier_id', '=', 'dossiers.id')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'requettes.id as id',
+                DB::raw("'requette' as row_type"),
+                'requettes.date as sort_date',
+            ])
+            ->where('requettes.tribunal_id', $trId)
+            ->where('requettes.etat', 'TR')
+            ->where(function ($q) {
+                $q->where('requettes.etat_tribunal', '!=', 'TR')->orWhereNull('requettes.etat_tribunal');
+            })
+            ->where('requettes.etat_greffe', $etatGreffe);
+
+        if (!empty($f['numero'])) {
+            $query->where('requettes.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numeromp'])) {
+            $query->where('dossiers.numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('requettes.date', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('requettes.date', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
+
+    /**
+     * ============================================================================
+     * À AJOUTER dans App\Http\Controllers\Api\V1\DossierController
+     * (même pattern que dossiersRequettesGreffeServerSide de la Tâche 3)
+     * ============================================================================
+     *
+     * Différences avec la version "greffe" :
+     * - Contrainte supplémentaire : user_parquet == utilisateur courant (colonne
+     *   directe vérifiée sur dossiers ET requettes)
+     * - dossiers.originedossier = 'D' strictement (pas 'D' ou 'R'), repris du
+     *   filtre JS existant (item.originedossier === 'D')
+     * - Le pivot d'onglet est etat_parquet (au lieu de etat_greffe), avec 2
+     *   valeurs mutuellement exclusives :
+     *     - 'EN_COURS' -> etat_parquet != 'OK'
+     *     - 'OK'       -> etat_parquet == 'OK'
+     */
+
+    public function dossiersRequettesParquetServerSide(Request $request)
+    {
+        $f       = $request->input('filters', []);
+        $trId    = $f['tribunal_id'] ?? null;
+        $userId  = $f['user_parquet'] ?? null;
+        $tabKey  = $f['etat_parquet_tab'] ?? 'EN_COURS'; // 'EN_COURS' | 'OK'
+
+        $startRow = (int) $request->input('startRow', 0);
+        $endRow   = (int) $request->input('endRow', 20);
+        $limit    = max(1, $endRow - $startRow);
+        $offset   = $startRow;
+
+        $dossierIdsQuery  = $this->buildDossierParquetIdsQuery($trId, $userId, $tabKey, $f);
+        $requetteIdsQuery = $this->buildRequetteParquetIdsQuery($trId, $userId, $tabKey, $f);
+
+        $total = (clone $dossierIdsQuery)->count() + (clone $requetteIdsQuery)->count();
+
+        $unionQuery = $dossierIdsQuery->unionAll($requetteIdsQuery);
+
+        $page = DB::query()
+            ->fromSub($unionQuery, 'combined')
+            ->orderBy('sort_date', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+
+        $dossierIds  = $page->where('row_type', 'dossier')->pluck('id')->all();
+        $requetteIds = $page->where('row_type', 'requette')->pluck('id')->all();
+
+        $dossiers = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'userParquetObjet:id,name',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'pjs.requette',
+            'pjs.affaire',
+            'avis',
+            'prison',
+            'objetdemande',
+            'sourcedemande',
+        ])->whereIn('id', $dossierIds)->get()->keyBy('id');
+
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.pjs',
+            'dossier.avis',
+            'dossier.pjs.affaire',
+            'dossier.detenu',
+            'dossier.affaires',
+            'userParquetObjet:id,name',
+            'dossier.affaires.tribunal',
+            'statutrequettes' => function ($q) {
+                $q->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+            'dossier.naturedossier',
+            'dossier.typedossier',
+            'dossier.objetdemande',
+            'dossier.detenu.nationalite',
+            'dossier.prison',
+            'dossier.garants',
+            'tribunal',
+            'typerequette',
+        ])->whereIn('id', $requetteIds)->get()->keyBy('id');
+
+        $rows = $page->map(function ($row) use ($dossiers, $requettes) {
+            if ($row->row_type === 'dossier') {
+                $model = $dossiers->get($row->id);
+                if (!$model) return null;
+                $arr = $model->toArray();
+                $arr['rowType'] = 'dossier';
+                return $arr;
+            }
+
+            $model = $requettes->get($row->id);
+            if (!$model) return null;
+            $arr = $model->toArray();
+            $arr['rowType'] = 'requette';
+            return $arr;
+        })->filter()->values();
+
+        return response()->json([
+            'rows'    => $rows,
+            'lastRow' => $total,
+        ]);
+    }
+
+    private function buildDossierParquetIdsQuery($trId, $userId, string $tabKey, array $f)
+    {
+        $query = DB::table('dossiers')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'dossiers.id as id',
+                DB::raw("'dossier' as row_type"),
+                'dossiers.created_at as sort_date',
+            ])
+            ->where('dossiers.user_tribunal_id', $trId)
+            ->where('dossiers.categorie', 'CAT-1')
+            ->where('dossiers.originedossier', 'D') // repris du filtre JS : origineDossier === 'D'
+            ->where('dossiers.user_parquet', $userId)
+            ->where(function ($q) {
+                $q->whereNull('dossiers.has_antecedent')->orWhere('dossiers.has_antecedent', '!=', 'OUI');
+            })
+            ->where(function ($q) {
+                $q->whereNull('dossiers.tr_tribunal')->orWhere('dossiers.tr_tribunal', '!=', 'OK');
+            });
+
+        if ($tabKey === 'OK') {
+            $query->where('dossiers.etat_parquet', 'TR'); // ⚠️ corrigé : 'TR' est la vraie valeur "traité", pas 'OK'
+        } else {
+            $query->where(function ($q) {
+                $q->whereNull('dossiers.etat_parquet')->orWhere('dossiers.etat_parquet', '!=', 'TR');
+            });
+        }
+
+        if (!empty($f['numero'])) {
+            $query->where('dossiers.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('dossiers.created_at', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('dossiers.created_at', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
+
+    private function buildRequetteParquetIdsQuery($trId, $userId, string $tabKey, array $f)
+    {
+        $query = DB::table('requettes')
+            ->join('dossiers', 'requettes.dossier_id', '=', 'dossiers.id')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'requettes.id as id',
+                DB::raw("'requette' as row_type"),
+                'requettes.date as sort_date',
+            ])
+            ->where('requettes.tribunal_id', $trId)
+            ->where('requettes.etat', 'TR')
+            ->where(function ($q) {
+                $q->where('requettes.etat_tribunal', '!=', 'TR')->orWhereNull('requettes.etat_tribunal');
+            })
+            ->where('requettes.user_parquet', $userId);
+
+        if ($tabKey === 'OK') {
+            $query->where('requettes.etat_parquet', 'TR'); // ⚠️ corrigé : 'TR' est la vraie valeur "traité", pas 'OK'
+        } else {
+            $query->where(function ($q) {
+                $q->whereNull('requettes.etat_parquet')->orWhere('requettes.etat_parquet', '!=', 'TR');
+            });
+        }
+
+        if (!empty($f['numero'])) {
+            $query->where('requettes.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('requettes.date', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('requettes.date', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
 }
