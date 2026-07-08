@@ -53,6 +53,27 @@ Route::prefix('v1')->group(function () {
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
+        /*_________________________*/
+        Route::post('/dossiers-tribunaux/server-side', [DossierController::class, 'dossiersTrServerSide']);
+        Route::post('/dossiers-tribunaux/export', [DossierController::class, 'exportDossiersTr']);
+        Route::post('/dossiers-tribunaux-recus/server-side', [DossierController::class, 'allReceivedDossiersTrServerSide']);
+        Route::post('/dossiers-tribunaux-recus/export', [DossierController::class, 'exportAllReceivedDossiersTr']);
+        Route::post('/dossiers-tribunal-mine/server-side', [DossierController::class, 'dossiersTribunalServerSide']);
+        Route::post('/dossiers-tribunal-mine/export', [DossierController::class, 'exportDossiersTribunal']);
+        Route::post('/requettes-a-traiter-tr/server-side', [RequetteController::class, 'requettesATraiterTrServerSide']);
+        Route::post('/requettes-a-traiter-tr/export', [RequetteController::class, 'exportRequettesATraiterTr']);
+        Route::post('/dossiers-requettes-greffe/server-side', [DossierController::class, 'dossiersRequettesGreffeServerSide']);
+        Route::post('/dossiers-requettes-parquet/server-side', [DossierController::class, 'dossiersRequettesParquetServerSide']);
+        Route::post('/dossiers-requettes-tribunal/server-side', [DossierController::class, 'dossiersRequettesTribunalServerSide']);
+        Route::post('/dossiers-requettes-tribunal/export', [DossierController::class, 'exportDossiersRequettesTribunal']);
+        Route::post('/requettes/server-side', [RequetteController::class, 'requettesServerSide']);
+        Route::post('/requettes-nt/server-side', [RequetteController::class, 'ntRequettesServerSide']);
+        Route::get('/type-requettes', [RequetteController::class, 'getAllTypeRequettes']);
+        Route::post('/bo-demandes-copie/server-side', [RequetteController::class, 'listAddDemandeCopieToRequettesServerSide']);
+        Route::post('/bo-demandes-copie/export', [RequetteController::class, 'exportListAddDemandeCopieToRequettes']);
+        Route::post('/bo-demandes-all/server-side', [RequetteController::class, 'listAllBoDemandesServerSide']);
+        Route::post('/bo-demandes-all/export', [RequetteController::class, 'exportListAllBoDemandes']);
+        /*_________________________*/
 
         Route::apiResource('villes', VilleController::class);
         Route::apiResource('utilisateurs', UtilisateurController::class);
@@ -139,16 +160,5 @@ Route::prefix('v1')->group(function () {
                 'data' => \App\Models\TypePj::orderBy('id')->get()
             ]);
         });
-
-        Route::post('/dossiers-tribunaux/server-side', [DossierController::class, 'dossiersTrServerSide']);
-        Route::post('/dossiers-tribunaux/export', [DossierController::class, 'exportDossiersTr']);
-        Route::post('/dossiers-tribunaux-recus/server-side', [DossierController::class, 'allReceivedDossiersTrServerSide']);
-        Route::post('/dossiers-tribunaux-recus/export', [DossierController::class, 'exportAllReceivedDossiersTr']);
-        Route::post('/dossiers-tribunal-mine/server-side', [DossierController::class, 'dossiersTribunalServerSide']);
-        Route::post('/dossiers-tribunal-mine/export', [DossierController::class, 'exportDossiersTribunal']);
-        Route::post('/requettes-a-traiter-tr/server-side', [RequetteController::class, 'requettesATraiterTrServerSide']);
-        Route::post('/requettes-a-traiter-tr/export', [RequetteController::class, 'exportRequettesATraiterTr']);
-        Route::post('/dossiers-requettes-greffe/server-side', [DossierController::class, 'dossiersRequettesGreffeServerSide']);
-        Route::post('/dossiers-requettes-parquet/server-side', [DossierController::class, 'dossiersRequettesParquetServerSide']);
     });
 });

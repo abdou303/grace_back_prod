@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exports\BoDemandesExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateGreffeRequetteRequest;
 use App\Http\Requests\UpdateRequetteRequest;
@@ -21,8 +22,9 @@ use App\Http\Traits\HasServerSideRowModel;
 use App\Http\Resources\RequetteResource;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Excel;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RequettesATraiterTrExport;
+use App\Models\TypeRequette;
 use Illuminate\Support\Facades\Cache;
 
 class RequetteController extends Controller
@@ -1686,5 +1688,223 @@ class RequetteController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+
+    // ========================================================================
+    // Écran 1 : requettes.component (vue globale, toutes requêtes)
+    // ========================================================================
+    public function requettesServerSide(Request $request)
+    {
+        $query = $this->buildRequettesQuery($request->input('filters', []), false);
+
+        return $this->serverSideRows(
+            $request,
+            $query,
+            ['numero', 'date', 'id'],
+            ['id', 'desc'],
+        );
+    }
+
+    // ========================================================================
+    // Écran 2 : nt-requettes.component (exclut toujours tr_dapg == 'OK')
+    // ========================================================================
+    public function ntRequettesServerSide(Request $request)
+    {
+        $query = $this->buildRequettesQuery($request->input('filters', []), true);
+
+        return $this->serverSideRows(
+            $request,
+            $query,
+            ['numero', 'date', 'id'],
+            ['id', 'desc'],
+        );
+    }
+
+    private function buildRequettesQuery(array $f, bool $forceExcludeRecues): Builder
+    {
+        $query = \App\Models\Requette::with([
+            'dossier',
+            'tribunal',
+            'typerequette',
+            'statutrequettes' => function ($q) {
+                $q->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+        ]);
+
+        if ($forceExcludeRecues) {
+            // nt-requettes.component : toujours exclure les requêtes déjà reçues
+            $query->where(function ($q) {
+                $q->whereNull('tr_dapg')->orWhere('tr_dapg', '!=', 'OK');
+            });
+        } elseif (!empty($f['requettes_recues'])) {
+            // requettes.component : switch optionnel "الاجراءات التي تم تسلمها"
+            $query->where('tr_dapg', 'OK');
+        }
+
+        if (!empty($f['numero'])) {
+            $query->where('numero', 'like', '%' . $f['numero'] . '%');
+        }
+
+        if (!empty($f['startDate'])) {
+            $query->whereDate('date', '>=', $f['startDate']);
+        }
+
+        if (!empty($f['endDate'])) {
+            $query->whereDate('date', '<=', $f['endDate']);
+        }
+
+        if (!empty($f['tribunal'])) {
+            $query->whereHas('tribunal', function ($q) use ($f) {
+                $q->where('libelle', $f['tribunal']);
+            });
+        }
+
+        if (!empty($f['typerequette'])) {
+            $query->whereHas('typerequette', function ($q) use ($f) {
+                $q->where('libelle', $f['typerequette']);
+            });
+        }
+
+        if (!empty($f['statutrequettes'])) {
+            $code = $f['statutrequettes'];
+
+            // Ne matche que si le CODE DU STATUT LE PLUS RÉCENT est celui demandé
+            // (et pas n'importe lequel des statuts historiques de la requête)
+            $query->whereExists(function ($sub) use ($code) {
+                $sub->select(DB::raw(1))
+                    ->from('requette_statut_requette as rsr')
+                    ->join('statut_requettes as sr', 'sr.id', '=', 'rsr.statut_requette_id')
+                    ->whereColumn('rsr.requette_id', 'requettes.id')
+                    ->where('sr.code', $code)
+                    ->where('rsr.created_at', function ($maxSub) {
+                        $maxSub->selectRaw('MAX(rsr2.created_at)')
+                            ->from('requette_statut_requette as rsr2')
+                            ->whereColumn('rsr2.requette_id', 'rsr.requette_id');
+                    });
+            });
+        }
+
+        return $query;
+    }
+
+    public function getAllTypeRequettes()
+    {
+        return response()->json(['data' => TypeRequette::all()]);
+    }
+
+
+    // ========================================================================
+    // Écran 1 : list-add-demande-copie-to-requettes (copie_demande_envoyee=false forcé)
+    // ========================================================================
+    public function listAddDemandeCopieToRequettesServerSide(Request $request)
+    {
+        $query = $this->buildBoDemandesQuery($request->input('filters', []), true);
+
+        return $this->serverSideRows(
+            $request,
+            $query,
+            ['numero', 'date', 'id'],
+            ['id', 'desc'],
+        );
+    }
+
+    public function exportListAddDemandeCopieToRequettes(Request $request)
+    {
+        $filters   = $request->input('filters', []);
+        $requettes = $this->buildBoDemandesQuery($filters, true)->get();
+
+        return Excel::download(new BoDemandesExport($requettes), 'liste-requettes.xlsx');
+    }
+
+    // ========================================================================
+    // Écran 2 : list-all-bo-demandes (switch copie_demande_envoyee optionnel)
+    // ========================================================================
+    public function listAllBoDemandesServerSide(Request $request)
+    {
+        $query = $this->buildBoDemandesQuery($request->input('filters', []), false);
+
+        return $this->serverSideRows(
+            $request,
+            $query,
+            ['numero', 'date', 'id'],
+            ['id', 'desc'],
+        );
+    }
+
+    public function exportListAllBoDemandes(Request $request)
+    {
+        $filters   = $request->input('filters', []);
+        $requettes = $this->buildBoDemandesQuery($filters, false)->get();
+
+        return Excel::download(new BoDemandesExport($requettes), 'liste-requettes.xlsx');
+    }
+
+    private function buildBoDemandesQuery(array $f, bool $forceExcludeCopieEnvoyee): Builder
+    {
+        $query = \App\Models\Requette::with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.affaires',
+            'dossier.typedossier',
+            'dossier.naturedossier',
+            'tribunal',
+            'typerequette',
+        ]);
+
+        if ($forceExcludeCopieEnvoyee) {
+            $query->where('copie_demande_envoyee', false);
+        } elseif (!empty($f['copie_demande_envoyee'])) {
+            $query->where('copie_demande_envoyee', true);
+        }
+
+        if (!empty($f['numero_dapg'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+            });
+        }
+
+        if (!empty($f['nom_detenu'])) {
+            $query->whereHas('dossier.detenu', function ($q) use ($f) {
+                $q->where('nom', 'like', '%' . $f['nom_detenu'] . '%')
+                    ->orWhere('prenom', 'like', '%' . $f['nom_detenu'] . '%');
+            });
+        }
+
+        if (!empty($f['numero_affaire'])) {
+            $query->whereHas('dossier.affaires', function ($q) use ($f) {
+                // Reproduit exactement `${numero}/${code}/${annee}` du filtre JS
+                $q->whereRaw(
+                    "CONCAT(numero, '/', code, '/', annee) like ?",
+                    ['%' . $f['numero_affaire'] . '%'],
+                );
+            });
+        }
+
+        if (!empty($f['tribunal_id'])) {
+            $query->where('tribunal_id', $f['tribunal_id']);
+        }
+
+        if (!empty($f['typedossier'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('typedossier_id', $f['typedossier']);
+            });
+        }
+
+        if (!empty($f['naturedossier'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('naturedossiers_id', $f['naturedossier']); // ⚠️ avec le "s"
+            });
+        }
+
+        if (!empty($f['date_debut'])) {
+            $query->whereDate('date', '>=', $f['date_debut']);
+        }
+
+        if (!empty($f['date_fin'])) {
+            $query->whereDate('date', '<=', $f['date_fin']);
+        }
+
+        return $query;
     }
 }
