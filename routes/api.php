@@ -66,6 +66,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/dossiers-requettes-parquet/server-side', [DossierController::class, 'dossiersRequettesParquetServerSide']);
         Route::post('/dossiers-requettes-tribunal/server-side', [DossierController::class, 'dossiersRequettesTribunalServerSide']);
         Route::post('/dossiers-requettes-tribunal/export', [DossierController::class, 'exportDossiersRequettesTribunal']);
+        Route::post('/dossiers-requettes-all-parquet/server-side', [DossierController::class, 'dossiersRequettesAllParquetServerSide']);
+        Route::post('/dossiers-requettes-all-parquet/export', [DossierController::class, 'exportDossiersRequettesAllParquet']);
         Route::post('/requettes/server-side', [RequetteController::class, 'requettesServerSide']);
         Route::post('/requettes-nt/server-side', [RequetteController::class, 'ntRequettesServerSide']);
         Route::get('/type-requettes', [RequetteController::class, 'getAllTypeRequettes']);

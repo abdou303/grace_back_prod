@@ -2796,4 +2796,275 @@ class DossierController extends Controller
 
         return $query;
     }
+
+    // ========================================================================
+    // À AJOUTER dans App\Http\Controllers\Api\V1\DossierController
+    // (même pattern que dossiersRequettesTribunalServerSide, mais reprend les
+    // conditions d'affichage de all-parquet-dossiers.component +
+    // all-parquet-requettes.component — écran SANS onglets etat_parquet,
+    // contrairement à dossiersRequettesParquetServerSide qui reste inchangé.)
+    //
+    // - Dossiers : reprend exactement all-parquet-dossiers.component.ts
+    //   (user_tribunal_id = trId, categorie = CAT-1 [via dossierByTr],
+    //   has_antecedent != OUI, originedossier = 'D', user_parquet = userId).
+    //   PAS d'exclusion sur tr_tribunal (commentée dans le composant d'origine).
+    // - Requêtes : reprend exactement all-parquet-requettes.component.ts
+    //   (tribunal_id = trId, etat = 'TR' [via requetteByTr], user_parquet =
+    //   userId), + typerequette.cat = 'CAT-1' comme demandé.
+    //   PAS d'exclusion sur etat_tribunal.
+    // ========================================================================
+
+    public function dossiersRequettesAllParquetServerSide(Request $request)
+    {
+        $f      = $request->input('filters', []);
+        $trId   = $f['tribunal_id'] ?? null;
+        $userId = $f['user_parquet'] ?? null;
+
+        $startRow = (int) $request->input('startRow', 0);
+        $endRow   = (int) $request->input('endRow', 20);
+        $limit    = max(1, $endRow - $startRow);
+        $offset   = $startRow;
+
+        $dossierIdsQuery  = $this->buildDossierAllParquetIdsQuery($trId, $userId, $f);
+        $requetteIdsQuery = $this->buildRequetteAllParquetIdsQuery($trId, $userId, $f);
+
+        $total = (clone $dossierIdsQuery)->count() + (clone $requetteIdsQuery)->count();
+
+        $unionQuery = $dossierIdsQuery->unionAll($requetteIdsQuery);
+
+        $page = DB::query()
+            ->fromSub($unionQuery, 'combined')
+            ->orderBy('sort_date', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+
+        $dossierIds  = $page->where('row_type', 'dossier')->pluck('id')->all();
+        $requetteIds = $page->where('row_type', 'requette')->pluck('id')->all();
+
+        $dossiers = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'userParquetObjet:id,name',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'pjs.requette',
+            'pjs.affaire',
+            'avis',
+            'prison',
+            'objetdemande',
+            'sourcedemande',
+        ])->whereIn('id', $dossierIds)->get()->keyBy('id');
+
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.pjs',
+            'dossier.avis',
+            'dossier.pjs.affaire',
+            'dossier.detenu',
+            'dossier.affaires',
+            'userParquetObjet:id,name',
+            'dossier.affaires.tribunal',
+            'statutrequettes' => function ($q) {
+                $q->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+            'dossier.naturedossier',
+            'dossier.typedossier',
+            'dossier.objetdemande',
+            'dossier.detenu.nationalite',
+            'dossier.prison',
+            'dossier.garants',
+            'tribunal',
+            'typerequette',
+        ])->whereIn('id', $requetteIds)->get()->keyBy('id');
+
+        $rows = $page->map(function ($row) use ($dossiers, $requettes) {
+            if ($row->row_type === 'dossier') {
+                $model = $dossiers->get($row->id);
+                if (!$model) return null;
+                $arr = $model->toArray();
+                $arr['rowType'] = 'dossier';
+                return $arr;
+            }
+
+            $model = $requettes->get($row->id);
+            if (!$model) return null;
+            $arr = $model->toArray();
+            $arr['rowType'] = 'requette';
+            return $arr;
+        })->filter()->values();
+
+        return response()->json([
+            'rows'    => $rows,
+            'lastRow' => $total,
+        ]);
+    }
+
+    /**
+     * Export Excel : mêmes filtres que la grille, sans pagination.
+     * Comme pour le tribunal, on renvoie du JSON hydraté et c'est le front
+     * qui génère le .xlsx avec ExcelJS (pattern déjà utilisé dans
+     * all-parquet-requettes.component.ts).
+     */
+    public function exportDossiersRequettesAllParquet(Request $request)
+    {
+        $f      = $request->input('filters', []);
+        $trId   = $f['tribunal_id'] ?? null;
+        $userId = $f['user_parquet'] ?? null;
+
+        $dossierIds  = $this->buildDossierAllParquetIdsQuery($trId, $userId, $f)->pluck('dossiers.id')->all();
+        $requetteIds = $this->buildRequetteAllParquetIdsQuery($trId, $userId, $f)->pluck('requettes.id')->all();
+
+        $dossiers = Dossier::with([
+            'detenu',
+            'affaires',
+            'affaires.tribunal',
+            'typedossier',
+            'naturedossier',
+        ])->whereIn('id', $dossierIds)->orderBy('created_at', 'desc')->get()
+            ->map(function ($d) {
+                $arr = $d->toArray();
+                $arr['rowType'] = 'dossier';
+                return $arr;
+            });
+
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.affaires',
+            'dossier.affaires.tribunal',
+            'dossier.typedossier',
+            'dossier.naturedossier',
+            'typerequette',
+        ])->whereIn('id', $requetteIds)->orderBy('date', 'desc')->get()
+            ->map(function ($r) {
+                $arr = $r->toArray();
+                $arr['rowType'] = 'requette';
+                return $arr;
+            });
+
+        return response()->json([
+            'rows' => $dossiers->concat($requettes)->values(),
+        ]);
+    }
+
+    private function buildDossierAllParquetIdsQuery($trId, $userId, array $f)
+    {
+        $query = DB::table('dossiers')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'dossiers.id as id',
+                DB::raw("'dossier' as row_type"),
+                'dossiers.created_at as sort_date',
+            ])
+            ->where('dossiers.user_tribunal_id', $trId)
+            ->where('dossiers.categorie', 'CAT-1')
+            ->where('dossiers.originedossier', 'D')
+            ->where('dossiers.user_parquet', $userId)
+            ->where(function ($q) {
+                $q->whereNull('dossiers.has_antecedent')->orWhere('dossiers.has_antecedent', '!=', 'OUI');
+            });
+        // ⚠️ PAS d'exclusion sur tr_tribunal : all-parquet-dossiers.component
+        // l'a explicitement commentée (// trTribunal !== 'OK').
+
+        if (!empty($f['numero'])) {
+            $query->where('dossiers.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numeromp'])) {
+            $query->where('dossiers.numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('dossiers.created_at', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('dossiers.created_at', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
+
+    private function buildRequetteAllParquetIdsQuery($trId, $userId, array $f)
+    {
+        $typeRequetteTable = (new TypeRequette())->getTable();
+
+        $query = DB::table('requettes')
+            ->join('dossiers', 'requettes.dossier_id', '=', 'dossiers.id')
+            ->join($typeRequetteTable, 'requettes.typerequette_id', '=', $typeRequetteTable . '.id')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'requettes.id as id',
+                DB::raw("'requette' as row_type"),
+                'requettes.date as sort_date',
+            ])
+            ->where('requettes.tribunal_id', $trId)
+            ->where('requettes.etat', 'TR')
+            ->where('requettes.user_parquet', $userId)
+            ->where($typeRequetteTable . '.cat', 'CAT-1');
+        // ⚠️ PAS d'exclusion sur etat_tribunal : all-parquet-requettes.component
+        // utilise getRequettesByTr() -> requetteByTr() qui ne filtre que etat='TR'.
+
+        if (!empty($f['numero'])) {
+            $query->where('requettes.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numeromp'])) {
+            $query->where('dossiers.numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('requettes.date', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('requettes.date', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
 }
