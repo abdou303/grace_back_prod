@@ -1698,7 +1698,7 @@ class DossierController extends Controller
     public function uploadOnePj(Request $request, $dossier_id)
     {
         $request->validate([
-            'file' => 'required|file|mimes:pdf|max:20480',
+            'file' => 'required|file|mimes:pdf|max:153600',
             'type' => 'required|string'
         ]);
 

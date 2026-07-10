@@ -162,3 +162,9 @@ DB::unprepared("
     VALUES (99, N'آخر', 1, GETDATE(), GETDATE());
     SET IDENTITY_INSERT typespjs OFF;
 ");
+/***************************************************************************************/
+APP_LOCATION=office
+
+upload_max_filesize = 128M
+post_max_size = 128M
+php artisan jwt:secret

@@ -1563,7 +1563,7 @@ class RequetteController extends Controller
     public function uploadOnePj(Request $request, $requette_id)
     {
         $request->validate([
-            'file' => 'required|file|mimes:pdf|max:20480',
+            'file' => 'required|file|mimes:pdf|max:153600',
             'type' => 'required|string',
             'affaire_id' => 'nullable|integer'
         ]);
