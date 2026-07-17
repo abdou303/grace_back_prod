@@ -805,7 +805,7 @@ class DossierController extends Controller
             $postActions = [[
                 'model' => Dossier::class,
                 'id'    => $dossier->id,
-                'data'  => ['etat' => 'OK', 'date_etat_ok' => now()->format('Y-m-d H:i:s.v')]
+                'data'  => ['etat' => 'OK', 'date_etat_ok' => now()->format('Y-m-d H:i:s.v'), 'tr_tribunal' => 'OK', 'date_tr_tribunal' => now()->format('Y-m-d H:i:s.v')]
             ]];
 
             // 4. Dispatch du Job pour le traitement en arrière-plan
@@ -819,6 +819,9 @@ class DossierController extends Controller
             } else {
                 $dossier->etat = 'OK';
                 $dossier->date_etat_ok = now()->format('Y-m-d H:i:s.v');
+                $dossier->tr_tribunal = 'OK';
+                $dossier->date_tr_tribunal = now()->format('Y-m-d H:i:s.v');
+
                 $dossier->save();
             }
 
