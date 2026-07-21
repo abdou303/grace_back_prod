@@ -26,6 +26,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RequettesATraiterTrExport;
 use App\Models\TypeRequette;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
 
 class RequetteController extends Controller
 {
@@ -927,16 +928,34 @@ class RequetteController extends Controller
             'user_id' => 'required|int',
             'tribunal_id' => 'required|int',
             'typerequette_id' => 'required|int',
-            // 'copie_demande' => 'required|file|mimes:pdf|max:153600', // Validation du fichier
-            'copie_demande' => 'required_without:copie_dgapr|nullable|file|mimes:pdf|max:153600',
-            'copie_dgapr'   => 'required_without:copie_demande|nullable|file|mimes:pdf|max:153600',
-            /*'copie_demande' => [
-                Rule::requiredIf($request->categorie === 'CAT-1'),
-                'file',
-                'mimes:pdf',
-                'max:2048'
-            ],*/
+            'copie_demande' => 'nullable|file|mimes:pdf|max:153600',
+            'copie_dgapr'   => 'nullable|file|mimes:pdf|max:153600',
+            // AJOUT : fichiers copie_non_recours envoyés en tableau associatif [affaireId => file]
+            'copie_non_recours' => 'nullable|array',
+            'copie_non_recours.*' => 'nullable|file|mimes:pdf|max:153600',
         ], $messages);
+
+        // AJOUT : un seul fichier requis parmi copie_demande / copie_dgapr / copie_non_recours[]
+        $hasCopieDemande = $request->hasFile('copie_demande');
+        $hasCopieDgapr   = $request->hasFile('copie_dgapr');
+        $hasNonRecours   = false;
+
+        if ($request->hasFile('copie_non_recours')) {
+            $filesNonRecours = $request->file('copie_non_recours');
+            $filesNonRecoursArray = is_array($filesNonRecours) ? $filesNonRecours : [$filesNonRecours];
+            foreach ($filesNonRecoursArray as $fileNonRecours) {
+                if ($fileNonRecours) {
+                    $hasNonRecours = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$hasCopieDemande && !$hasCopieDgapr && !$hasNonRecours) {
+            throw ValidationException::withMessages([
+                'copie_demande' => 'المرجو رفع نسخة من الطلب أو الوضعية الجنائية أو نسخة عدم الطعن',
+            ]);
+        }
 
         try {
             return DB::transaction(function () use ($request, $requette, $data, $operationService) {
@@ -965,8 +984,9 @@ class RequetteController extends Controller
                 // 5. Préparation des fichiers pour le Job
                 $filesToProcess = [];
                 $fileMappings = [
-                    'copie_demande' => 7,
-                    'copie_dgapr'   => 8,
+                    'copie_demande'     => 7,
+                    'copie_dgapr'       => 8,
+                    'copie_non_recours' => 2, // même typepj_id que dans terminerParquetRequette()
                 ];
 
                 foreach ($fileMappings as $fieldName => $typepjId) {
