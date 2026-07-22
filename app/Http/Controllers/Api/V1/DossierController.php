@@ -2023,10 +2023,9 @@ class DossierController extends Controller
         }
 
         if (!empty($f['date_sortie'])) {
-            $query->where(function ($q) use ($f) {
-                $q->whereNull('date_sortie')
-                    ->orWhereDate('date_sortie', '>', $f['date_sortie']);
-            });
+            $query->whereNotNull('date_sortie')
+                ->where('date_sortie', '!=', '')
+                ->whereDate('date_sortie', '>', $f['date_sortie']);
         }
     }
 
@@ -3069,5 +3068,31 @@ class DossierController extends Controller
         }
 
         return $query;
+    }
+
+    public function updateNumeroDapgSortie(Request $request, $id)
+    {
+        $dossier = Dossier::findOrFail($id);
+
+        $validated = $request->validate([
+            'numero_dapg' => [
+                'required',
+                'string',
+                Rule::unique('dossiers', 'numero_dapg')->ignore($dossier->id),
+            ],
+            'date_sortie' => ['required', 'date'],
+        ], [
+            'numero_dapg.unique' => 'رقم الملف بالوزارة موجود مسبقاً',
+        ]);
+
+        $dossier->update([
+            'numero_dapg' => $validated['numero_dapg'],
+            'date_sortie' => $validated['date_sortie'],
+        ]);
+
+        return response()->json([
+            'message' => 'تم التحديث بنجاح',
+            'data' => $dossier->fresh(),
+        ]);
     }
 }

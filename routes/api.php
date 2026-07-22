@@ -152,6 +152,7 @@ Route::prefix('v1')->group(function () {
         Route::put('/tr-utilisateurs/{id}', [UtilisateurController::class, 'updateTrUser']);
         Route::put('/requettes/{id}/recevoir-dapg', [RequetteController::class, 'recevoirRequetteCAT2']);
         Route::post('/dossiers/{dossier}/pjs-details', [DossierController::class, 'addPjsFromDetails']);
+        Route::put('/dossier/{id}/numero-dapg-sortie', [DossierController::class, 'updateNumeroDapgSortie']);
         Route::get('/import-historique', [DossierImportController::class, 'historique']);
         Route::post('/import-dossiers-encours',  [DossierImportController::class, 'importEncours']);
         Route::get('/import-historique-encours', [DossierImportController::class, 'historiqueEncours']);
