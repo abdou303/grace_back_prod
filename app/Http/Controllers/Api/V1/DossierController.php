@@ -3076,11 +3076,11 @@ class DossierController extends Controller
 
         $validated = $request->validate([
             'numero_dapg' => [
-                'required',
+                'nullable',
                 'string',
                 Rule::unique('dossiers', 'numero_dapg')->ignore($dossier->id),
             ],
-            'date_sortie' => ['required', 'date'],
+            'date_sortie' => ['nullable', 'date'],
         ], [
             'numero_dapg.unique' => 'رقم الملف بالوزارة موجود مسبقاً',
         ]);

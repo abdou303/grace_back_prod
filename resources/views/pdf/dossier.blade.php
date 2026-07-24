@@ -91,7 +91,7 @@
     <div style="margin-top: 30px; line-height: 1.8;  text-align: justify; direction: rtl;font-size:18px">
 
         <p>
-            إن الوكيل العام للملك لدى {{ $dossier->user_tribunal_libelle }}
+            إن الوكيل العام للملك لدى {{ $dossier->LibelleTribunalUtilisateur->libelle ?? '' }}
             بناء على طلب @if ($dossier->typedossier->id == 1)
                 العفو
             @elseif($dossier->typedossier->id == 2)
