@@ -75,6 +75,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/bo-demandes-copie/export', [RequetteController::class, 'exportListAddDemandeCopieToRequettes']);
         Route::post('/bo-demandes-all/server-side', [RequetteController::class, 'listAllBoDemandesServerSide']);
         Route::post('/bo-demandes-all/export', [RequetteController::class, 'exportListAllBoDemandes']);
+        Route::post('/dossier-export/server-side', [RequetteController::class, 'dossierExportServerSide']);
+        Route::post('/dossier-export/export', [RequetteController::class, 'exportDossierExport']);
+        Route::post('/dossiers-requettes-transferees-greffe/server-side', [DossierController::class, 'dossiersRequettesTransfereesGreffeServerSide']);
         /*_________________________*/
 
         Route::apiResource('villes', VilleController::class);
@@ -136,7 +139,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/dossiers/terminer-tr-greffe/{dossier_id}', [DossierController::class, 'terminerGreffeDossierTr']);
         Route::post('/dossiers/terminer-tr-parquet/{dossier_id}', [DossierController::class, 'terminerParquetDossierTr']);
         Route::post('/antecedent-dossiers', [DossierController::class, 'storeAntecedent']);
+        Route::delete('/dossiers/{id}/annuler-antecedent', [DossierController::class, 'annulerAntecedentDossier']);
         Route::put('/antecedent-dossiers-requette/{requette_id}', [RequetteController::class, 'storeAntecedentRequette']);
+        Route::put('/antecedent-dossiers-requette/{requette_id}/annuler', [RequetteController::class, 'annulerAntecedentRequette']);
         Route::get('/dossier/{id}/pdf', [FichePdfController::class, 'generatePdf']);
         Route::get('/requette/{id}/pdf', [FichePdfController::class, 'generatePdfFromRequette']);
         Route::get('/dossiers/{id}/pjs', [DossierController::class, 'getPjs']);

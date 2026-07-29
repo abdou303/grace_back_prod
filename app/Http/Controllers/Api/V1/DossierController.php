@@ -645,43 +645,299 @@ class DossierController extends Controller
     }
     public function storeAntecedent(StoreAntecedentDossierRequest $request)
     {
-
-
-        $dossier = new Dossier();
         $currentYear = now()->format('Y');
-        $lastRecord = Dossier::whereYear('created_at', $currentYear)->orderBy('id', 'desc')->first();
 
-        //$lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 4)) : 0;
-        $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0;
+        $maxAttempts = 5;
+        $attempt = 0;
 
-        $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
-        $numero_dossier = 'D-' . $currentYear . $newNumber;
+        while (true) {
+            $attempt++;
+            try {
+                $dossier = DB::transaction(function () use ($request, $currentYear) {
+                    // On filtre directement sur le préfixe du numéro (et non sur
+                    // created_at, qui peut être trompeur pour des dossiers importés
+                    // ou corrigés manuellement). lockForUpdate() verrouille la ligne
+                    // le temps de la transaction pour empêcher deux requêtes
+                    // concurrentes de lire le même "dernier numéro".
+                    $lastRecord = Dossier::where('numero', 'like', "D-{$currentYear}%")
+                        ->orderBy('numero', 'desc')
+                        ->lockForUpdate()
+                        ->first();
 
-        $dossier->typedossier_id = $request->typedossier;
-        $dossier->naturedossiers_id = $request->naturedossier;
-        $dossier->sourcedemande_id = $request->sourcedemande;
-        $dossier->numero = $numero_dossier;
-        $dossier->etat = 'NT';
-        $dossier->has_antecedent = $request->has_antecedent;
-        $dossier->antecedant_id = $request->antecedant_id;
-        $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande)  ? (int) $request->objetdemande : null;
-        $dossier->user_id = $request->user_id;
-        $dossier->user_tribunal_id = $request->tribunal_user_id;
-        $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
-        $dossier->numeromp = $request->numeromp;
-        $dossier->detenu_id = $request->detenu_id;
+                    $lastNumber = $lastRecord ? intval(substr($lastRecord->numero, 7)) : 0;
+                    $newNumber = str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+                    $numero_dossier = 'D-' . $currentYear . $newNumber;
 
-        $dossier->save();
+                    $dossier = new Dossier();
+                    $dossier->typedossier_id = $request->typedossier;
+                    $dossier->naturedossiers_id = $request->naturedossier;
+                    $dossier->sourcedemande_id = $request->sourcedemande;
+                    $dossier->numero = $numero_dossier;
+                    $dossier->etat = 'NT';
+                    $dossier->has_antecedent = $request->has_antecedent;
+                    $dossier->antecedant_id = $request->antecedant_id;
+                    $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
+                    $dossier->user_id = $request->user_id;
+                    $dossier->user_tribunal_id = $request->tribunal_user_id;
+                    $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
+                    $dossier->numeromp = $request->numeromp;
+                    $dossier->detenu_id = $request->detenu_id;
 
+                    $dossier->save();
 
+                    return $dossier;
+                });
 
-        return response()->json([
-            'message' => 'تم تسجيل الطلب بنجاح',
-            'data' => $dossier,
-        ], 201);
+                return response()->json([
+                    'message' => 'تم تسجيل الطلب بنجاح',
+                    'data' => $dossier,
+                ], 201);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                if ($attempt >= $maxAttempts) {
+                    Log::error('storeAntecedent: échec après ' . $maxAttempts . ' tentatives - ' . $e->getMessage());
+                    return response()->json([
+                        'message' => 'حدث خطأ أثناء تسجيل الطلب، المرجو إعادة المحاولة',
+                    ], 500);
+                }
+                usleep(100000); // 100ms avant de réessayer
+                continue;
+            }
+        }
     }
 
+    /***************************** */
+    /**
+     * ============================================================================
+     * À AJOUTER dans App\Http\Controllers\Api\V1\DossierController
+     * (juste après buildRequetteGreffeIdsQuery, même pattern que
+     * dossiersRequettesGreffeServerSide)
+     * ============================================================================
+     *
+     * Différence avec dossiersRequettesGreffeServerSide : PAS de filtre sur
+     * etat_greffe -> on ramène ici TOUS les dossiers/requêtes CAT-1 transférés
+     * au greffe, qu'ils soient traités (TR) ou non traités (NT). C'est le
+     * pendant "liste unique" utilisé par le nouvel onglet "جميع الملفات".
+     */
 
+
+
+    /***************************** */
+    /**
+     * ============================================================================
+     * À AJOUTER dans App\Http\Controllers\Api\V1\DossierController
+     * (juste après buildRequetteGreffeIdsQuery, même pattern que
+     * dossiersRequettesGreffeServerSide)
+     * ============================================================================
+     *
+     * Différence avec dossiersRequettesGreffeServerSide : PAS de filtre sur
+     * etat_greffe -> on ramène ici TOUS les dossiers/requêtes CAT-1 transférés
+     * au greffe, qu'ils soient traités (TR) ou non traités (NT). C'est le
+     * pendant "liste unique" utilisé par le nouvel onglet "جميع الملفات".
+     */
+
+    public function dossiersRequettesTransfereesGreffeServerSide(Request $request)
+    {
+        $f    = $request->input('filters', []);
+        $trId = $f['tribunal_id'] ?? null;
+
+        $startRow = (int) $request->input('startRow', 0);
+        $endRow   = (int) $request->input('endRow', 20);
+        $limit    = max(1, $endRow - $startRow);
+        $offset   = $startRow;
+
+        $dossierIdsQuery  = $this->buildDossierTransfereesGreffeIdsQuery($trId, $f);
+        $requetteIdsQuery = $this->buildRequetteTransfereesGreffeIdsQuery($trId, $f);
+
+        $total = (clone $dossierIdsQuery)->count() + (clone $requetteIdsQuery)->count();
+
+        $unionQuery = $dossierIdsQuery->unionAll($requetteIdsQuery);
+
+        $page = DB::query()
+            ->fromSub($unionQuery, 'combined')
+            ->orderBy('sort_date', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+
+        $dossierIds  = $page->where('row_type', 'dossier')->pluck('id')->all();
+        $requetteIds = $page->where('row_type', 'requette')->pluck('id')->all();
+
+        $dossiers = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'userParquetObjet:id,name',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'pjs.requette',
+            'pjs.affaire',
+            'avis',
+            'prison',
+            'objetdemande',
+            'sourcedemande',
+        ])->whereIn('id', $dossierIds)->get()->keyBy('id');
+
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.pjs',
+            'dossier.avis',
+            'dossier.pjs.affaire',
+            'dossier.detenu',
+            'dossier.affaires',
+            'userParquetObjet:id,name',
+            'dossier.affaires.tribunal',
+            'statutrequettes' => function ($q) {
+                $q->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+            'dossier.naturedossier',
+            'dossier.typedossier',
+            'dossier.objetdemande',
+            'dossier.detenu.nationalite',
+            'dossier.prison',
+            'dossier.garants',
+            'tribunal',
+            'typerequette',
+        ])->whereIn('id', $requetteIds)->get()->keyBy('id');
+
+        $rows = $page->map(function ($row) use ($dossiers, $requettes) {
+            if ($row->row_type === 'dossier') {
+                $model = $dossiers->get($row->id);
+                if (!$model) return null;
+                $arr = $model->toArray();
+                $arr['rowType'] = 'dossier';
+                return $arr;
+            }
+
+            $model = $requettes->get($row->id);
+            if (!$model) return null;
+            $arr = $model->toArray();
+            $arr['rowType'] = 'requette';
+            return $arr;
+        })->filter()->values();
+
+        return response()->json([
+            'rows'    => $rows,
+            'lastRow' => $total,
+        ]);
+    }
+
+    private function buildDossierTransfereesGreffeIdsQuery($trId, array $f)
+    {
+        $query = DB::table('dossiers')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'dossiers.id as id',
+                DB::raw("'dossier' as row_type"),
+                'dossiers.created_at as sort_date',
+            ])
+            ->where('dossiers.user_tribunal_id', $trId)
+            ->where(function ($q) {
+                // Dossiers CAT-1 classiques OU dossiers dont le numéro
+                // commence par "D-" (même s'ils n'ont pas categorie = CAT-1).
+                $q->where('dossiers.categorie', 'CAT-1')
+                    ->orWhere('dossiers.numero', 'like', 'D-%');
+            })
+            ->where('dossiers.originedossier', '!=', 'DAPG-ENCOURS')
+            ->where(function ($q) {
+                $q->whereNull('dossiers.has_antecedent')->orWhere('dossiers.has_antecedent', '!=', 'OUI');
+            });
+        // ⚠️ PAS de ->where('dossiers.etat_greffe', ...) ici : on veut NT + TR.
+        // ⚠️ IGNORÉ (sur demande) : condition tr_tribunal IS NULL / != 'OK'.
+
+        if (!empty($f['numero'])) {
+            $query->where('dossiers.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numeromp'])) {
+            $query->where('dossiers.numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('dossiers.created_at', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('dossiers.created_at', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
+
+    private function buildRequetteTransfereesGreffeIdsQuery($trId, array $f)
+    {
+        $query = DB::table('requettes')
+            ->join('dossiers', 'requettes.dossier_id', '=', 'dossiers.id')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'requettes.id as id',
+                DB::raw("'requette' as row_type"),
+                'requettes.date as sort_date',
+            ])
+            ->where('requettes.tribunal_id', $trId)
+            ->where('requettes.etat', 'TR');
+        // ⚠️ PAS de ->where('requettes.etat_greffe', ...) ici : on veut NT + TR.
+        // ⚠️ IGNORÉ (sur demande) : condition etat_tribunal != 'TR' / IS NULL.
+
+        if (!empty($f['numero'])) {
+            $query->where('requettes.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numeromp'])) {
+            $query->where('dossiers.numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('requettes.date', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('requettes.date', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
     /******************************************************** */
 
 
@@ -1344,6 +1600,64 @@ class DossierController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Annule le rattachement d'un dossier "cumulé" (has_antecedent = 'OUI')
+     * en supprimant DÉFINITIVEMENT ce dossier (celui créé via storeAntecedent()),
+     * avec le même nettoyage en cascade que destroy().
+     *
+     * Utilisé par le bouton "إلغاء الضم" sur la fiche du dossier cumulé.
+     */
+    public function annulerAntecedentDossier($id)
+    {
+        $dossier = Dossier::find($id);
+
+        if (!$dossier) {
+            return response()->json(['message' => 'الملف غير موجود'], 404);
+        }
+
+        // Garde-fou : on ne permet cette action que sur un dossier réellement
+        // marqué comme "ضم" (cumulé à un antécédent). Empêche un appel accidentel
+        // sur un dossier normal.
+        if ($dossier->has_antecedent !== 'OUI') {
+            return response()->json([
+                'message' => 'هذا الملف ليس ملفا مضموما، لا يمكن إلغاء الضم',
+            ], 422);
+        }
+
+        try {
+            return DB::transaction(function () use ($dossier) {
+
+                // --- Nettoyage des historiques liés ---
+                if (method_exists($dossier, 'requettes')) {
+                    $requetteIds = $dossier->requettes()->pluck('id');
+                    DB::table('historiques_operations')->whereIn('requette_id', $requetteIds)->delete();
+                    $dossier->requettes()->delete();
+                }
+
+                DB::table('historiques_operations')->where('dossier_id', $dossier->id)->delete();
+
+                // --- Nettoyage des relations qui bloquent la suppression ---
+                $dossier->pjs()->delete();
+
+                if (method_exists($dossier, 'affaires')) {
+                    $dossier->affaires()->detach();
+                }
+
+                // --- Suppression définitive du dossier cumulé ---
+                $dossier->delete();
+
+                return response()->json(['message' => 'تم إلغاء الضم وحذف الملف بنجاح'], 200);
+            });
+        } catch (\Exception $e) {
+            Log::error('Erreur annulerAntecedentDossier: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'حدث خطأ أثناء إلغاء الضم',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function getRegistreTribunal($id_tr)
     {
         $dossiers = Dossier::with([
@@ -1889,7 +2203,9 @@ class DossierController extends Controller
             ->where(function ($q) {
                 $q->whereNull('tr_dapg')->orWhere('tr_dapg', '!=', 'OK');
             })
-            ->whereIn('originedossier', ['D', 'R']);
+            ->whereIn('originedossier', ['D', 'R'])
+            // Nouvelle condition : uniquement les dossiers de catégorie CAT-1
+            ->where('categorie', 'CAT-1');
 
         $this->applyCommonDossierTrFilters($query, $f);
 
@@ -1946,7 +2262,9 @@ class DossierController extends Controller
             ->where(function ($q) {
                 $q->whereNull('has_antecedent')->orWhere('has_antecedent', '!=', 'OUI');
             })
-            ->whereIn('originedossier', ['R', 'D']); // exclut null et toute autre valeur
+            ->whereIn('originedossier', ['R', 'D']) // exclut null et toute autre valeur
+            // Nouvelle condition : uniquement les dossiers de catégorie CAT-1
+            ->where('categorie', 'CAT-1');
 
         $this->applyCommonDossierTrFilters($query, $f);
 

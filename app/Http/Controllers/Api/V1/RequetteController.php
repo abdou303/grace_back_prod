@@ -1409,7 +1409,104 @@ class RequetteController extends Controller
 
         return new RequetteResource($requettes);
     }
+    // ========================================================================
+    // Écran dossier-export.component : toutes les requêtes TR, SANS restriction
+    // typerequette.cat = 'CAT-2' (contrairement à getTRRequettes())
+    // ========================================================================
+    public function dossierExportServerSide(Request $request)
+    {
+        $query = $this->buildDossierExportQuery($request->input('filters', []));
 
+        return $this->serverSideRows(
+            $request,
+            $query,
+            ['numero', 'date', 'id'], // colonnes triables autorisées côté SQL
+            ['id', 'desc'],
+        );
+    }
+
+    public function exportDossierExport(Request $request)
+    {
+        $filters   = $request->input('filters', []);
+        $requettes = $this->buildDossierExportQuery($filters)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return Excel::download(new BoDemandesExport($requettes), 'export-requettes.xlsx');
+    }
+
+    private function buildDossierExportQuery(array $f): Builder
+    {
+        // Reprend exactement les relations de getTRRequettes(), mais sans le
+        // whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-2'))
+        $query = Requette::where('etat', 'TR')->with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.detenu.profession',
+            'dossier.detenu.nationalite',
+            'dossier.affaires',
+            'dossier.typedossier',
+            'dossier.naturedossier',
+            'dossier.affaires.tribunal',
+            'dossier.prison',
+            'dossier.requettes',
+            'dossier.pjs',
+            'dossier.pjs.affaire',
+            'tribunal',
+            'typerequette',
+            'statutrequettes' => function ($query) {
+                $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+        ]);
+
+        if (!empty($f['numero_dapg'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+            });
+        }
+
+        if (!empty($f['nom_detenu'])) {
+            $query->whereHas('dossier.detenu', function ($q) use ($f) {
+                $q->where('nom', 'like', '%' . $f['nom_detenu'] . '%')
+                    ->orWhere('prenom', 'like', '%' . $f['nom_detenu'] . '%');
+            });
+        }
+
+        if (!empty($f['numero_affaire'])) {
+            $query->whereHas('dossier.affaires', function ($q) use ($f) {
+                $q->whereRaw(
+                    "CONCAT(numero, '/', code, '/', annee) like ?",
+                    ['%' . $f['numero_affaire'] . '%'],
+                );
+            });
+        }
+
+        if (!empty($f['tribunal_id'])) {
+            $query->where('tribunal_id', $f['tribunal_id']);
+        }
+
+        if (!empty($f['typedossier'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('typedossier_id', $f['typedossier']);
+            });
+        }
+
+        if (!empty($f['naturedossier'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('naturedossiers_id', $f['naturedossier']); // ⚠️ avec le "s"
+            });
+        }
+
+        if (!empty($f['date_debut'])) {
+            $query->whereDate('date', '>=', $f['date_debut']);
+        }
+
+        if (!empty($f['date_fin'])) {
+            $query->whereDate('date', '<=', $f['date_fin']);
+        }
+
+        return $query;
+    }
     public function getPjs($requetteId)
     {
         $requette = Requette::with('pjs')->findOrFail($requetteId);
@@ -1540,6 +1637,53 @@ class RequetteController extends Controller
             'message' => 'تم تسجيل الطلب بنجاح',
             'data' => $dossier,
         ], 201);
+    }
+
+    /**
+     * Annule le rattachement (الضم) d'un dossier antécédent effectué via
+     * storeAntecedentRequette(). Contrairement au cas "dossiers", ici on ne
+     * supprime rien : on remet la requête et son dossier à leur état initial
+     * (celui juste après la création de la requête, avant tout ضم).
+     */
+    public function annulerAntecedentRequette($requette_id)
+    {
+        $requette = Requette::findOrFail($requette_id);
+        $dossier = $requette->dossier;
+
+        if (!$dossier) {
+            return response()->json(['message' => 'Dossier not found'], 404);
+        }
+
+        if ($dossier->has_antecedent !== 'OUI') {
+            return response()->json([
+                'message' => 'هذا الملف ليس ملفا مضموما، لا يمكن إلغاء الضم',
+            ], 422);
+        }
+
+        // --- Remise à l'état initial de la requête ---
+        $requette->etat = "TR";
+        $requette->etat_greffe = "KO";
+        $requette->etat_parquet = "KO";
+        $requette->save();
+
+        // --- Remise à l'état initial du dossier, et annulation du lien d'antécédent ---
+        $requette->dossier()->update([
+            'etat' => 'NT',
+            'tr_tribunal' => 'NT',
+            'has_antecedent' => null,
+            'antecedant_id' => null,
+        ]);
+
+        // --- Ajout du statut KO à l'historique des statuts de la requête ---
+        $id_statut = StatutRequette::where('code', 'KO')->value('id');
+        if ($id_statut) {
+            $requette->statutrequettes()->attach($id_statut);
+        }
+
+        return response()->json([
+            'message' => 'تم إلغاء الضم بنجاح',
+            'data' => $requette->fresh('dossier'),
+        ], 200);
     }
 
     public function AdminMakeRequetteDone(Request $request, $requette_id)
