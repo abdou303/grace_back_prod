@@ -193,7 +193,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'detenu_id'           => $detenu->id,
                         //  'user_id'             => $row['user_id'],
                         'user_id'             =>  $this->userId,
-                        'originedossier'      => 'R'
+                        'originedossier'      => 'R',
+
                     ];
 
                     // Logique spécifique type dossier

@@ -832,12 +832,14 @@ class RequetteController extends Controller
 
                 // 3. Mise à jour du Dossier lié
                 // Il est préférable d'utiliser le modèle directement
-                $requette->dossier()->update([
-                    'etat' => 'NT',
-                    'tr_tribunal' => 'NT',
-                    'user_tribunal_id' => $request->tribunal_id,
-                    'categorie' => $requette->typerequette->cat ?? null
-                ]);
+                if ($requette->typerequette->cat == "CAT-1") {
+                    $requette->dossier()->update([
+                        'etat' => 'NT',
+                        'tr_tribunal' => 'NT',
+                        'user_tribunal_id' => $request->tribunal_id,
+                        'categorie' => $requette->typerequette->cat ?? null
+                    ]);
+                }
 
                 // 4. Attachement du statut initial
                 $id_statut = StatutRequette::where('code', 'KO')->value('id');
@@ -1081,12 +1083,15 @@ class RequetteController extends Controller
                     ]);
 
                     // --- MISE À JOUR DOSSIER ---
-                    $requette->dossier()->update([
-                        'etat' => 'NT',
-                        'tr_tribunal' => 'NT',
-                        'user_tribunal_id' => $requette->tribunal_id, // On garde celui d'origine
-                        'categorie' => $requette->typerequette->cat ?? null
-                    ]);
+                    if ($requette->typerequette->cat == "CAT-1") {
+
+                        $requette->dossier()->update([
+                            'etat' => 'NT',
+                            'tr_tribunal' => 'NT',
+                            'user_tribunal_id' => $requette->tribunal_id, // On garde celui d'origine
+                            'categorie' => $requette->typerequette->cat ?? null
+                        ]);
+                    }
 
                     // --- STATUT ---
                     $id_statut = StatutRequette::where('code', 'KO')->value('id');
