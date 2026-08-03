@@ -168,3 +168,9 @@ APP_LOCATION=office
 upload_max_filesize = 128M
 post_max_size = 128M
 php artisan jwt:secret
+/***************************************************************************************/
+
+
+
+DB::unprepared(" SET IDENTITY_INSERT typespjs ON; INSERT INTO typespjs (id, libelle, active, created_at, updated_at) VALUES (14, N'نسخة من المراسلة', 1, GETDATE(), GETDATE()); SET IDENTITY_INSERT typespjs OFF; ");
+/*****************************************************************************************************/

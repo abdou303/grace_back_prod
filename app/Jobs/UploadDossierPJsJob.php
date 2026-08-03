@@ -99,20 +99,30 @@ class UploadDossierPJsJob implements ShouldQueue
                         'typepjId'    => $fileData['typepjId'],
                         'observation' => $fileData['observation'] ?? 'VIDE',
                     ]);
-                    $insertedObservation = ($requette->typerequette->cat == "CAT-1")
-                        ? (($typepjId == 99 && !empty($fileData['observation']))
-                            ? $fileData['observation']
-                            : ($typepjLabels[$typepjId] ?? 'أخرى'))
-                        : ($requette->typerequette->libelle ?? 'أخرى');
+                    if ($typepjId == 14) {
+                        // Cas spécial CAT-2 : observation fixe, quel que soit le contexte
+                        $insertedObservation = 'نسخة من المراسلة';
+                    } else {
+                        $insertedObservation = ($requette->typerequette->cat == "CAT-1")
+                            ? (($typepjId == 99 && !empty($fileData['observation']))
+                                ? $fileData['observation']
+                                : ($typepjLabels[$typepjId] ?? 'أخرى'))
+                            : ($requette->typerequette->libelle ?? 'أخرى');
+                    }
                     $baseNumero = $requette->numero;
                 } else {
                     Log::info('FILE DATA DANS JOB', [
                         'typepjId'    => $fileData['typepjId'],
                         'observation' => $fileData['observation'] ?? 'VIDE',
                     ]);
-                    $insertedObservation = ($typepjId == 99 && !empty($fileData['observation']))
-                        ? $fileData['observation']           // ← valeur saisie par l'utilisateur
-                        : ($typepjLabels[$typepjId] ?? 'أخرى');  // ← ancienne logique inchangée
+                    if ($typepjId == 14) {
+                        // Cas spécial CAT-2 : observation fixe, quel que soit le contexte
+                        $insertedObservation = 'نسخة من المراسلة';
+                    } else {
+                        $insertedObservation = ($typepjId == 99 && !empty($fileData['observation']))
+                            ? $fileData['observation']           // ← valeur saisie par l'utilisateur
+                            : ($typepjLabels[$typepjId] ?? 'أخرى');  // ← ancienne logique inchangée
+                    }
 
                     $baseNumero = $dossier->numero;
                 }

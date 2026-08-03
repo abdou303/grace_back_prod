@@ -920,6 +920,10 @@ class RequetteController extends Controller
             'copie_dgapr.mimes'              => "الملف يجب أن يكون بصيغة PDF",
             'copie_dgapr.max' => "الملف يجب أن لا يتعدى 25 ميغابايت",
 
+            // AJOUT : messages pour copie_demande_requette (CAT-2)
+            'copie_demande_requette.mimes' => "الملف يجب أن يكون بصيغة PDF",
+            'copie_demande_requette.max'   => "الملف يجب أن لا يتعدى 25 ميغابايت",
+
         ];
 
         $data = $request->validate([
@@ -932,13 +936,16 @@ class RequetteController extends Controller
             'typerequette_id' => 'required|int',
             'copie_demande' => 'nullable|file|mimes:pdf|max:153600',
             'copie_dgapr'   => 'nullable|file|mimes:pdf|max:153600',
+            // AJOUT : équivalent de copie_demande pour les requêtes CAT-2 ("نسخة من المراسلة")
+            'copie_demande_requette' => 'nullable|file|mimes:pdf|max:153600',
             // AJOUT : fichiers copie_non_recours envoyés en tableau associatif [affaireId => file]
             'copie_non_recours' => 'nullable|array',
             'copie_non_recours.*' => 'nullable|file|mimes:pdf|max:153600',
         ], $messages);
 
-        // AJOUT : un seul fichier requis parmi copie_demande / copie_dgapr / copie_non_recours[]
+        // AJOUT : un seul fichier requis parmi copie_demande / copie_demande_requette / copie_dgapr / copie_non_recours[]
         $hasCopieDemande = $request->hasFile('copie_demande');
+        $hasCopieDemandeRequette = $request->hasFile('copie_demande_requette');
         $hasCopieDgapr   = $request->hasFile('copie_dgapr');
         $hasNonRecours   = false;
 
@@ -953,7 +960,7 @@ class RequetteController extends Controller
             }
         }
 
-        if (!$hasCopieDemande && !$hasCopieDgapr && !$hasNonRecours) {
+        if (!$hasCopieDemande && !$hasCopieDemandeRequette && !$hasCopieDgapr && !$hasNonRecours) {
             throw ValidationException::withMessages([
                 'copie_demande' => 'المرجو رفع نسخة من الطلب أو الوضعية الجنائية أو نسخة عدم الطعن',
             ]);
@@ -987,6 +994,7 @@ class RequetteController extends Controller
                 $filesToProcess = [];
                 $fileMappings = [
                     'copie_demande'     => 7,
+                    'copie_demande_requette' => 14, // نسخة من المراسلة
                     'copie_dgapr'       => 8,
                     'copie_non_recours' => 2, // même typepj_id que dans terminerParquetRequette()
                 ];
