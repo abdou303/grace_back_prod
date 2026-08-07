@@ -1752,6 +1752,7 @@ class RequetteController extends Controller
         $path = $file->store('temp/openbee_uploads');
 
         $fileMappings = [
+            'copie_cat2' => 6,
             'copie_demande' => 7,
             'copie_decision' => 5,
             'copie_cin' => 4,
@@ -1890,6 +1891,11 @@ class RequetteController extends Controller
     {
         $query = $this->buildRequettesQuery($request->input('filters', []), true);
 
+        // nt-requettes.component : ne lister que les requêtes de catégorie CAT-2
+        $query->whereHas('typerequette', function ($q) {
+            $q->where('cat', 'CAT-2');
+        });
+
         return $this->serverSideRows(
             $request,
             $query,
@@ -1902,6 +1908,8 @@ class RequetteController extends Controller
     {
         $query = \App\Models\Requette::with([
             'dossier',
+            'dossier.detenu',
+            'dossier.affaires',
             'tribunal',
             'typerequette',
             'statutrequettes' => function ($q) {
@@ -1921,6 +1929,35 @@ class RequetteController extends Controller
 
         if (!empty($f['numero'])) {
             $query->where('numero', 'like', '%' . $f['numero'] . '%');
+        }
+
+        if (!empty($f['nom_detenu'])) {
+            $query->whereHas('dossier.detenu', function ($q) use ($f) {
+                $q->where('nom', 'like', '%' . $f['nom_detenu'] . '%')
+                    ->orWhere('prenom', 'like', '%' . $f['nom_detenu'] . '%');
+            });
+        }
+
+        if (!empty($f['numero_affaire'])) {
+            $query->whereHas('dossier.affaires', function ($q) use ($f) {
+                // Reproduit `${numero}/${code}/${annee}` comme dans buildBoDemandesQuery
+                $q->whereRaw(
+                    "CONCAT(numero, '/', code, '/', annee) like ?",
+                    ['%' . $f['numero_affaire'] . '%'],
+                );
+            });
+        }
+
+        if (!empty($f['numeromp'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('numeromp', 'like', '%' . $f['numeromp'] . '%');
+            });
+        }
+
+        if (!empty($f['numero_dapg'])) {
+            $query->whereHas('dossier', function ($q) use ($f) {
+                $q->where('numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+            });
         }
 
         if (!empty($f['startDate'])) {

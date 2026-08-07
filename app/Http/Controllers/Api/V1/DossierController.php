@@ -1430,13 +1430,13 @@ class DossierController extends Controller
             'numero_dapg' => [
                 $request->origindossier === 'D' ? 'required' : 'nullable',
                 'string',
-                Rule::unique('dossiers', 'numero_dapg')
+                /*  Rule::unique('dossiers', 'numero_dapg')
                     ->ignore($id) // Ignore le dossier actuel pour éviter les faux positifs lors de la modification
                     ->where(function ($query) use ($dossier) {
                         // Force l'unicité au sein du même type de dossier ET du même originedossier
                         return $query->where('typedossier_id', $dossier->typedossier_id)
                             ->where('originedossier', $dossier->originedossier); // ou 'originedossier' selon le nom exact de ta colonne en BDD
-                    })
+                    })*/
             ],
             'numero_detention' => 'nullable|string',
             'detenu.nom' => 'nullable|string',
@@ -3411,6 +3411,52 @@ class DossierController extends Controller
         return response()->json([
             'message' => 'تم التحديث بنجاح',
             'data' => $dossier->fresh(),
+        ]);
+    }
+    /**
+     * Export Excel : mêmes filtres que la grille (onglet compris via
+     * etat_greffe), mais SANS pagination — toutes les lignes qui matchent.
+     * Même pattern que exportDossiersRequettesTribunal : pas de classe
+     * Export dédiée pour cette liste fusionnée, on renvoie du JSON hydraté
+     * et c'est le front qui génère le .xlsx avec ExcelJS.
+     */
+    public function exportDossiersRequettesGreffe(Request $request)
+    {
+        $f          = $request->input('filters', []);
+        $trId       = $f['tribunal_id'] ?? null;
+        $etatGreffe = $f['etat_greffe'] ?? 'NT';
+
+        $dossierIds  = $this->buildDossierGreffeIdsQuery($trId, $etatGreffe, $f)->pluck('dossiers.id')->all();
+        $requetteIds = $this->buildRequetteGreffeIdsQuery($trId, $etatGreffe, $f)->pluck('requettes.id')->all();
+
+        $dossiers = Dossier::with([
+            'detenu',
+            'affaires',
+            'typedossier',
+            'naturedossier',
+        ])->whereIn('id', $dossierIds)->orderBy('created_at', 'desc')->get()
+            ->map(function ($d) {
+                $arr = $d->toArray();
+                $arr['rowType'] = 'dossier';
+                return $arr;
+            });
+
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.affaires',
+            'dossier.typedossier',
+            'dossier.naturedossier',
+            'typerequette',
+        ])->whereIn('id', $requetteIds)->orderBy('date', 'desc')->get()
+            ->map(function ($r) {
+                $arr = $r->toArray();
+                $arr['rowType'] = 'requette';
+                return $arr;
+            });
+
+        return response()->json([
+            'rows' => $dossiers->concat($requettes)->values(),
         ]);
     }
 }

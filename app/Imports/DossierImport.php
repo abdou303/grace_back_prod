@@ -189,6 +189,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'date_sortie'         => $this->transformDate($row['datefin_peine']),
                         'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
                         'typedossier_id'      => $row['typedossier_id'],
+                        'numeromp' => $row['numeromp'] ?? null,
                         'naturedossiers_id'   => $row['naturedossiers_id'],
                         'detenu_id'           => $detenu->id,
                         //  'user_id'             => $row['user_id'],

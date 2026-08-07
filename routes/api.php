@@ -168,5 +168,8 @@ Route::prefix('v1')->group(function () {
                 'data' => \App\Models\TypePj::orderBy('id')->get()
             ]);
         });
+
+        Route::post('/dossiers-requettes-greffe/server-side', [DossierController::class, 'dossiersRequettesGreffeServerSide']);
+        Route::post('/dossiers-requettes-greffe/export', [DossierController::class, 'exportDossiersRequettesGreffe']);
     });
 });
