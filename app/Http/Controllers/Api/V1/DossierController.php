@@ -1660,6 +1660,10 @@ class DossierController extends Controller
 
     public function getRegistreTribunal($id_tr)
     {
+        // ------------------------------------------------------------------
+        // 1. DOSSIERS CAT-1 : logique strictement inchangée par rapport à
+        //    l'origine (un dossier par ligne, avec sa dernière requête CAT-1).
+        // ------------------------------------------------------------------
         $dossiers = Dossier::with([
             'detenu',
             'garants',
@@ -1710,10 +1714,55 @@ class DossierController extends Controller
                             });
                     });
             })
-            ->orderByDesc('id')
             ->get();
 
-        return DossierResource::collection($dossiers);
+        // ------------------------------------------------------------------
+        // 2. REQUETES CAT-2 : mêmes conditions d'état, filtrées sur
+        //    requettes.tribunal_id (comme dans buildRequetteGreffeIdsQuery).
+        //    Chaque requête CAT-2 devient sa PROPRE ligne dans le registre,
+        //    au même titre qu'un dossier — même logique "rowType" que sur
+        //    les autres listes fusionnées dossiers/requêtes de l'appli.
+        // ------------------------------------------------------------------
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.garants',
+            'dossier.affaires',
+            'typerequette',
+        ])
+            ->where('tribunal_id', $id_tr)
+            ->whereNotNull('etat_greffe')
+            ->where(function ($q) {
+                $q->where('etat_greffe', '!=', 'KO')
+                    ->orWhere('etat_parquet', '!=', 'KO');
+            })
+            ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-2'))
+            ->get();
+
+        // ------------------------------------------------------------------
+        // 3. Fusion en une seule liste plate, avec le discriminant "rowType"
+        //    ('dossier' | 'requette'), triée par date décroissante — même
+        //    convention que dossiersRequettesGreffeServerSide() ci-dessous.
+        // ------------------------------------------------------------------
+        $dossierRows = $dossiers->map(function ($dossier) {
+            $arr = $dossier->toArray();
+            $arr['rowType']   = 'dossier';
+            $arr['sort_date'] = $dossier->created_at;
+            return $arr;
+        });
+
+        $requetteRows = $requettes->map(function ($requette) {
+            $arr = $requette->toArray();
+            $arr['rowType']   = 'requette';
+            $arr['sort_date'] = $requette->date ?? $requette->created_at;
+            return $arr;
+        });
+
+        $rows = $dossierRows->concat($requetteRows)
+            ->sortByDesc('sort_date')
+            ->values();
+
+        return response()->json(['data' => $rows]);
     }
 
     public function getRegistreTribunalParquetUser($id_tr, $id_user_parquet)
