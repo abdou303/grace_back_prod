@@ -174,3 +174,26 @@ php artisan jwt:secret
 
 DB::unprepared(" SET IDENTITY_INSERT typespjs ON; INSERT INTO typespjs (id, libelle, active, created_at, updated_at) VALUES (14, N'نسخة من المراسلة', 1, GETDATE(), GETDATE()); SET IDENTITY_INSERT typespjs OFF; ");
 /*****************************************************************************************************/
+
+$updates = [
+    1  => ['active_dapg' => 0, 'active_tr' => 0],
+    2  => ['active_dapg' => 0, 'active_tr' => 0],
+    3  => ['active_dapg' => 0, 'active_tr' => 0],
+    4  => ['active_dapg' => 1, 'active_tr' => 1],
+    5  => ['active_dapg' => 0, 'active_tr' => 0],
+    6  => ['active_dapg' => 0, 'active_tr' => 0],
+    7  => ['active_dapg' => 0, 'active_tr' => 1],
+    8  => ['active_dapg' => 0, 'active_tr' => 1],
+    9  => ['active_dapg' => 1, 'active_tr' => 1],
+    10 => ['active_dapg' => 1, 'active_tr' => 1],
+    11 => ['active_dapg' => 1, 'active_tr' => 1],
+    12 => ['active_dapg' => 1, 'active_tr' => 1],
+    13 => ['active_dapg' => 1, 'active_tr' => 1],
+    14 => ['active_dapg' => 0, 'active_tr' => 0],
+    99 => ['active_dapg' => 1, 'active_tr' => 1],
+];
+
+foreach ($updates as $id => $values) {
+    \App\Models\TypePj::where('id', $id)->update($values);
+}
+/******************************************************** */

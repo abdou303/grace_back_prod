@@ -18,10 +18,12 @@ class Detenu extends Model
         'nommere',
         'cin',
         'datenaissance',
+        'lieunaissance',
         'genre',
         'nationalite_id',
         'numero_national_detenu',
-        'adresse'
+        'adresse',
+        'telephone'
 
     ];
 

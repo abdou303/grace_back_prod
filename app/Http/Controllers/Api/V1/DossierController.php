@@ -152,6 +152,25 @@ class DossierController extends Controller
             $query->whereDate('created_at', '<=', $f['dateFin']);
         }
 
+        // Filtre : ممثل ن.ع assigné au dossier
+        if (!empty($f['user_parquet'])) {
+            $query->where('user_parquet', $f['user_parquet']);
+        }
+
+        // Filtre : état du dossier chez le ممثل ن.ع (منجز / غير منجز)
+        if (!empty($f['etat_parquet_filter'])) {
+            if ($f['etat_parquet_filter'] === 'TR') {
+                // منجز
+                $query->where('etat_parquet', 'TR');
+            } elseif ($f['etat_parquet_filter'] === 'NON_TR') {
+                // غير منجز : soit encore chez la présidence (NT), soit pas
+                // encore envoyé (KO / null)
+                $query->where(function ($q) {
+                    $q->whereNull('etat_parquet')->orWhere('etat_parquet', '!=', 'TR');
+                });
+            }
+        }
+
         return $query;
     }
     /**
@@ -348,12 +367,14 @@ class DossierController extends Controller
                     'nom' => $request->nom,
                     'prenom' => $request->prenom,
                     'datenaissance' => $request->datenaissance,
+                    'lieunaissance' => $request->lieunaissance ?? null,
                     'nompere' => $request->nompere,
                     'nommere' => $request->nommere,
                     'cin' => $request->cin,
                     'genre' => $request->genre,
                     'nationalite_id' => $request->nationalite,
                     'adresse' => $request->adresse ?? null,
+                    'telephone' => $request->telephone ?? null,
                 ]);
                 $detenu->save();
 
@@ -395,6 +416,7 @@ class DossierController extends Controller
                 $dossier->detenu_id = $detenu->id;
                 $dossier->prison_id = is_numeric($request->prison) ? (int) $request->prison : null;
                 $dossier->numero_detention = $request->numerolocal;
+                $dossier->date_sortie = $request->date_sortie ?? null;
                 $dossier->etat_greffe = "KO";
                 $dossier->etat_parquet = "KO";
                 $dossier->date_envoi_greffe = now();
@@ -967,12 +989,14 @@ class DossierController extends Controller
             $detenu->nom = $request->nom;
             $detenu->prenom = $request->prenom;
             $detenu->datenaissance = $request->datenaissance;
+            $detenu->lieunaissance = $request->lieunaissance ?? null;
             $detenu->nompere = $request->nompere;
             $detenu->nommere = $request->nommere;
             $detenu->cin = $request->cin;
             $detenu->genre = $request->genre;
             $detenu->nationalite_id = $request->nationalite;
             $detenu->adresse = $request->adresse ?? null;
+            $detenu->telephone = $request->telephone ?? null;
             $detenu->save();
 
             // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
@@ -988,6 +1012,7 @@ class DossierController extends Controller
             $dossier->numeromp = $request->numeromp;
             $dossier->prison_id = isset($request->prison) && is_numeric($request->prison) ? (int) $request->prison : null;
             $dossier->numero_detention = $request->numerolocal;
+            $dossier->date_sortie = $request->date_sortie ?? $dossier->date_sortie;
             $dossier->save();
 
             // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
@@ -1444,9 +1469,11 @@ class DossierController extends Controller
             'detenu.nompere' => 'nullable|string',
             'detenu.nommere' => 'nullable|string',
             'detenu.adresse' => 'nullable|string',
+            'detenu.telephone' => 'nullable|string',
             'detenu.cin' => 'nullable|string',
             'detenu.genre' => 'nullable|string',
             'detenu.datenaissance' => 'nullable|string',
+            'detenu.lieunaissance' => 'nullable|string',
             'detenu.nationalite_id' => 'nullable|int',
 
             'tr_tribunal' => 'nullable|string',
@@ -1468,12 +1495,14 @@ class DossierController extends Controller
         $detenu->nom = $validated['detenu.nom'] ?? $detenu->nom;
         $detenu->prenom = $validated['detenu.prenom'] ?? $detenu->prenom;
         $detenu->datenaissance = $validated['detenu.datenaissance'] ?? $detenu->datenaissance;
+        $detenu->lieunaissance = $validated['detenu.lieunaissance'] ?? $detenu->lieunaissance;
         $detenu->nompere = $validated['detenu.nompere'] ?? $detenu->nompere;
         $detenu->nommere = $validated['detenu.nommere'] ?? $detenu->nommere;
         $detenu->cin = $validated['detenu.cin'] ?? $detenu->cin;
         $detenu->genre = $validated['detenu.genre'] ?? $detenu->genre;
         $detenu->nationalite_id = $validated['detenu.nationalite_id'] ?? $detenu->nationalite_id;
         $detenu->adresse = $validated['detenu.adresse'] ?? $detenu->adresse;
+        $detenu->telephone = $validated['detenu.telephone'] ?? $detenu->telephone;
         $detenu->save();
         // Update main dossier fields
 
@@ -1529,6 +1558,39 @@ class DossierController extends Controller
     {
         $dossier = Dossier::with('pjs')->findOrFail($dossierId);
         return response()->json($dossier->pjs);
+    }
+
+    /**
+     * Supprime une pièce jointe (PJ) : ligne en BDD + fichier sur OpenBee (best effort).
+     * Utilisé notamment pour les PJ génériques du formulaire "إرفاق الوثائق والمرفقات"
+     * (contenu du type OPENBEE/{numero}_{dossierId}_copie_type_{typepjId}.pdf).
+     */
+    public function deletePj($id, OpenBeeService $openBee)
+    {
+        $pj = Pj::find($id);
+
+        if (!$pj) {
+            return response()->json(['message' => 'المرفق غير موجود'], 404);
+        }
+
+        try {
+            if ($pj->contenu) {
+                $filenameSansExtension = pathinfo(basename($pj->contenu), PATHINFO_FILENAME);
+                try {
+                    $openBee->deleteIfExists($filenameSansExtension);
+                } catch (\Exception $e) {
+                    // On journalise mais on ne bloque pas la suppression en BDD si OpenBee échoue
+                    Log::warning('Erreur suppression OpenBee pour PJ ID ' . $id . ': ' . $e->getMessage());
+                }
+            }
+
+            $pj->delete();
+
+            return response()->json(['message' => 'تم حذف المرفق بنجاح']);
+        } catch (\Exception $e) {
+            Log::error('Erreur suppression PJ ID ' . $id . ': ' . $e->getMessage());
+            return response()->json(['message' => 'حدث خطأ أثناء حذف المرفق'], 500);
+        }
     }
 
 
@@ -2112,10 +2174,12 @@ class DossierController extends Controller
             'nom',
             'prenom',
             'datenaissance',
+            'lieunaissance',
             'nompere',
             'nommere',
             'cin',
             'adresse',
+            'telephone',
             'genre',
             'nationalite_id'
         ]));
@@ -2123,7 +2187,8 @@ class DossierController extends Controller
         // Mise à jour Dossier
         $dossier->update($request->only([
             'numeromp',
-            'prison_id'
+            'prison_id',
+            'date_sortie'
         ]));
 
         return response()->json(['message' => 'Mise à jour réussie']);

@@ -1,0 +1,57 @@
+========================================
+COMMANDES A COPIER-COLLER DANS TINKER
+(php artisan tinker)
+========================================
+
+----------------------------------------
+1. TROUVER TON LOGIN EXACT
+----------------------------------------
+$user = DB::selectOne("SELECT SUSER_SNAME() as login_name");
+dd($user);
+
+
+----------------------------------------
+2. APPLIQUER LE ALTER LOGIN
+(login : PMP\pool-abcd)
+----------------------------------------
+DB::statement("ALTER LOGIN [PMP\\pool-abcd] WITH DEFAULT_LANGUAGE = us_english");
+
+
+----------------------------------------
+3. VERIFIER QUE LE CHANGEMENT A ETE PRIS EN COMPTE
+----------------------------------------
+$check = DB::selectOne("SELECT name, default_language_name FROM sys.server_principals WHERE name = 'PMP\\pool-abcd'");
+dd($check);
+
+
+========================================
+NOTES IMPORTANTES
+========================================
+
+- Le double antislash \\ dans la commande PHP est obligatoire
+  car \ est un caractere d'echappement en PHP.
+  Cela enverra bien "PMP\pool-abcd" a SQL Server.
+
+- Pour executer ALTER LOGIN, le compte utilise pour se connecter
+  a tinker doit avoir le role serveur "securityadmin" ou "sysadmin".
+  Si erreur de permission -> se connecter avec un compte admin,
+  ou utiliser la solution alternative ci-dessous.
+
+
+----------------------------------------
+SOLUTION ALTERNATIVE (sans droits admin)
+A executer a chaque connexion / session
+----------------------------------------
+DB::statement("SET LANGUAGE us_english");
+$lang = DB::selectOne("SELECT @@LANGUAGE as lang");
+dd($lang);
+
+
+----------------------------------------
+VERIFIER LA LANGUE ACTUELLE DE LA SESSION
+----------------------------------------
+$lang = DB::selectOne("SELECT @@LANGUAGE as lang");
+dd($lang);
+
+$info = DB::select("SELECT * FROM sys.syslanguages WHERE name = @@LANGUAGE");
+dd($info);

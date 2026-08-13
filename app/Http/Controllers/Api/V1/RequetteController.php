@@ -142,6 +142,25 @@ class RequetteController extends Controller
             $query->whereDate('date', '<=', $f['dateFin']);
         }
 
+        // Filtre : ممثل ن.ع assigné à la requête
+        if (!empty($f['user_parquet'])) {
+            $query->where('user_parquet', $f['user_parquet']);
+        }
+
+        // Filtre : état de la requête chez le ممثل ن.ع (منجز / غير منجز)
+        if (!empty($f['etat_parquet_filter'])) {
+            if ($f['etat_parquet_filter'] === 'TR') {
+                // منجز
+                $query->where('etat_parquet', 'TR');
+            } elseif ($f['etat_parquet_filter'] === 'NON_TR') {
+                // غير منجز : soit encore chez la présidence (NT), soit pas
+                // encore envoyé (KO / null)
+                $query->where(function ($q) {
+                    $q->whereNull('etat_parquet')->orWhere('etat_parquet', '!=', 'TR');
+                });
+            }
+        }
+
         return $query;
     }
 
