@@ -197,3 +197,5 @@ foreach ($updates as $id => $values) {
     \App\Models\TypePj::where('id', $id)->update($values);
 }
 /******************************************************** */
+JWT_TTL=120
+JWT_REFRESH_TTL=43200

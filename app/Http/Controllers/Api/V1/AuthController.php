@@ -120,6 +120,37 @@ class AuthController extends Controller
             'token' => $token,
         ]);
     }
+
+    public function refresh(Request $request)
+    {
+        try {
+            $newToken = JWTAuth::parseToken()->refresh();
+        } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+            return response()->json(['error' => 'Session expirée, veuillez vous reconnecter'], 401);
+        } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
+            return response()->json(['error' => 'Token invalide'], 401);
+        }
+
+        $user = JWTAuth::setToken($newToken)->toUser();
+
+        $customClaims = [
+            'id'       => $user->id,
+            'name'     => $user->name,
+            'email'    => $user->email,
+            'username' => $user->username,
+            'role_id'  => $user->role_id,
+            'groupe_id' => $user->groupe_id,
+            'tribunal_id' => $user->tribunal_id,
+            'tribunal_libelle' => $user->tribunal?->libelle,
+            'tribunal_ca' => $user->tribunal?->ca_id,
+            'partenaire_id' => $user->partenaire_id,
+            'must_change_password' => $user->must_change_password,
+        ];
+
+        $newToken = JWTAuth::claims($customClaims)->fromUser($user);
+
+        return response()->json(['token' => $newToken]);
+    }
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

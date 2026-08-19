@@ -44,6 +44,7 @@ Route::prefix('v1')->group(function () {
 
     // Public route
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/refresh', [AuthController::class, 'refresh']);
     Route::get('/openbee/file/{id}', [OpenBeeController::class, 'download']);
 
 
