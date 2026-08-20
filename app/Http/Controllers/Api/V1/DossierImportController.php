@@ -137,6 +137,38 @@ class DossierImportController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Suppression d'une ligne d'historique (import classique)
+    // ─────────────────────────────────────────────────────────────────────────
+    public function deleteHistorique(string $id)
+    {
+        $log = \App\Models\ImportLog::find($id);
+
+        if (!$log) {
+            return response()->json(['error' => 'السجل غير موجود'], 404);
+        }
+
+        $log->delete();
+
+        return response()->json(['message' => 'تم حذف السجل بنجاح'], 200);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Suppression d'une ligne d'historique (import "ملفات رائجة")
+    // ─────────────────────────────────────────────────────────────────────────
+    public function deleteHistoriqueEncours(string $id)
+    {
+        $log = \App\Models\ImportEncoursLog::find($id);
+
+        if (!$log) {
+            return response()->json(['error' => 'السجل غير موجود'], 404);
+        }
+
+        $log->delete();
+
+        return response()->json(['message' => 'تم حذف السجل بنجاح'], 200);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Méthodes CRUD générées par artisan (non utilisées)
     // ─────────────────────────────────────────────────────────────────────────
     public function index() {}

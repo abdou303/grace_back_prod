@@ -160,8 +160,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/dossiers/{dossier}/pjs-details', [DossierController::class, 'addPjsFromDetails']);
         Route::put('/dossier/{id}/numero-dapg-sortie', [DossierController::class, 'updateNumeroDapgSortie']);
         Route::get('/import-historique', [DossierImportController::class, 'historique']);
+        Route::delete('/import-historique/{id}', [DossierImportController::class, 'deleteHistorique']);
         Route::post('/import-dossiers-encours',  [DossierImportController::class, 'importEncours']);
         Route::get('/import-historique-encours', [DossierImportController::class, 'historiqueEncours']);
+        Route::delete('/import-historique-encours/{id}', [DossierImportController::class, 'deleteHistoriqueEncours']);
 
 
         Route::get('/types-pjs', function () {
