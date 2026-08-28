@@ -174,5 +174,6 @@ Route::prefix('v1')->group(function () {
 
         Route::post('/dossiers-requettes-greffe/server-side', [DossierController::class, 'dossiersRequettesGreffeServerSide']);
         Route::post('/dossiers-requettes-greffe/export', [DossierController::class, 'exportDossiersRequettesGreffe']);
+        Route::get('/type-dossiers', [DossierController::class, 'getAllTypeDossier']);
     });
 });

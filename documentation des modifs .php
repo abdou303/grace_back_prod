@@ -197,5 +197,17 @@ foreach ($updates as $id => $values) {
     \App\Models\TypePj::where('id', $id)->update($values);
 }
 /******************************************************** */
-JWT_TTL=120
+JWT_TTL=60
 JWT_REFRESH_TTL=43200
+
+/************************************************************* */
+\App\Models\Occasion::insert([
+    ['libelle' => 'مناسبة ذكرى 11 يناير الخالدة', 'id_dapg' => 2, 'created_at' => now(), 'updated_at' => now()],
+    ['libelle' => 'مناسبة عيد المولد النبوي الشريف', 'id_dapg' => 3, 'created_at' => now(), 'updated_at' => now()],
+    ['libelle' => 'مناسبة عيد العرش المجيد', 'id_dapg' => 4, 'created_at' => now(), 'updated_at' => now()],
+    ['libelle' => 'مناسبة ذكرى ثورة الملك والشعب المجيدة', 'id_dapg' => 5, 'created_at' => now(), 'updated_at' => now()],
+    ['libelle' => 'مناسبة عيد الشباب السعيد', 'id_dapg' => 6, 'created_at' => now(), 'updated_at' => now()],
+    ['libelle' => 'مناسبة عيد الفطر السعيد', 'id_dapg' => 7, 'created_at' => now(), 'updated_at' => now()],
+    ['libelle' => 'مناسبة عيد الأضحى المبارك', 'id_dapg' => 8, 'created_at' => now(), 'updated_at' => now()],
+    ['libelle' => 'مناسبة عيد الوحدة', 'id_dapg' => 11, 'created_at' => now(), 'updated_at' => now()],
+]);

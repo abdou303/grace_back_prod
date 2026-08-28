@@ -198,4 +198,9 @@ class Dossier extends Model
     {
         return $this->belongsTo(Tribunal::class, 'user_tribunal_id');
     }
+
+    public function occasions()
+    {
+        return $this->belongsToMany(Occasion::class, 'dossier_occasion');
+    }
 }

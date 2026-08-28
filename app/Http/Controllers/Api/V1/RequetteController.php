@@ -1999,6 +1999,12 @@ class RequetteController extends Controller
             });
         }
 
+        if (!empty($f['typedossier'])) {
+            $query->whereHas('dossier.typedossier', function ($q) use ($f) {
+                $q->where('libelle', $f['typedossier']);
+            });
+        }
+
         if (!empty($f['statutrequettes'])) {
             $code = $f['statutrequettes'];
 

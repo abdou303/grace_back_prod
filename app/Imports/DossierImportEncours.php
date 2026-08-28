@@ -37,6 +37,12 @@ class DossierImportEncours implements ToCollection, WithHeadingRow
                 continue;
             }
 
+            // Ignorer les lignes sans numéro d'affaire
+            if (empty(trim($row['numeroaffaire'] ?? ''))) {
+                $this->nbTotal++;
+                continue;
+            }
+
             $this->nbTotal++;
 
             DB::transaction(function () use ($row) {

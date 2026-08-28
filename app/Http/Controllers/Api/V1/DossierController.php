@@ -20,6 +20,7 @@ use App\Models\Pj;
 use App\Models\Prison;
 use App\Models\Requette;
 use App\Models\TypeRequette;
+use App\Models\TypeDossier;
 use App\Models\StatutRequette;
 use App\Models\TypePj;
 use App\Services\OperationService;
@@ -1464,6 +1465,8 @@ class DossierController extends Controller
                     })*/
             ],
             'numero_detention' => 'nullable|string',
+            'numeromp' => 'nullable|string',
+
             'detenu.nom' => 'nullable|string',
             'detenu.prenom' => 'nullable|string',
             'detenu.nompere' => 'nullable|string',
@@ -1507,6 +1510,7 @@ class DossierController extends Controller
         // Update main dossier fields
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
+        $dossier->numeromp = $validated['numeromp'] ?? $dossier->numeromp;
         $dossier->numero_dapg = $validated['numero_dapg'] ?? $dossier->numero_dapg;
 
         $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
@@ -3572,5 +3576,10 @@ class DossierController extends Controller
         return response()->json([
             'rows' => $dossiers->concat($requettes)->values(),
         ]);
+    }
+
+    public function getAllTypeDossier()
+    {
+        return response()->json(['data' => TypeDossier::all()]);
     }
 }

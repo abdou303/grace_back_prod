@@ -148,6 +148,14 @@ class DossierImport implements ToCollection, WithHeadingRow
 
                 continue;
             }
+
+            // On ignore les lignes sans numéro d'affaire
+            if (empty(trim($row['numeroaffaire'] ?? ''))) {
+                $this->nbTotal++;
+
+                continue;
+            }
+
             $this->nbTotal++;
 
 
