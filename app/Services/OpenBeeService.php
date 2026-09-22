@@ -24,68 +24,9 @@ class OpenBeeService
     }
 
 
-    /*   **************Apres visite de CA kenitra ************
 
 
-    public function upload(UploadedFile $file, string $filename, array $options = []): array
-    {
-        // Le reste du code reste inchangé car getRealPath() est disponible sur File
-        $checksum = hash('sha256', file_get_contents($file->getRealPath()));
-
-        $metadata = [
-            'title'       => $options['title'] ?? $filename,
-            'description' => $options['description'] ?? '',
-            'filename'    => $filename,
-            'checksum'    => $checksum,
-            'overwrite'   => 'true',
-        ];
-
-        if (!empty($options['path'])) {
-            $metadata['path'] = $options['path'];
-        }
-
-        Log::debug('OpenBee metadata sent:', $metadata);
-
-        $response = Http::withBasicAuth($this->username, $this->password)
-            ->attach('file', fopen($file->getRealPath(), 'r'), $filename)
-            ->post("{$this->baseUrl}/ws/v2/document", $metadata);
-
-        Log::debug('⬇️ OpenBee response:', [
-            'status' => $response->status(),
-            'body'   => $response->body(),
-            'headers' => $response->headers(),
-        ]);
-
-        if ($response->successful()) {
-            $json = $response->json();
-
-            if (is_array($json) && !empty($json)) {
-                return $json;
-            }
-
-            // 🔁 Fallback : si pas de JSON, prendre l’en-tête Location
-            $location = $response->header('Document-Ids');
-
-            if ($location) {
-                return [
-                    'document_link' => $location,
-                ];
-            }
-
-            return [
-                'message' => 'Upload succeeded but no data returned',
-            ];
-        }
-
-        Log::error("Open Bee upload failed", [
-            'status' => $response->status(),
-            'body'   => $response->body(),
-        ]);
-
-        throw new \Exception("Erreur Open Bee: " . $response->body());
-    }*/
-
-    public function upload(UploadedFile $file, string $filename, array $options = []): array
+    /* public function upload(UploadedFile $file, string $filename, array $options = []): array
     {
         // On tente l'opération jusqu'à 3 fois en cas d'erreur
         return retry(3, function () use ($file, $filename, $options) {
@@ -105,7 +46,10 @@ class OpenBeeService
             }
 
             // Appel API avec authentification et fichier attaché
+       
             $response = Http::withBasicAuth($this->username, $this->password)
+                ->timeout(10)
+                ->connectTimeout(5)
                 ->attach('file', fopen($file->getRealPath(), 'r'), $filename)
                 ->post("{$this->baseUrl}/ws/v2/document", $metadata);
 
@@ -132,17 +76,54 @@ class OpenBeeService
 
             throw new \Exception("Erreur Open Bee: " . $response->body());
         }, 500); // Délai de 500ms entre chaque tentative interne
-    }
-
-    public function deleteIfExists(string $filename): void
+    }*/
+    public function upload(UploadedFile $file, string $filename, array $options = []): array
     {
-        \Log::error("------deleteIfExists--------:Entrer " . $filename);
+        $checksum = hash('sha256', file_get_contents($file->getRealPath()));
+        $metadata = [
+            'title'       => $options['title'] ?? $filename,
+            'description' => $options['description'] ?? '',
+            'filename'    => $filename,
+            'checksum'    => $checksum,
+            'overwrite'   => 'true',
+        ];
+        if (!empty($options['path'])) {
+            $metadata['path'] = $options['path'];
+        }
 
         $response = Http::withBasicAuth($this->username, $this->password)
+            ->timeout(10)->connectTimeout(5)
+            ->attach('file', fopen($file->getRealPath(), 'r'), $filename)
+            ->post("{$this->baseUrl}/ws/v2/document", $metadata);
+
+        if ($response->successful()) {
+            $json = $response->json();
+            if (is_array($json) && !empty($json)) return $json;
+            $location = $response->header('Document-Ids');
+            if ($location) return ['document_link' => $location];
+            return ['message' => 'Upload réussi'];
+        }
+
+        Log::warning("Échec upload OpenBee (Status: {$response->status()}) pour {$filename}");
+        throw new \Exception("Erreur Open Bee: " . $response->body());
+    }
+    public function deleteIfExists(string $filename): void
+    {
+        //  \Log::error("------deleteIfExists--------:Entrer " . $filename);
+        Log::debug("deleteIfExists: recherche de {$filename}");
+
+        /* $response = Http::withBasicAuth($this->username, $this->password)
             ->get("{$this->baseUrl}/ws/v2/search", [
                 'name' => $filename,
-            ]);
-
+            ]);*/
+        try {
+            $response = Http::withBasicAuth($this->username, $this->password)
+                ->timeout(10)->connectTimeout(5)
+                ->get("{$this->baseUrl}/ws/v2/search", ['name' => $filename]);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::warning("deleteIfExists: timeout/connexion échouée pour {$filename} — {$e->getMessage()}");
+            return;
+        }
         if ($response->successful()) {
             $results = $response->json()['documents'] ?? [];
 

@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 
-class UploadDossierPJsJob implements ShouldQueue
+
+/*class UploadDossierPJsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -28,8 +30,24 @@ class UploadDossierPJsJob implements ShouldQueue
     public function backoff(): array
     {
         return [5, 15, 30, 60];
+    }*/
+
+class UploadDossierPJsJob implements ShouldQueue, ShouldBeUnique
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public $tries = 5;
+    public $uniqueFor = 3600;
+
+    public function backoff(): array
+    {
+        return [5, 15, 30, 60];
     }
 
+    public function uniqueId(): string
+    {
+        return (string) $this->dossierId;
+    }
     protected $dossierId;
     protected $filesToProcess;
     protected $postUploadActions;
@@ -51,7 +69,13 @@ class UploadDossierPJsJob implements ShouldQueue
         // Log au début de l'exécution
         Log::info("## JOB DÉMARRÉ : Traitement du dossier {$this->dossierId}");
 
-        $dossier = Dossier::findOrFail($this->dossierId);
+        // $dossier = Dossier::findOrFail($this->dossierId);
+        $dossier = Dossier::find($this->dossierId);
+        if (!$dossier) {
+            Log::error("Dossier {$this->dossierId} introuvable — job abandonné.");
+            $this->fail(new \RuntimeException("Dossier {$this->dossierId} introuvable"));
+            return;
+        }
         $typepjLabels = TypePj::pluck('libelle', 'id')->toArray();
 
         foreach ($this->filesToProcess as $fileData) {
@@ -144,9 +168,10 @@ class UploadDossierPJsJob implements ShouldQueue
                 // 4. Action OpenBee (La méthode upload() du service gère déjà son propre retry interne)
                 // $openBee->deleteIfExists($filenameSansExtension);
                 // APRÈS :
-                if ($typepjId != 99) {
+                /* if ($typepjId != 99) {
                     $openBee->deleteIfExists($filenameSansExtension);
-                }
+                }*/
+                $openBee->deleteIfExists($filenameSansExtension);
 
                 $result = $openBee->upload($uploadedFile, $filename, [
                     'title'       => $filename,
@@ -164,16 +189,16 @@ class UploadDossierPJsJob implements ShouldQueue
                     'requette_id' => $contextRequetteId,
                 ]);*/
                 // APRÈS :
-                if ($typepjId == 99) {
+                /*if ($typepjId == 99) {
                     $pj = new Pj();
-                } else {
-                    $pj = Pj::firstOrNew([
-                        'dossier_id'  => $dossier->id,
-                        'affaire_id'  => $fileData['affaireId'],
-                        'typepj_id'   => $typepjId,
-                        'requette_id' => $contextRequetteId,
-                    ]);
-                }
+                } else {}*/
+                $pj = Pj::firstOrNew([
+                    'dossier_id'  => $dossier->id,
+                    'affaire_id'  => $fileData['affaireId'],
+                    'typepj_id'   => $typepjId,
+                    'requette_id' => $contextRequetteId,
+                ]);
+
                 $pj->dossier_id  = $dossier->id;                    // ← AJOUT
                 $pj->affaire_id  = $fileData['affaireId'] ?? null;  // ← AJOUT
                 $pj->typepj_id   = $typepjId;                       // ← AJOUT (manquait pour آخر)
@@ -201,13 +226,15 @@ class UploadDossierPJsJob implements ShouldQueue
             Log::info("##LOGIQUE DB : Exécution des post-actions pour le dossier {$this->dossierId}", [
                 'payload' => $this->postUploadActions
             ]);
-            DB::transaction(function () {
-                foreach ($this->postUploadActions as $action) {
-                    $modelClass = $action['model'];
-                    $modelId    = $action['id'];
-                    $data       = $action['data'] ?? [];
+            if (!empty($this->postUploadActions)) {
+                try {
+                    DB::transaction(function () {
+                        foreach ($this->postUploadActions as $action) {
+                            $modelClass = $action['model'];
+                            $modelId    = $action['id'];
+                            $data       = $action['data'] ?? [];
 
-                    $model = $modelClass::find($modelId);
+                            /*$model = $modelClass::find($modelId);
                     if ($model) {
                         // Mise à jour des colonnes (etat, user_id, etc.)
                         if (!empty($data)) {
@@ -219,9 +246,26 @@ class UploadDossierPJsJob implements ShouldQueue
                             $model->{$action['relation']}()->attach($action['attach']);
                         }
                     }
-                    Log::debug("##ACTION RÉUSSIE : Mise à jour de " . $action['model'] . " ID: " . $action['id']);
+                    Log::debug("##ACTION RÉUSSIE : Mise à jour de " . $action['model'] . " ID: " . $action['id']);*/
+                            $model = $modelClass::find($modelId);
+                            if ($model) {
+                                if (!empty($data)) {
+                                    $model->update($data);
+                                }
+                                if (isset($action['attach']) && isset($action['relation'])) {
+                                    $model->{$action['relation']}()->attach($action['attach']);
+                                }
+                                Log::debug("##ACTION RÉUSSIE : Mise à jour de {$action['model']} ID: {$action['id']}");
+                            } else {
+                                Log::warning("##ACTION ÉCHOUÉE : {$action['model']} ID: {$action['id']} introuvable");
+                            }
+                        }
+                    });
+                } catch (\Throwable $e) {
+                    Log::error("Échec post-actions UploadJob (Dossier: {$this->dossierId}): " . $e->getMessage());
+                    throw $e;
                 }
-            });
+            }
         }
     }
 }

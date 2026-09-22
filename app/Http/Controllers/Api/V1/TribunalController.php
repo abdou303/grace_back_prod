@@ -23,11 +23,16 @@ class TribunalController extends Controller
 
 
     public function getByCa($ca_id)
-    {
+    {/*
         // Fetch Tribunaux by ca_id
         $tribunaux = Tribunal::where('ca_id', $ca_id)->get();
 
         // Return the response
+        return TribunalResource::collection($tribunaux);*/
+        if (!is_numeric($ca_id)) {
+            return TribunalResource::collection(collect());
+        }
+        $tribunaux = Tribunal::where('ca_id', $ca_id)->get();
         return TribunalResource::collection($tribunaux);
     }
 

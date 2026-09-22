@@ -1763,36 +1763,45 @@ class RequetteController extends Controller
             'type' => 'required|string',
             'affaire_id' => 'nullable|integer'
         ]);
+        $lockKey = "upload-one-pj-requette-{$requette_id}-{$request->type}";
+        $lock = Cache::lock($lockKey, 30);
+        if (!$lock->get()) {
+            return response()->json(['message' => 'Un envoi est déjà en cours pour ce document.'], 429);
+        }
 
-        $requette = Requette::findOrFail($requette_id);
-        $dossier_id = $requette->dossier_id; // On récupère le dossier parent
+        try {
+            $requette = Requette::findOrFail($requette_id);
+            $dossier_id = $requette->dossier_id; // On récupère le dossier parent
 
-        $file = $request->file('file');
-        $path = $file->store('temp/openbee_uploads');
+            $file = $request->file('file');
+            $path = $file->store('temp/openbee_uploads');
 
-        $fileMappings = [
-            'copie_cat2' => 6,
-            'copie_demande' => 7,
-            'copie_decision' => 5,
-            'copie_cin' => 4,
-            'copie_mp' => 3,
-            'copie_non_recours' => 2,
-            'copie_social' => 1,
-        ];
+            $fileMappings = [
+                'copie_cat2' => 6,
+                'copie_demande' => 7,
+                'copie_decision' => 5,
+                'copie_cin' => 4,
+                'copie_mp' => 3,
+                'copie_non_recours' => 2,
+                'copie_social' => 1,
+            ];
 
-        $fileData = [[
-            'path' => $path,
-            'typepjId' => $fileMappings[$request->type],
-            'affaireId' => $request->affaire_id,
-            'fieldName' => $request->type,
-            'originalName' => $file->getClientOriginalName(),
-            'context_requette_id' => $requette->id, // Important pour le suivi
-        ]];
+            $fileData = [[
+                'path' => $path,
+                'typepjId' => $fileMappings[$request->type],
+                'affaireId' => $request->affaire_id,
+                'fieldName' => $request->type,
+                'originalName' => $file->getClientOriginalName(),
+                'context_requette_id' => $requette->id, // Important pour le suivi
+            ]];
 
-        // Lancer le job immédiatement
-        UploadDossierPJsJob::dispatch($dossier_id, $fileData, [])->onQueue('openbee_uploads');
+            // Lancer le job immédiatement
+            UploadDossierPJsJob::dispatch($dossier_id, $fileData, [])->onQueue('openbee_uploads');
 
-        return response()->json(['message' => 'Fichier en cours de traitement']);
+            return response()->json(['message' => 'Fichier en cours de traitement']);
+        } finally {
+            $lock->release();
+        }
     }
 
     public function updateInfosOnly(Request $request, $id)
@@ -1807,7 +1816,7 @@ class RequetteController extends Controller
         $detenu = $dossier->detenu;
 
         // Mise à jour Détenu
-        $detenu->update($request->only([
+        /*$detenu->update($request->only([
             'nom',
             'prenom',
             'datenaissance',
@@ -1815,6 +1824,24 @@ class RequetteController extends Controller
             'nommere',
             'cin',
             'adresse',
+            'genre',
+            'nationalite_id'
+        ]));*/
+        $request->validate([
+            'nom' => 'sometimes|required|string',
+            'nationalite_id' => 'nullable|integer|exists:nationalites,id',
+        ]);
+
+        $detenu->update($request->only([
+            'nom',
+            'prenom',
+            'datenaissance',
+            'lieunaissance',
+            'nompere',
+            'nommere',
+            'cin',
+            'adresse',
+            'telephone',
             'genre',
             'nationalite_id'
         ]));

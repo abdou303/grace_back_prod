@@ -1527,18 +1527,30 @@ class DossierController extends Controller
             $dossier->detenu->update($validated['detenu']);
         }
         /************************************************************ */
-        if ($dossier->originedossier == "R") {
+        /*if ($dossier->originedossier == "R") {
 
             $requette = $dossier->requettes()
                 ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
                 ->first();
-            /*  \Log::alert("requette est :" . $requette->numero);
-            \Log::alert("validated[\'tr_dapg\'] :" . $validated['tr_dapg']);*/
+
 
 
             $requette->tr_dapg = $validated['tr_dapg'] ?? $requette->tr_dapg;
             $requette->date_tr_dapg = now()->format('Y-m-d H:i:s.v') ?? $requette->date_tr_dapg;
             $requette->save();
+        }*/
+        if ($dossier->originedossier == "R") {
+            $requette = $dossier->requettes()
+                ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
+                ->first();
+
+            if ($requette) {
+                $requette->tr_dapg = $validated['tr_dapg'] ?? $requette->tr_dapg;
+                $requette->date_tr_dapg = now()->format('Y-m-d H:i:s.v');
+                $requette->save();
+            } else {
+                Log::warning("Dossier {$dossier->id} : aucune requête CAT-1 trouvée pour mise à jour tr_dapg");
+            }
         }
         /*if ($validated['operation_code'] !== null) {
             $userId = (int) Auth::id();
@@ -2129,37 +2141,51 @@ class DossierController extends Controller
 
     public function uploadOnePj(Request $request, $dossier_id)
     {
-        $request->validate([
+        /* $request->validate([
             'file' => 'required|file|mimes:pdf|max:153600',
             'type' => 'required|string'
+        ]);*/
+        $request->validate([
+            'file' => 'required|file|mimes:pdf|max:153600',
+            'type' => 'required|string',
+            'affaire_id' => 'nullable|integer',
         ]);
 
-        $file = $request->file('file');
-        $path = $file->store('temp/openbee_uploads');
+        $lockKey = "upload-one-pj-{$dossier_id}-{$request->type}" . ($request->affaire_id ? "-{$request->affaire_id}" : '');
+        $lock = Cache::lock($lockKey, 30);
+        if (!$lock->get()) {
+            return response()->json(['message' => 'Un envoi est déjà en cours pour ce document.'], 429);
+        }
+        try {
+            $file = $request->file('file');
+            $path = $file->store('temp/openbee_uploads');
 
-        // Mappage du type vers l'ID OpenBee (comme dans votre controller actuel)
-        $fileMappings = [
-            'copie_dgapr' => 8,
-            'copie_demande' => 7,
-            'copie_decision' => 5,
-            'copie_cin' => 4,
-            'copie_mp' => 3,
-            'copie_non_recours' => 2,
-            'copie_social' => 1,
-        ];
+            // Mappage du type vers l'ID OpenBee (comme dans votre controller actuel)
+            $fileMappings = [
+                'copie_dgapr' => 8,
+                'copie_demande' => 7,
+                'copie_decision' => 5,
+                'copie_cin' => 4,
+                'copie_mp' => 3,
+                'copie_non_recours' => 2,
+                'copie_social' => 1,
+            ];
 
-        $fileData = [[
-            'path' => $path,
-            'typepjId' => $fileMappings[$request->type],
-            'affaireId' => $request->affaire_id,
-            'fieldName' => $request->type,
-            'originalName' => $file->getClientOriginalName(),
-        ]];
+            $fileData = [[
+                'path' => $path,
+                'typepjId' => $fileMappings[$request->type],
+                'affaireId' => $request->affaire_id,
+                'fieldName' => $request->type,
+                'originalName' => $file->getClientOriginalName(),
+            ]];
 
-        // Lancer le job immédiatement pour ce fichier seul
-        UploadDossierPJsJob::dispatch($dossier_id, $fileData, [])->onQueue('openbee_uploads');
+            // Lancer le job immédiatement pour ce fichier seul
+            UploadDossierPJsJob::dispatch($dossier_id, $fileData, [])->onQueue('openbee_uploads');
 
-        return response()->json(['message' => 'Fichier en cours de traitement']);
+            return response()->json(['message' => 'Fichier en cours de traitement']);
+        } finally {
+            $lock->release();
+        }
     }
 
     public function updateInfosOnly(Request $request, $id)

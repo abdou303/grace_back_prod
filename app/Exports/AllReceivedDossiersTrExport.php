@@ -42,6 +42,9 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
             'رقم القضية',
             'تاريخ التسجيل',
             'المتهم',
+            'التهمة',
+            'القضية الأولى',
+            'التهمة الأولى',
             'نوع الملف',
         ];
     }
@@ -62,8 +65,30 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
             ->filter()
             ->implode(' : ');
 
+        // الرقم : R-XXXXXXXXX si le dossier vient d'une requête, sinon D-XXXXXXXXX
+        $numero = $item->numero ?? '';
+        if ($item->originedossier === 'R') {
+            $requetteCat1 = $item->requettes
+                ->filter(fn($r) => optional($r->typerequette)->cat === 'CAT-1')
+                ->sortByDesc('id')
+                ->first();
+            $numero = $requetteCat1->numero ?? $numero;
+        }
+
+        $tuhma = $item->affaires
+            ->pluck('conenujugement') // ⚠️ التهمة : remplacer par la bonne colonne si besoin
+            ->filter()
+            ->implode(' : ');
+
+        // القضية الأولى
+        $premiereAffaire = $item->affaires->sortBy('id')->first();
+        $affairePremiere = $premiereAffaire->numeroaffaire ?? '';
+
+        // التهمة الأولى : التهمة de la première affaire (même logique que القضية الأولى)
+        $tuhmaPremiere = $premiereAffaire->conenujugement ?? '';
+
         return [
-            $item->numero ?? '',
+            $numero,
             $item->numero_dapg ?? '',
             optional($item->detenu)->cin ?? '',
             $item->numeromp ?? '',
@@ -74,6 +99,9 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
             $numerosAffaire,
             $item->created_at ? $item->created_at->format('Y-m-d H:i') : '',
             trim(($item->detenu->nom ?? '') . ' ' . ($item->detenu->prenom ?? '')),
+            $tuhma,
+            $affairePremiere,
+            $tuhmaPremiere,
             optional($item->typedossier)->libelle ?? '',
         ];
     }
@@ -85,7 +113,7 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
                 $sheet = $event->sheet->getDelegate();
                 $sheet->setRightToLeft(true);
 
-                $lastColumn = 'J';
+                $lastColumn = 'M';
 
                 $sheet->getStyle("A1:{$lastColumn}1")->applyFromArray([
                     'fill' => [
