@@ -164,6 +164,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/import-dossiers-encours',  [DossierImportController::class, 'importEncours']);
         Route::get('/import-historique-encours', [DossierImportController::class, 'historiqueEncours']);
         Route::delete('/import-historique-encours/{id}', [DossierImportController::class, 'deleteHistoriqueEncours']);
+        Route::post('dossiers/{id}/recevoir-dapg-dossier', [DossierController::class, 'recevoirDossierDapg']);
 
 
         Route::get('/types-pjs', function () {

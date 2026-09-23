@@ -1511,12 +1511,18 @@ class DossierController extends Controller
 
         $dossier->numero_detention = $validated['numero_detention'] ?? $dossier->numero_detention;
         $dossier->numeromp = $validated['numeromp'] ?? $dossier->numeromp;
+        if ($request->filled('prison')) {
+            $dossier->prison_id = (int) $request->prison;
+        }
         $dossier->numero_dapg = $validated['numero_dapg'] ?? $dossier->numero_dapg;
 
         $dossier->tr_tribunal = $validated['tr_tribunal'] ?? $dossier->tr_tribunal;
         $dossier->date_tr_tribunal = $validated['date_tr_tribunal'] ?? $dossier->date_tr_tribunal;
         $dossier->tr_dapg = $validated['tr_dapg'] ?? $dossier->tr_dapg;
-        $dossier->date_tr_dapg = now()->format('Y-m-d H:i:s.v') ?? $dossier->date_tr_dapg;
+        //$dossier->date_tr_dapg = now()->format('Y-m-d H:i:s.v') ?? $dossier->date_tr_dapg;
+        if (!empty($validated['tr_dapg'])) {
+            $dossier->date_tr_dapg = now()->format('Y-m-d H:i:s.v');
+        }
         $dossier->date_sortie = $validated['date_sortie'] ?? $dossier->date_sortie;
         $dossier->user_id = $validated['user_id'] ?? $dossier->user_id;
         $dossier->save();
@@ -1539,7 +1545,7 @@ class DossierController extends Controller
             $requette->date_tr_dapg = now()->format('Y-m-d H:i:s.v') ?? $requette->date_tr_dapg;
             $requette->save();
         }*/
-        if ($dossier->originedossier == "R") {
+        if ($dossier->originedossier == "R" && !empty($validated['tr_dapg'])) {
             $requette = $dossier->requettes()
                 ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
                 ->first();
@@ -3556,6 +3562,54 @@ class DossierController extends Controller
             'message' => 'تم التحديث بنجاح',
             'data' => $dossier->fresh(),
         ]);
+    }
+
+    public function recevoirDossierDapg(Request $request, $id)
+    {
+        $dossier = Dossier::findOrFail($id);
+
+        if ($dossier->tr_dapg === 'OK') {
+            return response()->json(['message' => 'تم تسلم هذا الملف مسبقاً', 'data' => $dossier], 200);
+        }
+
+        $numeroRequis = $dossier->originedossier === 'D' && empty($dossier->numero_dapg);
+
+        $validated = $request->validate([
+            'numero_dapg' => [$numeroRequis ? 'required' : 'nullable', 'string'],
+        ], [
+            'numero_dapg.required' => 'يجب إدخال رقم الملف بالوزارة',
+        ]);
+
+        return DB::transaction(function () use ($dossier, $validated) {
+            $now = now()->format('Y-m-d H:i:s.v');
+
+            if (!empty($validated['numero_dapg'])) {
+                $dossier->numero_dapg = $validated['numero_dapg'];
+            }
+            $dossier->tr_dapg = 'OK';
+            $dossier->date_tr_dapg = $now;
+            $dossier->user_id = Auth::id() ?? $dossier->user_id;
+            $dossier->save();
+
+            if ($dossier->originedossier === 'R') {
+                $requette = $dossier->requettes()
+                    ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
+                    ->first();
+
+                if ($requette) {
+                    $requette->tr_dapg = 'OK';
+                    $requette->date_tr_dapg = $now;
+                    $requette->save();
+                } else {
+                    Log::warning("recevoirDossierDapg: dossier {$dossier->id} sans requête CAT-1");
+                }
+            }
+
+            return response()->json([
+                'message' => 'تم تسلم الملف بنجاح',
+                'data' => $dossier->fresh(),
+            ]);
+        });
     }
     /**
      * Export Excel : mêmes filtres que la grille (onglet compris via

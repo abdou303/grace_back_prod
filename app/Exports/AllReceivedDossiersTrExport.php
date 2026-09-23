@@ -46,6 +46,8 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
             'القضية الأولى',
             'التهمة الأولى',
             'نوع الملف',
+            'تاريخ الخروج',
+            'تاريخ الانجاز',
         ];
     }
 
@@ -87,6 +89,14 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
         // التهمة الأولى : التهمة de la première affaire (même logique que القضية الأولى)
         $tuhmaPremiere = $premiereAffaire->conenujugement ?? '';
 
+        // تاريخ الانجاز : même logique que la colonne date_readiness de la grille
+        $dateInjaz = null;
+        if ($item->originedossier === 'D') {
+            $dateInjaz = $item->date_etat_ok;
+        } elseif ($item->originedossier === 'R' && $item->tr_tribunal === 'OK') {
+            $dateInjaz = $item->date_tr_tribunal;
+        }
+
         return [
             $numero,
             $item->numero_dapg ?? '',
@@ -103,7 +113,21 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
             $affairePremiere,
             $tuhmaPremiere,
             optional($item->typedossier)->libelle ?? '',
+            $this->formatDate($item->date_sortie, 'Y-m-d'),
+            $this->formatDate($dateInjaz, 'Y-m-d - H:i'),
         ];
+    }
+
+    private function formatDate($value, string $format): string
+    {
+        if (empty($value)) {
+            return '';
+        }
+        try {
+            return \Carbon\Carbon::parse($value)->format($format);
+        } catch (\Throwable $e) {
+            return (string) $value;
+        }
     }
 
     public function registerEvents(): array
@@ -113,7 +137,7 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
                 $sheet = $event->sheet->getDelegate();
                 $sheet->setRightToLeft(true);
 
-                $lastColumn = 'M';
+                $lastColumn = 'O';
 
                 $sheet->getStyle("A1:{$lastColumn}1")->applyFromArray([
                     'fill' => [
