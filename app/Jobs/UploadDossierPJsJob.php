@@ -162,6 +162,9 @@ class UploadDossierPJsJob implements ShouldQueue, ShouldBeUnique
                     'numero'      => $dossier->numero,
                     'baseNumero'  => $baseNumero,
                 ]);
+                // NOTE : la génération du nom de fichier "Autre" (typepjId == 99) reste simple ici —
+                // le fieldName transmis par le frontend (copie_autreN) doit déjà être unique par dossier
+                // (voir le fix de submitDynamicPjs() côté finishing-demande / edit-requettes-tribunal).
                 $filename = $baseNumero . "_" . $dossier->id . $affairePart . "_" . $fileData['fieldName'] . '.' . $extension;
                 $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
 
@@ -181,23 +184,23 @@ class UploadDossierPJsJob implements ShouldQueue, ShouldBeUnique
 
                 $openbeeUrl = $result['document_link'] ?? $result['url'] ?? null;
 
-                // 5. Enregistrement en base de données (firstOrNew pour éviter les doublons au retry)
-                /* $pj = Pj::firstOrNew([
-                    'dossier_id' => $dossier->id,
-                    'affaire_id' => $fileData['affaireId'],
-                    'typepj_id'  => $typepjId,
-                    'requette_id' => $contextRequetteId,
-                ]);*/
-                // APRÈS :
-                /*if ($typepjId == 99) {
-                    $pj = new Pj();
-                } else {}*/
-                $pj = Pj::firstOrNew([
+                // 5. Enregistrement en base de données (firstOrNew pour éviter les doublons au retry,
+                // tout en gardant plusieurs "Autre" distincts grâce au critère 'contenu')
+                $critereRecherche = [
                     'dossier_id'  => $dossier->id,
                     'affaire_id'  => $fileData['affaireId'],
                     'typepj_id'   => $typepjId,
                     'requette_id' => $contextRequetteId,
-                ]);
+                ];
+
+                if ($typepjId == 99) {
+                    // "Autre" : plusieurs fichiers distincts possibles pour le même dossier/affaire/requête.
+                    // On ajoute le nom du fichier au critère pour ne dédoublonner QUE les vrais retries
+                    // du même fichier, sans jamais fusionner deux "Autre" différents.
+                    $critereRecherche['contenu'] = "OPENBEE/" . $filename;
+                }
+
+                $pj = Pj::firstOrNew($critereRecherche);
 
                 $pj->dossier_id  = $dossier->id;                    // ← AJOUT
                 $pj->affaire_id  = $fileData['affaireId'] ?? null;  // ← AJOUT

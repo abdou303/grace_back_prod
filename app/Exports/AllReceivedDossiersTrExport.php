@@ -44,7 +44,11 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
             'المتهم',
             'التهمة',
             'القضية الأولى',
-            'التهمة الأولى',
+            'التهمة (ق 1)',
+            'تاريخ الحكم(ق 1)',
+            'تاريخ الحكم',
+            'المنطوق(ق 1)',
+            'المنطوق',
             'نوع الملف',
             'تاريخ الخروج',
             'تاريخ الانجاز',
@@ -89,6 +93,20 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
         // التهمة الأولى : التهمة de la première affaire (même logique que القضية الأولى)
         $tuhmaPremiere = $premiereAffaire->conenujugement ?? '';
 
+        // تاريخ الحكم(ق 1) / تاريخ الحكم : datejujement (première affaire / toutes les affaires)
+        $dateJugementPremiere = $this->formatDate($premiereAffaire->datejujement ?? null, 'Y-m-d');
+        $datesJugement = $item->affaires
+            ->map(fn($a) => $this->formatDate($a->datejujement, 'Y-m-d'))
+            ->filter()
+            ->implode(' : ');
+
+        // المنطوق(ق 1) / المنطوق : conenujugement (première affaire / toutes les affaires)
+        $mantoukPremiere = $premiereAffaire->conenujugement ?? '';
+        $mantouk = $item->affaires
+            ->pluck('conenujugement')
+            ->filter()
+            ->implode(' : ');
+
         // تاريخ الانجاز : même logique que la colonne date_readiness de la grille
         $dateInjaz = null;
         if ($item->originedossier === 'D') {
@@ -112,6 +130,10 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
             $tuhma,
             $affairePremiere,
             $tuhmaPremiere,
+            $dateJugementPremiere,
+            $datesJugement,
+            $mantoukPremiere,
+            $mantouk,
             optional($item->typedossier)->libelle ?? '',
             $this->formatDate($item->date_sortie, 'Y-m-d'),
             $this->formatDate($dateInjaz, 'Y-m-d - H:i'),
@@ -137,7 +159,7 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
                 $sheet = $event->sheet->getDelegate();
                 $sheet->setRightToLeft(true);
 
-                $lastColumn = 'O';
+                $lastColumn = 'S';
 
                 $sheet->getStyle("A1:{$lastColumn}1")->applyFromArray([
                     'fill' => [

@@ -364,6 +364,20 @@ class DossierController extends Controller
 
                 // 1. Création du Détenu
                 $detenu = new Detenu();
+                $datenaissance = $request->datenaissance;
+                if ($datenaissance) {
+                    try {
+                        $parsed = \Carbon\Carbon::createFromFormat('Y-m-d', $datenaissance);
+                        // Rejette toute date hors plage plausible (avant 1900 ou dans le futur)
+                        if ($parsed->year < 1900 || $parsed->year > (int) now()->format('Y')) {
+                            $datenaissance = null;
+                        } else {
+                            $datenaissance = $parsed->format('Y-m-d');
+                        }
+                    } catch (\Exception $e) {
+                        $datenaissance = null;
+                    }
+                }
                 $detenu->fill([
                     'nom' => $request->nom,
                     'prenom' => $request->prenom,

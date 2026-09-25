@@ -24,7 +24,8 @@ class StoreDossierRequest extends FormRequest
         return [
             'nom' => 'required',
             'prenom' => 'required',
-            'datenaissance' => 'nullable',
+            'datenaissance' => 'nullable|date_format:Y-m-d|after:1900-01-01|before_or_equal:today',
+
             //  'adresse' => 'nullable',
 
             'nompere' => 'nullable',
@@ -45,7 +46,7 @@ class StoreDossierRequest extends FormRequest
             'affaires.*.code' => 'required|string',
             'affaires.*.annee' => 'required|string',
             'affaires.*.tribunal' => 'required|numeric',
-            'affaires.*.datejujement' => 'required|string',
+            'affaires.*.datejujement' => 'required|date_format:Y-m-d|after:1900-01-01|before_or_equal:today',
             'affaires.*.conenujugement' => 'nullable|string',
             'affaires.*.copie_decision' => 'file|mimes:pdf|max:153600', // Each file must be valid
             'affaires.*.copie_non_recours' => 'file|mimes:pdf|max:153600', // Each file must be valid
@@ -74,6 +75,13 @@ class StoreDossierRequest extends FormRequest
             'prenom.required' => ' الاسم الشخصي إجباري.',
             'cin.min' => 'رقم البطاقة الوطنية يجب أن يحتوي على حرفين على الأقل.',
             'cin.max' => 'رقم البطاقة الوطنية لا يجب أن يتجاوز 50 حرفًا.',
+            'datenaissance.date_format' => 'صيغة تاريخ الازدياد غير صحيحة.',
+            'datenaissance.after' => 'تاريخ الازدياد غير معقول.',
+            'datenaissance.before_or_equal' => 'تاريخ الازدياد لا يمكن أن يكون في المستقبل.',
+
+            'affaires.*.datejujement.date_format' => 'صيغة تاريخ الحكم غير صحيحة.',
+            'affaires.*.datejujement.after' => 'تاريخ الحكم غير معقول.',
+            'affaires.*.datejujement.before_or_equal' => 'تاريخ الحكم لا يمكن أن يكون في المستقبل.',
             'genre.required' => ' الجنس إجباري.',
             'typedossier.required' => 'نوع الملف إجباري.',
             'naturedossier.required' => 'طبيعة الملف إجبارية.',
