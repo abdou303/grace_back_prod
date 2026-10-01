@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Carbon\Carbon;
+use App\Models\ImportLogItem;
+
 
 class DossierImportEncours implements ToCollection, WithHeadingRow
 {
@@ -69,6 +71,8 @@ class DossierImportEncours implements ToCollection, WithHeadingRow
                     'numero_national_detenu' => $row['numero_detention_national'],
                     'nationalite_id'         => $row['nationality'] ?? 99,
                 ]);
+                $this->track('Detenu', $detenu->id);
+
 
                 // 2. Préparation des données du Dossier
                 $dossierData = [
@@ -98,6 +102,8 @@ class DossierImportEncours implements ToCollection, WithHeadingRow
                 }
 
                 $dossier = Dossier::create($dossierData);
+                $this->track('Dossier', $dossier->id);
+
 
                 // 3. Traitement des Affaires
                 $affaireTribunaux    = !empty($row['tribunalaffaire']) ? explode(':', $row['tribunalaffaire']) : [];
@@ -135,6 +141,7 @@ class DossierImportEncours implements ToCollection, WithHeadingRow
                         'conenujugement' => trim($affaireContenus[$index] ?? null),
                         'numeroaffaire'  => $numeroComplet,
                     ]);
+                    $this->track('Affaire', $affaire->id);
 
                     $affaireIds[] = $affaire->id;
                 }
@@ -187,5 +194,18 @@ class DossierImportEncours implements ToCollection, WithHeadingRow
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+
+    private function track(string $model, $id): void
+    {
+        if (!$this->importLogId || !$id) return;
+
+        ImportLogItem::create([
+            'import_type'   => 'ENCOURS',
+            'import_log_id' => $this->importLogId,
+            'model'         => $model,
+            'model_id'      => $id,
+        ]);
     }
 }

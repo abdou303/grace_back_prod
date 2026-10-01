@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Carbon\Carbon;
 use App\Models\ImportLog;
+use App\Models\ImportLogItem;
 
 
 class DossierImport implements ToCollection, WithHeadingRow
@@ -169,6 +170,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                 if ($existingDossier) {
                     // Si le dossier existe, on ajoute seulement la requête
                     $requette = $this->createRequette($existingDossier->id, $row);
+                    $this->track('Requette', $requette->id);
+
                     $this->operationService->logOperation(
                         $existingDossier->id,
                         'DAPG-GET-DEMANDE', // Mettez l'ID correspondant à "Ajout requête"
@@ -190,6 +193,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'numero_national_detenu' => $row['numero_detention_national'],
                         'nationalite_id'         => $row['nationality'] ?? 99,
                     ]);
+                    $this->track('Detenu', $detenu->id);
 
                     // 2. Préparation des données du Dossier
                     $dossierData = [
@@ -220,6 +224,8 @@ class DossierImport implements ToCollection, WithHeadingRow
                     }
 
                     $dossier = Dossier::create($dossierData);
+                    $this->track('Dossier', $dossier->id);
+
 
                     // 3. Traitement des Affaires (Split et formatage)
                     $affaireTribunaux    = !empty($row['tribunalaffaire']) ? explode(':', $row['tribunalaffaire']) : [];
@@ -258,6 +264,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                             'conenujugement' => trim($affaireContenus[$index] ?? null),
                             'numeroaffaire'  => $numeroComplet,
                         ]);
+                        $this->track('Affaire', $affaire->id);
 
                         $affaireIds[] = $affaire->id;
                     }
@@ -268,6 +275,7 @@ class DossierImport implements ToCollection, WithHeadingRow
 
                     // 4. Création de la requête initiale
                     $requette = $this->createRequette($dossier->id, $row);
+                    $this->track('Requette', $requette->id);
                     $this->operationService->logOperation(
                         $dossier->id,
                         'DAPG-GET-DEMANDE', // Mettez l'ID correspondant à "Ajout requête"
@@ -331,5 +339,16 @@ class DossierImport implements ToCollection, WithHeadingRow
         } catch (\Exception $e) {
             return null;
         }
+    }
+    private function track(string $model, $id): void
+    {
+        if (!$this->importLogId || !$id) return;
+
+        ImportLogItem::create([
+            'import_type'   => 'CLASSIQUE',
+            'import_log_id' => $this->importLogId,
+            'model'         => $model,
+            'model_id'      => $id,
+        ]);
     }
 }

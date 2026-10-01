@@ -168,13 +168,13 @@ class UploadDossierPJsJob implements ShouldQueue, ShouldBeUnique
                 $filename = $baseNumero . "_" . $dossier->id . $affairePart . "_" . $fileData['fieldName'] . '.' . $extension;
                 $filenameSansExtension = pathinfo($filename, PATHINFO_FILENAME);
 
-                // 4. Action OpenBee (La méthode upload() du service gère déjà son propre retry interne)
-                // $openBee->deleteIfExists($filenameSansExtension);
-                // APRÈS :
-                /* if ($typepjId != 99) {
+                // 4. Nettoyage préalable UNIQUEMENT si on est dans un retry (attempts() > 1).
+                // Au premier essai, il n'y a par définition aucun document résiduel à supprimer :
+                // on économise un aller-retour réseau inutile vers OpenBee.
+                if ($this->attempts() > 1) {
+                    Log::debug("Tentative #{$this->attempts()} : nettoyage préalable de {$filenameSansExtension}");
                     $openBee->deleteIfExists($filenameSansExtension);
-                }*/
-                $openBee->deleteIfExists($filenameSansExtension);
+                }
 
                 $result = $openBee->upload($uploadedFile, $filename, [
                     'title'       => $filename,

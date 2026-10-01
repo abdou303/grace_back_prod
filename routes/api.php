@@ -33,10 +33,7 @@ use App\Models\TypePj;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-
-
-
+use App\Http\Controllers\Api\V1\ImportRollbackController;
 
 
 Route::prefix('v1')->group(function () {
@@ -165,6 +162,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/import-historique-encours', [DossierImportController::class, 'historiqueEncours']);
         Route::delete('/import-historique-encours/{id}', [DossierImportController::class, 'deleteHistoriqueEncours']);
         Route::post('dossiers/{id}/recevoir-dapg-dossier', [DossierController::class, 'recevoirDossierDapg']);
+        Route::post('import-historique/{id}/rollback', [ImportRollbackController::class, 'rollbackImport']);
+        Route::post('import-encours-historique/{id}/rollback', [ImportRollbackController::class, 'rollbackImportEncours']);
 
 
         Route::get('/types-pjs', function () {

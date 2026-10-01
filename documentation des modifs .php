@@ -211,3 +211,55 @@ JWT_REFRESH_TTL=43200
     ['libelle' => 'مناسبة عيد الأضحى المبارك', 'id_dapg' => 8, 'created_at' => now(), 'updated_at' => now()],
     ['libelle' => 'مناسبة عيد الوحدة', 'id_dapg' => 11, 'created_at' => now(), 'updated_at' => now()],
 ]);
+
+/***************************************************************** */
+DB::transaction(function () {
+    App\Models\Tribunal::whereIn('libelle', [
+        'محكمة الإستئناف بتارودانت',
+        'المحكمة الابتدائية بأولاد تايمة',
+        'المحكمة الابتدائية ببوجدور',
+    ])->where('id', '>', 9999)->delete();
+
+    App\Models\Ca::where('id', 10001)->delete();
+
+    $maxCa = DB::table('cas')->max('id');
+    DB::statement("DBCC CHECKIDENT ('cas', RESEED, $maxCa)");
+
+    $maxT = DB::table('tribunaux')->max('id');
+    DB::statement("DBCC CHECKIDENT ('tribunaux', RESEED, $maxT)");
+
+    $ca = App\Models\Ca::forceCreate([
+        'libelle'       => 'محكمة الإستئناف بتارودانت',
+        'libelle_small' => 'تارودانت',
+        'active'        => 1,
+    ]);
+
+    App\Models\Tribunal::forceCreate([
+        'libelle'       => 'محكمة الإستئناف بتارودانت',
+        'libelle_fr'    => "Cour d'appel de Taroudanet",
+        'type_tribunal' => 'C',
+        'ordre'         => 0,
+        'ca_id'         => $ca->id,
+    ]);
+
+    App\Models\Tribunal::forceCreate([
+        'libelle'       => 'المحكمة الابتدائية بأولاد تايمة',
+        'libelle_fr'    => 'le TPI de Ouled Taima',
+        'type_tribunal' => 'T',
+        'ordre'         => 0,
+        'ca_id'         => $ca->id,
+    ]);
+
+    App\Models\Tribunal::forceCreate([
+        'libelle'       => 'المحكمة الابتدائية ببوجدور',
+        'libelle_fr'    => 'le TPI de Boujdour',
+        'type_tribunal' => 'T',
+        'ordre'         => 0,
+        'ca_id'         => 9,
+    ]);
+
+    return [
+        'ca_id'        => $ca->id,
+        'tribunaux'    => App\Models\Tribunal::where('id', '>', $maxT)->pluck('id'),
+    ];
+});
