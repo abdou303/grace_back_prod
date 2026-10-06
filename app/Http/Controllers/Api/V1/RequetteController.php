@@ -445,6 +445,30 @@ class RequetteController extends Controller
                     $affaire->save();
                 }
             }
+            /******************************************************** */
+            // 2-ter. Choix شهادة ضبطية (par affaire)
+            if ($request->has('has_choix_non_recours')) {
+                foreach ($request->has_choix_non_recours as $affaireId => $hasChoix) {
+                    $affaire = $dossier->affaires()->where('affaires.id', $affaireId)->first();
+                    if (!$affaire) {
+                        continue;
+                    }
+
+                    $hasChoixBool = filter_var($hasChoix, FILTER_VALIDATE_BOOLEAN);
+
+                    $affaire->has_choix_non_recours = $hasChoixBool;
+                    $affaire->choix_non_recours_id = $hasChoixBool
+                        ? ($request->choix_non_recours_id[$affaireId] ?? null)
+                        : null;
+                    $affaire->observation_non_recours = $hasChoixBool
+                        ? ($request->observation_non_recours[$affaireId] ?? null)
+                        : null;
+
+                    $affaire->save();
+                }
+            }
+            /******************************************************** */
+
             /*************GENERIQUE JOB 30/03/2026******************* */
 
             $postActions = [[
@@ -1763,7 +1787,7 @@ class RequetteController extends Controller
             'type' => 'required|string',
             'affaire_id' => 'nullable|integer'
         ]);
-        $lockKey = "upload-one-pj-requette-{$requette_id}-{$request->type}";
+        $lockKey = "upload-one-pj-requette-{$requette_id}-{$request->type}" . ($request->affaire_id ? "-{$request->affaire_id}" : '');
         $lock = Cache::lock($lockKey, 30);
         if (!$lock->get()) {
             return response()->json(['message' => 'Un envoi est déjà en cours pour ce document.'], 429);

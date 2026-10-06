@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\TypeRequetteController;
 use App\Http\Controllers\Api\V1\PartenaireController;
 use App\Http\Controllers\Api\V1\RequetteController;
 use App\Http\Controllers\Api\V1\AvisController;
+use App\Http\Controllers\Api\V1\ChoixNonRecoursController;
 use App\Http\Controllers\Api\V1\ComportementController;
 use App\Http\Controllers\Api\V1\DossierImportController;
 use App\Http\Controllers\Api\V1\FichePdfController;
@@ -34,7 +35,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\ImportRollbackController;
-
+use App\Http\Controllers\Api\V1\NonRecoursPdfController;
 
 Route::prefix('v1')->group(function () {
 
@@ -175,5 +176,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/dossiers-requettes-greffe/server-side', [DossierController::class, 'dossiersRequettesGreffeServerSide']);
         Route::post('/dossiers-requettes-greffe/export', [DossierController::class, 'exportDossiersRequettesGreffe']);
         Route::get('/type-dossiers', [DossierController::class, 'getAllTypeDossier']);
+        Route::get('choix-non-recours', [ChoixNonRecoursController::class, 'index']);
+        // PDF الشهادة الضبطية par affaire (traitement séparé du ملتمس)
+        Route::get('/dossiers/{dossier_id}/affaires/{affaire_id}/pdf-non-recours', [NonRecoursPdfController::class, 'generate']);
     });
 });

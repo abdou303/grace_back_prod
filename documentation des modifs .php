@@ -263,3 +263,45 @@ DB::transaction(function () {
         'tribunaux'    => App\Models\Tribunal::where('id', '>', $maxT)->pluck('id'),
     ];
 });
+/***************************************************** */
+DB::transaction(function () {
+    $caId = App\Models\Ca::where('libelle_small', 'تارودانت')->value('id');
+
+    $query = App\Models\Tribunal::where('type_tribunal', 'T')
+        ->where(function ($q) {
+            $q->where('libelle', 'like', '%طاطا%')
+              ->orWhere('libelle', 'like', '%تارودانت%');
+        });
+
+    $ids = $query->pluck('id');
+    $updated = $query->update(['ca_id' => $caId]);
+
+    return [
+        'ca_id'   => $caId,
+        'ids'     => $ids,
+        'updated' => $updated,
+    ];
+});
+/***************************************************** */
+App\Models\Tribunal::where('type_tribunal', 'C')
+    ->where('libelle', 'like', '%تارود%')
+    ->get(['id', 'libelle', 'ca_id']);
+/***************************************************** */
+
+foreach ([
+    'نهائي',
+    'غير مطعون فيه',
+    'مطعون فيه',
+    'رفض طلب النقض',
+    'النقض و الاحالة',
+    'غيابي',
+] as $libelle) {
+    \App\Models\ChoixNonRecours::firstOrCreate(
+        ['libelle' => $libelle],
+        ['active' => true]
+    );
+}
+
+\App\Models\ChoixNonRecours::orderBy('id')->get(['id', 'libelle', 'active']);
+
+/********************************************************************** */

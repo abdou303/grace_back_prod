@@ -1223,6 +1223,29 @@ class DossierController extends Controller
                     $affaire->save();
                 }
             }
+            /******************************************************** */
+            // 2-ter. Choix شهادة ضبطية (par affaire)
+            if ($request->has('has_choix_non_recours')) {
+                foreach ($request->has_choix_non_recours as $affaireId => $hasChoix) {
+                    $affaire = $dossier->affaires()->where('affaires.id', $affaireId)->first();
+                    if (!$affaire) {
+                        continue;
+                    }
+
+                    $hasChoixBool = filter_var($hasChoix, FILTER_VALIDATE_BOOLEAN);
+
+                    $affaire->has_choix_non_recours = $hasChoixBool;
+                    $affaire->choix_non_recours_id = $hasChoixBool
+                        ? ($request->choix_non_recours_id[$affaireId] ?? null)
+                        : null;
+                    $affaire->observation_non_recours = $hasChoixBool
+                        ? ($request->observation_non_recours[$affaireId] ?? null)
+                        : null;
+
+                    $affaire->save();
+                }
+            }
+            /******************************************************** */
             /*************GENERIQUE JOB 30/03/2026******************* */
             $postActions = [[
                 'model' => Dossier::class,
