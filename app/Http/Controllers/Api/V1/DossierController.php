@@ -1143,6 +1143,8 @@ class DossierController extends Controller
             return response()->json(['message' => 'Traitement déjà en cours.'], 409);
         }
         if ($dossier->etat_greffe === 'TR') {
+            // Dossier déjà traité : on applique seulement la modification الاختيار / ملاحظات
+            $this->saveChoixNonRecours($request, $dossier, $request->user_id ?: $request->user_tribunal, true);
             $lock->release();
             return response()->json(['message' => 'Dossier déjà traité.', 'data' => $dossier], 200);
         }
@@ -1225,26 +1227,7 @@ class DossierController extends Controller
             }
             /******************************************************** */
             // 2-ter. Choix شهادة ضبطية (par affaire)
-            if ($request->has('has_choix_non_recours')) {
-                foreach ($request->has_choix_non_recours as $affaireId => $hasChoix) {
-                    $affaire = $dossier->affaires()->where('affaires.id', $affaireId)->first();
-                    if (!$affaire) {
-                        continue;
-                    }
-
-                    $hasChoixBool = filter_var($hasChoix, FILTER_VALIDATE_BOOLEAN);
-
-                    $affaire->has_choix_non_recours = $hasChoixBool;
-                    $affaire->choix_non_recours_id = $hasChoixBool
-                        ? ($request->choix_non_recours_id[$affaireId] ?? null)
-                        : null;
-                    $affaire->observation_non_recours = $hasChoixBool
-                        ? ($request->observation_non_recours[$affaireId] ?? null)
-                        : null;
-
-                    $affaire->save();
-                }
-            }
+            $this->saveChoixNonRecours($request, $dossier, $request->user_id ?: $request->user_tribunal);
             /******************************************************** */
             /*************GENERIQUE JOB 30/03/2026******************* */
             $postActions = [[
@@ -2380,7 +2363,23 @@ class DossierController extends Controller
             'objetdemande',
             'sourcedemande',
             'LibelleTribunalUtilisateur',
+            // Requêtes CAT-1 : numéro R-XXXXXXXX + données pour "الوضعية"
+            'requettes' => function ($q) {
+                $q->select(
+                    'requettes.id',
+                    'requettes.dossier_id',
+                    'requettes.numero',
+                    'requettes.typerequette_id',
+                    'requettes.etat_greffe',
+                    'requettes.etat_parquet'
+                )
+                    ->whereNotNull('requettes.numero')
+                    ->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-1'))
+                    ->withCount('pjs');
+            },
+            'requettes.typerequette',
         ])
+            ->withCount('pjs')
             ->whereNotNull('user_tribunal_id')
             ->where(function ($q) {
                 $q->whereNull('has_antecedent')->orWhere('has_antecedent', '!=', 'OUI');
@@ -2444,7 +2443,23 @@ class DossierController extends Controller
             'objetdemande',
             'sourcedemande',
             'LibelleTribunalUtilisateur',
+            // Requêtes CAT-1 : numéro R-XXXXXXXX + données pour "الوضعية"
+            'requettes' => function ($q) {
+                $q->select(
+                    'requettes.id',
+                    'requettes.dossier_id',
+                    'requettes.numero',
+                    'requettes.typerequette_id',
+                    'requettes.etat_greffe',
+                    'requettes.etat_parquet'
+                )
+                    ->whereNotNull('requettes.numero')
+                    ->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-1'))
+                    ->withCount('pjs');
+            },
+            'requettes.typerequette',
         ])
+            ->withCount('pjs')
             ->whereNotNull('user_tribunal_id')
             ->where(function ($q) {
                 $q->whereNull('has_antecedent')->orWhere('has_antecedent', '!=', 'OUI');
@@ -2469,10 +2484,19 @@ class DossierController extends Controller
 
     private function applyCommonDossierTrFilters(Builder $query, array $f): void
     {
-        if (!empty($f['numero'])) {
+        /*if (!empty($f['numero'])) {
             $query->where('numero', 'like', '%' . $f['numero'] . '%');
+        }*/
+        if (!empty($f['numero'])) {
+            // Recherche sur D-XXXXXXXX (dossier) OU R-XXXXXXXX (requête CAT-1)
+            $query->where(function ($q) use ($f) {
+                $q->where('numero', 'like', '%' . $f['numero'] . '%')
+                    ->orWhereHas('requettes', function ($r) use ($f) {
+                        $r->where('numero', 'like', '%' . $f['numero'] . '%')
+                            ->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-1'));
+                    });
+            });
         }
-
         if (!empty($f['numero_dapg'])) {
             $query->where('numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
         }
@@ -2502,7 +2526,7 @@ class DossierController extends Controller
             $query->where('naturedossiers_id', $f['naturedossier']);
         }
 
-        if (!empty($f['etat'])) {
+        /*if (!empty($f['etat'])) {
             if ($f['etat'] === 'NT') {
                 $query->where('etat', 'NT');
             } elseif ($f['etat'] === 'OK_not_ready') {
@@ -2517,8 +2541,25 @@ class DossierController extends Controller
             } elseif ($f['etat'] === 'OK_ready') {
                 $query->where('etat', 'OK')->where('tr_tribunal', 'OK');
             }
+        }*/
+        if (!empty($f['etat'])) {
+            if ($f['etat'] === 'NT') {
+                // طلب جديد
+                $this->whereEtatNouveauTr($query);
+            } elseif ($f['etat'] === 'OK_not_ready') {
+                // في طور التجهيز (hors ملف جاهز)
+                $query->where(function ($q) {
+                    $q->whereNull('etat')
+                        ->orWhere('etat', '!=', 'OK')
+                        ->orWhereNull('tr_tribunal')
+                        ->orWhere('tr_tribunal', '!=', 'OK');
+                });
+                $this->whereEtatEnCoursTr($query);
+            } elseif ($f['etat'] === 'OK_ready') {
+                // ملف جاهز
+                $query->where('etat', 'OK')->where('tr_tribunal', 'OK');
+            }
         }
-
         if (!empty($f['date_debut'])) {
             $query->whereDate('created_at', '>=', $f['date_debut']);
         }
@@ -2533,7 +2574,72 @@ class DossierController extends Controller
                 ->whereDate('date_sortie', '>', $f['date_sortie']);
         }
     }
+    /**
+     * "في طور التجهيز" :
+     * - ancien cas : etat = OK sans tr_tribunal = OK
+     * - D : >= 3 PJ sur le dossier OU etat_greffe = NT OU etat_parquet = NT
+     * - R : requête CAT-1 avec >= 3 PJ OU etat_greffe = NT OU etat_parquet = NT
+     */
+    private function whereEtatEnCoursTr(Builder $query): void
+    {
+        $query->where(function ($w) {
+            $w->where(function ($x) {
+                $x->where('etat', 'OK')->where(function ($y) {
+                    $y->whereNull('tr_tribunal')->orWhere('tr_tribunal', '!=', 'OK');
+                });
+            })
+                ->orWhere(function ($x) {
+                    $x->where('originedossier', 'D')->where(function ($y) {
+                        $y->has('pjs', '>=', 3)
+                            ->orWhere('etat_greffe', 'NT')
+                            ->orWhere('etat_parquet', 'NT')
+                            ->orWhere('etat_greffe', 'TR')
+                            ->orWhere('etat_parquet', 'TR');
+                    });
+                })
+                ->orWhere(function ($x) {
+                    $x->where('originedossier', 'R')->whereHas('requettes', function ($r) {
+                        $r->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-1'))
+                            ->where(function ($y) {
+                                $y->has('pjs', '>=', 3)
+                                    ->orWhere('etat_greffe', 'NT')
+                                    ->orWhere('etat_parquet', 'NT')
+                                    ->orWhere('etat_greffe', 'TR')
+                                    ->orWhere('etat_parquet', 'TR');
+                            });
+                    });
+                });
+        });
+    }
 
+    /**
+     * "طلب جديد" : etat = NT et aucune condition de "في طور التجهيز"
+     */
+    private function whereEtatNouveauTr(Builder $query): void
+    {
+        $query->where('etat', 'NT')->where(function ($w) {
+            $w->where(function ($x) {
+                $x->where('originedossier', 'D')
+                    ->has('pjs', '<', 3)
+                    ->where(function ($y) {
+                        $y->whereNull('etat_greffe')->orWhere('etat_greffe', '!=', 'NT');
+                    })
+                    ->where(function ($y) {
+                        $y->whereNull('etat_parquet')->orWhere('etat_parquet', '!=', 'NT');
+                    });
+            })
+                ->orWhere(function ($x) {
+                    $x->where('originedossier', 'R')->whereDoesntHave('requettes', function ($r) {
+                        $r->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-1'))
+                            ->where(function ($y) {
+                                $y->has('pjs', '>=', 3)
+                                    ->orWhere('etat_greffe', 'NT')
+                                    ->orWhere('etat_parquet', 'NT');
+                            });
+                    });
+                });
+        });
+    }
     private function applyDossiersTrSorting($query, array $sortModel): void
     {
         $allowedColumns = ['numero', 'numero_dapg', 'etat', 'created_at', 'id'];
@@ -3698,5 +3804,44 @@ class DossierController extends Controller
     public function getAllTypeDossier()
     {
         return response()->json(['data' => TypeDossier::all()]);
+    }
+
+    /**
+     * 2-ter. Choix شهادة ضبطية (par affaire)
+     * $keepUserDate = true en modification : on garde l'utilisateur/date de la 1ère validation
+     */
+    private function saveChoixNonRecours(Request $request, $dossier, $userId, bool $keepUserDate = false): void
+    {
+        if (!$dossier || !$request->has('has_choix_non_recours')) {
+            return;
+        }
+
+        foreach ($request->has_choix_non_recours as $affaireId => $hasChoix) {
+            $affaire = $dossier->affaires()->where('affaires.id', $affaireId)->first();
+            if (!$affaire) {
+                continue;
+            }
+
+            $hasChoixBool = filter_var($hasChoix, FILTER_VALIDATE_BOOLEAN);
+
+            $affaire->has_choix_non_recours = $hasChoixBool;
+            $affaire->choix_non_recours_id = $hasChoixBool
+                ? ($request->choix_non_recours_id[$affaireId] ?? null)
+                : null;
+            $affaire->observation_non_recours = $hasChoixBool
+                ? ($request->observation_non_recours[$affaireId] ?? null)
+                : null;
+
+            // Utilisateur + date (zones إمضاء / التاريخ de la الشهادة الضبطية)
+            if (!$hasChoixBool) {
+                $affaire->user_choix_non_recours_id = null;
+                $affaire->date_choix_non_recours = null;
+            } elseif (!$keepUserDate || !$affaire->user_choix_non_recours_id) {
+                $affaire->user_choix_non_recours_id = $userId;
+                $affaire->date_choix_non_recours = now()->format('Y-m-d H:i:s.v');
+            }
+
+            $affaire->save();
+        }
     }
 }

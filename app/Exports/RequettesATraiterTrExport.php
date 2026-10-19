@@ -29,7 +29,7 @@ class RequettesATraiterTrExport implements FromCollection, WithHeadings, WithMap
     {
         return $this->requettes;
     }
-
+    /*
     public function headings(): array
     {
         return [
@@ -56,8 +56,52 @@ class RequettesATraiterTrExport implements FromCollection, WithHeadings, WithMap
             optional($item->dossier?->typedossier)->libelle ?? '',
             optional($item->typerequette)->libelle ?? '',
         ];
+    }*/
+    public function headings(): array
+    {
+        return [
+            'رقم الطلب',
+            'الاسم الكامل',
+            'رقم القضية',
+            'رقم ن.ع',
+            'تاريخ الطلب',
+            'رقم الملف بالوزارة',
+            'نوع الملف',
+            'نوع الاجراء',
+            'ممثل ن.ع',
+        ];
     }
 
+    public function map($item): array
+    {
+        $dossier = $item->dossier;
+        $affaire = optional($dossier)->affaires?->first();
+
+        return [
+            $item->numero ?? '',
+            trim(($dossier->detenu->nom ?? '') . ' ' . ($dossier->detenu->prenom ?? '')),
+            $affaire ? "{$affaire->numero} /{$affaire->code} /{$affaire->annee}" : '',
+            optional($dossier)->numeromp ?? '',
+            $item->date ? \Carbon\Carbon::parse($item->date)->format('d/m/Y - H:i') : '',
+            optional($dossier)->numero_dapg ?? '',
+            optional($dossier?->typedossier)->libelle ?? '',
+            optional($item->typerequette)->libelle ?? '',
+            $this->libelleParquet($item, ''),
+        ];
+    }
+
+    private function libelleParquet($item, string $defaultName): string
+    {
+        $user = $item->user_parquet_objet ?? $item->userParquetObjet ?? null;
+        $name = $user->name ?? $defaultName;
+
+        return match ($item->etat_parquet) {
+            null, 'KO' => 'غير محال',
+            'NT'       => "محال على ({$name}) - غير منجز",
+            'TR'       => "محال على ({$name}) - منجز",
+            default    => '',
+        };
+    }
     public function registerEvents(): array
     {
         return [
@@ -65,7 +109,7 @@ class RequettesATraiterTrExport implements FromCollection, WithHeadings, WithMap
                 $sheet = $event->sheet->getDelegate();
                 $sheet->setRightToLeft(true);
 
-                $sheet->getStyle('A1:G1')->applyFromArray([
+                $sheet->getStyle('A1:I1')->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['argb' => 'FFD7B964'],
@@ -75,7 +119,7 @@ class RequettesATraiterTrExport implements FromCollection, WithHeadings, WithMap
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
                 ]);
 
-                foreach (range('A', 'G') as $col) {
+                foreach (range('A', 'I') as $col) {
                     $sheet->getColumnDimension($col)->setWidth(20);
                 }
             },

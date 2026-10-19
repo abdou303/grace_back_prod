@@ -78,13 +78,24 @@ class FichePdfController extends Controller
                 'autoLangToFont' => true,
             ]);*/
             // Nettoyage des variables de config
-            $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
-            $fontDirs = $defaultConfig['fontDir'];
-
             $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
-            $fontData = $defaultFontConfig['fontdata'];
 
             $mpdf = new Mpdf([
+                // 'benaya-mohannad' (CSS) => police arabe intégrée à mPDF (XB Riyaz, OTL activé)
+                'fonttrans' => $defaultFontConfig['fonttrans'] + ['benaya-mohannad' => 'xbriyaz'],
+                'default_font' => 'xbriyaz',
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                //'format' => 'A5',
+                'margin_top' => 5,
+                'margin_bottom' => 5,
+                'margin_left' => 15,
+                'margin_right' => 15,
+                'autoArabic' => true,
+                'autoScriptToLang' => true,   // marque le texte arabe => liaison correcte des lettres
+                'autoLangToFont' => false,    // garde xbriyaz, pas la police choisie par mPDF
+            ]);
+            /*$mpdf = new Mpdf([
                 'fontDir' => array_merge($fontDirs, [
                     public_path('fonts'), // Chemin vers D:\xampp\htdocs\app_production\public\fonts
                 ]),
@@ -95,7 +106,7 @@ class FichePdfController extends Controller
                 'margin_bottom' => 5,
                 'margin_left' => 15,
                 'margin_right' => 15,
-            ]);
+            ]);*/
 
             // 3. Chargement de la vue
             $html = view('pdf.dossier', compact('dossier'))->render();
@@ -164,14 +175,22 @@ class FichePdfController extends Controller
         // Nettoyage des variables de config
 
 
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+
         $mpdf = new Mpdf([
-            'default_font' => 'benaya-mohannad',
-            'mode' => 'utf-8', // Supports Arabic text
+            // 'benaya-mohannad' (CSS) => police arabe intégrée à mPDF (XB Riyaz, OTL activé)
+            'fonttrans' => $defaultFontConfig['fonttrans'] + ['benaya-mohannad' => 'xbriyaz'],
+            'default_font' => 'xbriyaz',
+            'mode' => 'utf-8',
             'format' => 'A4',
+            //'format' => 'A5',
             'margin_top' => 5,
             'margin_bottom' => 5,
             'margin_left' => 15,
             'margin_right' => 15,
+            'autoArabic' => true,
+            'autoScriptToLang' => true,   // marque le texte arabe => liaison correcte des lettres
+            'autoLangToFont' => false,    // garde xbriyaz, pas la police choisie par mPDF
         ]);
 
 

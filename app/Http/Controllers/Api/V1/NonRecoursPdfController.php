@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ChoixNonRecours;
 use App\Models\Dossier;
 use App\Models\Requette;
+use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Mpdf\Mpdf;
@@ -28,7 +29,7 @@ class NonRecoursPdfController extends Controller
                 'detenu',
                 'typedossier',
                 'avis',
-                'userParquetObjet:id,name',
+                // 'userParquetObjet:id,name',
                 'LibelleTribunalUtilisateur',
             ])->findOrFail($dossierId);
 
@@ -49,6 +50,11 @@ class NonRecoursPdfController extends Controller
                 ? ChoixNonRecours::find($affaire->choix_non_recours_id)
                 : null;
 
+            // 3-bis. Utilisateur du greffe qui a choisi "نعم" (zone إمضاء)
+            $userChoix = $affaire->user_choix_non_recours_id
+                ? User::find($affaire->user_choix_non_recours_id)
+                : null;
+
             // 4. Contexte requête (optionnel) : date + nom du substitut, comme le ملتمس
             $requette = null;
             if ($request->filled('requette_id')) {
@@ -58,20 +64,32 @@ class NonRecoursPdfController extends Controller
             }
 
             // 5. mPDF (même configuration que le ملتمس)
-            $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+            /*$defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
 
             $mpdf = new Mpdf([
                 'fontDir' => array_merge($defaultConfig['fontDir'], [public_path('fonts')]),
-                'default_font' => 'benaya-mohannad',
+                'default_font' => 'benaya-mohannad',*/
+
+            // 5. mPDF (même configuration que le ملتمس)
+            $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+
+            $mpdf = new Mpdf([
+                // 'benaya-mohannad' (CSS) => police arabe intégrée à mPDF (XB Riyaz, OTL activé)
+                'fonttrans' => $defaultFontConfig['fonttrans'] + ['benaya-mohannad' => 'xbriyaz'],
+                'default_font' => 'xbriyaz',
                 'mode' => 'utf-8',
                 'format' => 'A4',
+                //'format' => 'A5',
                 'margin_top' => 5,
                 'margin_bottom' => 5,
                 'margin_left' => 15,
                 'margin_right' => 15,
+                'autoArabic' => true,
+                'autoScriptToLang' => true,   // marque le texte arabe => liaison correcte des lettres
+                'autoLangToFont' => false,    // garde xbriyaz, pas la police choisie par mPDF
             ]);
 
-            $html = view('pdf.non_recours', compact('dossier', 'affaire', 'choix', 'requette'))->render();
+            $html = view('pdf.non_recours', compact('dossier', 'affaire', 'choix', 'requette', 'userChoix'))->render();
 
             $mpdf->SetDirectionality('rtl');
             $mpdf->WriteHTML($html);

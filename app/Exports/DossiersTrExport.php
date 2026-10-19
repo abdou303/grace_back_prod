@@ -49,19 +49,30 @@ class DossiersTrExport implements FromCollection, WithHeadings, WithMapping, Wit
 
     public function map($item): array
     {
-        $etat = $item->etat;
+        /*$etat = $item->etat;
         if ($item->etat === 'NT') {
             $etat = 'طلب جديد';
         } elseif ($item->etat === 'OK' && $item->tr_tribunal !== 'OK') {
             $etat = 'في طور التجهيز';
         } elseif ($item->etat === 'OK' && $item->tr_tribunal === 'OK') {
             $etat = 'ملف جاهز';
-        }
-
+        }*/
+        $etat = $this->libelleEtat($item);
         $affaire = $item->affaires->first();
 
+        // الرقم : R-XXXXXXXX (requête CAT-1) si origine R, sinon numero du dossier ; jamais vide
+        $requetteCat1 = $item->requettes
+            ->filter(fn($r) => optional($r->typerequette)->cat === 'CAT-1' && !empty($r->numero))
+            ->sortByDesc('id')
+            ->first();
+        $numeroR = $requetteCat1->numero ?? null;
+
+        $numero = ($item->originedossier === 'R' && $numeroR)
+            ? $numeroR
+            : ($item->numero ?: ($numeroR ?? ''));
         return [
-            $item->numero ?? '',
+            //$item->numero ?? '',
+            $numero,
             $item->numero_dapg ?? '',
             $etat ?? '',
             $item->user_tribunal_libelle
@@ -85,7 +96,43 @@ class DossiersTrExport implements FromCollection, WithHeadings, WithMapping, Wit
             1 => ['font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']]],
         ];
     }
+    /**
+     * Règle d'affichage de "الوضعية" (identique à la grille et au filtre backend)
+     */
+    private function libelleEtat($item): string
+    {
+        if ($item->etat === 'OK' && $item->tr_tribunal === 'OK') {
+            return 'ملف جاهز';
+        }
 
+        $enCours = $item->etat === 'OK';
+
+        if ($item->originedossier === 'D') {
+            $enCours = $enCours
+                || ($item->pjs_count ?? 0) >= 3
+                || $item->etat_greffe === 'NT'
+                || $item->etat_parquet === 'NT'
+                || $item->etat_greffe === 'TR'
+                || $item->etat_parquet === 'TR';
+        } elseif ($item->originedossier === 'R') {
+            $enCours = $enCours || $item->requettes->contains(function ($r) {
+                return optional($r->typerequette)->cat === 'CAT-1'
+                    && (($r->pjs_count ?? 0) >= 3
+                        || $r->etat_greffe === 'NT'
+                        || $r->etat_parquet === 'NT' || $r->etat_greffe === 'TR'
+                        || $r->etat_parquet === 'TR');
+            });
+        }
+
+        if ($enCours) {
+            return 'في طور التجهيز';
+        }
+        if ($item->etat === 'NT') {
+            return 'طلب جديد';
+        }
+
+        return (string) ($item->etat ?? '');
+    }
     public function registerEvents(): array
     {
         return [

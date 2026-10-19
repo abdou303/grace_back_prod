@@ -51,22 +51,10 @@
             <td
                 style="width: 33%; border: none; text-align: center; vertical-align: middle; font-size: 13pt; line-height: 1.4; font-weight: normal;">
                 <p style="margin: 0; padding-right: 15px;">المملكة المغربية</p>
-                <p style="margin: 0; padding-right: 15px;">رئاسة النيابة العامة</p>
+                <p style="margin: 0; padding-right: 15px;">وزارة العدل</p>
                 <p style="margin: 0; padding-right: 15px;">{{ $dossier->LibelleTribunalUtilisateur->libelle }}</p>
-                <p style="margin: 0; padding-right: 15px; text-decoration: underline;">النيابة العامة</p>
-                <p style="margin: 0; padding-right: 15px; margin-top: 10px; font-weight: bold;">
-                    {{ $dossier->typedossier->libelle }} عدد:
-                    @if ($dossier->numero_dapg)
-                        {{ $dossier->numero_dapg }}
-                    @else
-                        {{ $dossier->numero }}
-                    @endif
-                </p>
-                @if ($dossier->numeromp)
-                    <p style="margin: 0; padding-right: 15px;">
-                        رقم النيابة العامة: {{ $dossier->numeromp }}
-                    </p>
-                @endif
+                <!-- <p style="margin: 0; padding-right: 15px; text-decoration: underline;">النيابة العامة</p> -->
+
             </td>
             <td style="width: 33%; border: none; text-align: center; vertical-align: middle;">
                 <img src="{{ public_path('images/royaume_du_maroc.svg') }}" width="110px">
@@ -84,103 +72,70 @@
 
         </tr>
     </table>
+    <br>
 
 
 
-    <h1>الشهادة الضبطية</h1>
 
-    <div style="margin-top: 30px; line-height: 1.8;  text-align: justify; direction: rtl;font-size:18px">
+    <h1>شهادة ضبطية</h1>
+    <br>
+    <br>
+    <div style="margin-top: 30px; line-height: 1.8;  text-align: justify; direction: rtl;font-size:20px">
 
-        <p>
-            إن الوكيل العام للملك لدى {{ $dossier->LibelleTribunalUtilisateur->libelle ?? '' }}
-            بناء على طلب @if ($dossier->typedossier->id == 1)
-                العفو
-            @elseif($dossier->typedossier->id == 2)
-                {{-- Remplacez 2 par l'ID correspondant à l'autre type --}}
-                الافراج المقيد بشروط
-            @else
-                {{ $dossier->typedossier->libelle }}
-            @endif
-            المقدم لفائدة {{ $dossier->detenu->nom ?? '' }} {{ $dossier->detenu->prenom ?? '' }}،
-            المدان من طرف
+        <br>
+        إن رئيس كتابة الضبط ب{{ $dossier->LibelleTribunalUtilisateur->libelle ?? '' }}، يشهد بأنه بعد الاطلاع على
+        ملف القضية عدد {{ $affaire->numeroaffaire ?? '..........' }}، الصادر فيها قرار بتاريخ @if ($affaire->datejujement)
+            {{ \Carbon\Carbon::parse($affaire->datejujement)->format('Y/m/d') }}
+        @else
+            ....................
+        @endif
+        .
+        <br>
+        تبث إليه أن القرار الصادر في الملف المذكور:
+        <strong>{{ $choix->libelle ?? '........................................' }}</strong>،
+        <strong>{{ $affaire->observation_non_recours ?? '................................................................................' }}</strong>
+        .
+        <br>
+        وبمضمنه سلمت هذه الشهادة لاستعمالها طبق القانون لا سيما من أجل الادلاء بها في
 
-            {{ $affaire->tribunal->libelle ?? 'المحكمة المختصة' }}
-            ،
-            بموجب المقرر القضائي في القضية عدد
-
-            {{ $affaire->numeroaffaire ?? '..........' }}
-
-            ،
-            بتاريخ
-
-            @if ($affaire->datejujement)
-                {{ \Carbon\Carbon::parse($affaire->datejujement)->format('Y/m/d') }}
-            @else
-                ....................
-            @endif
-
-            .
+        @if ($dossier->typedossier->id == 1)
+            ملف العفو
+        @elseif($dossier->typedossier->id == 2)
+            {{-- Remplacez 2 par l'ID correspondant à l'autre type --}}
+            ملف الافراج المقيد بشروط
+        @else
+            {{ $dossier->typedossier->libelle }}
+        @endif
+        عدد:
+        @if ($dossier->numero_dapg)
+            {{ $dossier->numero_dapg }}
+        @else
+            {{ $dossier->numero }}
+        @endif
+        .
         </p>
 
-        <p>
-            والذي يلتمس من خلاله
-            @if ($dossier->typedossier->id == 1)
-                الانعام عليه بالعفو الملكي السامي
-            @elseif($dossier->typedossier->id == 2)
-                تمتيعه بالافراج المقيد بشروط
-            @endif
-            من العقوبة المحكوم بها عليه وفق المشار إليه أعلاه.
-        </p>
 
-        <p style="margin-top: 15px;">
-            فإن هذه النيابة العامة تلتمس:
-            {{ $dossier->avis->libelle ?? '........................................' }}
-        </p>
-
-        <p>
-            تعليل القرار:
-            {{ $dossier->observations_parquet ?? '................................................................................' }}
-        </p>
-
-        {{-- Spécifique à la الشهادة الضبطية (par affaire) --}}
-        <p style="margin-top: 15px;">
-            <strong>الاختيار:</strong>
-            {{ $choix->libelle ?? '........................................' }}
-        </p>
-
-        <p>
-            <strong>ملاحظات:</strong>
-            {{ $affaire->observation_non_recours ?? '................................................................................' }}
-        </p>
-
-        <p style="margin-top: 20px;">
-            وللجنة @if ($dossier->typedossier->id == 1)
-                العفو
-            @elseif($dossier->typedossier->id == 2)
-                الافراج المقيد بشروط
-            @endif واسع النظر
-        </p>
-
+        <br>
+        <br>
+        <br>
         <div style="margin-top: 40px; width: 100%;">
             <table style="width: 100%; border: none;">
                 <tr>
-                    <td style="border: none; text-align: right; width: 50%;font-size:18px"><strong>
-                            التاريخ:</strong>
-                        @if (isset($requette))
-                            {{ \Carbon\Carbon::parse($requette->date_etat_parquet)->format('Y/m/d') ?? '....................' }}
-                        @else
-                            {{ \Carbon\Carbon::parse($dossier->date_etat_parquet)->format('Y/m/d') ?? '....................' }}
-                        @endif
+                    <td style="border: none; text-align: right; width: 50%;font-size:20px"><strong>
+                            التاريخ:</strong><br>
+                        {{-- Date de validation du greffe (TR) enregistrée avec le choix "نعم" --}}
+                        @php
+                            $dateTr =
+                                $affaire->date_choix_non_recours ??
+                                ($requette->date_etat_greffe ?? $dossier->date_etat_greffe);
+                        @endphp
+                        {{ $dateTr ? \Carbon\Carbon::parse($dateTr)->format('Y/m/d') : '....................' }}
                     </td>
-                    <td style="border: none; text-align: left; width: 50%;font-size:18px">
-                        <strong> إسم النائب:</strong><br>
-                        @if (isset($requette))
-                            {{-- Affiche le nom de l'utilisateur de la requête, ou vide si nul --}}
-                            {{ $requette->userParquetObjet->name ?? '....................' }}
-                        @else
-                            {{-- Affiche le nom de l'utilisateur du dossier, ou vide si nul --}}
-                            {{ $dossier->userParquetObjet->name ?? '....................' }}
-                        @endif
+                    <td style="border: none; text-align: left; width: 50%;font-size:20px">
+                        <strong> محرر الشهادة:</strong><br>
+                        {{-- Utilisateur du greffe qui a choisi "نعم" --}}
+                        {{ $userChoix->name ?? '....................' }}
 
                     </td>
                 </tr>

@@ -30,7 +30,7 @@ class DossiersTribunalExport implements FromCollection, WithHeadings, WithMappin
         return $this->dossiers;
     }
 
-    public function headings(): array
+    /*  public function headings(): array
     {
         return ['الرقم', 'نوع الملف', 'تاريخ التسجيل', 'الاسم الكامل', 'ب ت و'];
     }
@@ -44,8 +44,49 @@ class DossiersTribunalExport implements FromCollection, WithHeadings, WithMappin
             trim(($item->detenu->nom ?? '') . ' ' . ($item->detenu->prenom ?? '')),
             optional($item->detenu)->cin ?? '',
         ];
+    }*/
+    public function headings(): array
+    {
+        return [
+            'الرقم',
+            'الاسم الكامل',
+            'رقم القضية',
+            'رقم ن.ع',
+            'نوع الملف',
+            'تاريخ التسجيل',
+            'ب ت و',
+            'ممثل ن.ع',
+        ];
     }
 
+    public function map($item): array
+    {
+        $affaire = $item->affaires?->first();
+
+        return [
+            $item->numero ?? '',
+            trim(($item->detenu->nom ?? '') . ' ' . ($item->detenu->prenom ?? '')),
+            $affaire ? "{$affaire->numero} /{$affaire->code} /{$affaire->annee}" : '',
+            $item->numeromp ?? '',
+            optional($item->typedossier)->libelle ?? '',
+            $item->created_at ? $item->created_at->format('Y-m-d H:i') : '',
+            optional($item->detenu)->cin ?? '',
+            $this->libelleParquet($item, 'نائب غير معروف'),
+        ];
+    }
+
+    private function libelleParquet($item, string $defaultName): string
+    {
+        $user = $item->user_parquet_objet ?? $item->userParquetObjet ?? null;
+        $name = $user->name ?? $defaultName;
+
+        return match ($item->etat_parquet) {
+            null, 'KO' => 'غير محال',
+            'NT'       => "محال على ({$name}) - غير منجز",
+            'TR'       => "محال على ({$name}) - منجز",
+            default    => '',
+        };
+    }
     public function registerEvents(): array
     {
         return [
@@ -53,7 +94,7 @@ class DossiersTribunalExport implements FromCollection, WithHeadings, WithMappin
                 $sheet = $event->sheet->getDelegate();
                 $sheet->setRightToLeft(true);
 
-                $sheet->getStyle('A1:E1')->applyFromArray([
+                $sheet->getStyle('A1:H1')->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['argb' => 'FF325D88'],
@@ -63,7 +104,7 @@ class DossiersTribunalExport implements FromCollection, WithHeadings, WithMappin
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
                 ]);
 
-                foreach (range('A', 'E') as $col) {
+                foreach (range('A', 'H') as $col) {
                     $sheet->getColumnDimension($col)->setWidth(22);
                 }
             },

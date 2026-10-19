@@ -367,6 +367,8 @@ class RequetteController extends Controller
             return response()->json(['message' => 'Un traitement est déjà en cours pour cette requête.'], 409);
         }
         if ($requette->etat_greffe === 'TR') {
+            // Requête déjà traitée : on applique seulement la modification الاختيار / ملاحظات
+            $this->saveChoixNonRecours($request, $requette->dossier, $request->user_tribunal ?: $request->user_id, true);
             $lock->release();
             return response()->json([
                 'message' => 'Cette requête a déjà été traitée.',
@@ -447,26 +449,7 @@ class RequetteController extends Controller
             }
             /******************************************************** */
             // 2-ter. Choix شهادة ضبطية (par affaire)
-            if ($request->has('has_choix_non_recours')) {
-                foreach ($request->has_choix_non_recours as $affaireId => $hasChoix) {
-                    $affaire = $dossier->affaires()->where('affaires.id', $affaireId)->first();
-                    if (!$affaire) {
-                        continue;
-                    }
-
-                    $hasChoixBool = filter_var($hasChoix, FILTER_VALIDATE_BOOLEAN);
-
-                    $affaire->has_choix_non_recours = $hasChoixBool;
-                    $affaire->choix_non_recours_id = $hasChoixBool
-                        ? ($request->choix_non_recours_id[$affaireId] ?? null)
-                        : null;
-                    $affaire->observation_non_recours = $hasChoixBool
-                        ? ($request->observation_non_recours[$affaireId] ?? null)
-                        : null;
-
-                    $affaire->save();
-                }
-            }
+            $this->saveChoixNonRecours($request, $dossier, $request->user_tribunal ?: $request->user_id);
             /******************************************************** */
 
             /*************GENERIQUE JOB 30/03/2026******************* */
@@ -2160,5 +2143,44 @@ class RequetteController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * 2-ter. Choix شهادة ضبطية (par affaire)
+     * $keepUserDate = true en modification : on garde l'utilisateur/date de la 1ère validation
+     */
+    private function saveChoixNonRecours(Request $request, $dossier, $userId, bool $keepUserDate = false): void
+    {
+        if (!$dossier || !$request->has('has_choix_non_recours')) {
+            return;
+        }
+
+        foreach ($request->has_choix_non_recours as $affaireId => $hasChoix) {
+            $affaire = $dossier->affaires()->where('affaires.id', $affaireId)->first();
+            if (!$affaire) {
+                continue;
+            }
+
+            $hasChoixBool = filter_var($hasChoix, FILTER_VALIDATE_BOOLEAN);
+
+            $affaire->has_choix_non_recours = $hasChoixBool;
+            $affaire->choix_non_recours_id = $hasChoixBool
+                ? ($request->choix_non_recours_id[$affaireId] ?? null)
+                : null;
+            $affaire->observation_non_recours = $hasChoixBool
+                ? ($request->observation_non_recours[$affaireId] ?? null)
+                : null;
+
+            // Utilisateur + date (zones إمضاء / التاريخ de la الشهادة الضبطية)
+            if (!$hasChoixBool) {
+                $affaire->user_choix_non_recours_id = null;
+                $affaire->date_choix_non_recours = null;
+            } elseif (!$keepUserDate || !$affaire->user_choix_non_recours_id) {
+                $affaire->user_choix_non_recours_id = $userId;
+                $affaire->date_choix_non_recours = now()->format('Y-m-d H:i:s.v');
+            }
+
+            $affaire->save();
+        }
     }
 }
