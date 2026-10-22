@@ -977,7 +977,7 @@ class DossierController extends Controller
     }
     /******************************************************** */
 
-
+    /*
     public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
     {
         Log::debug('terminerDossierTr: Requête reçue :', $request->all());
@@ -1097,7 +1097,6 @@ class DossierController extends Controller
                 }
             }
 
-            /*************GENERIQUE JOB 30/03/2026******************* */
             $postActions = [[
                 'model' => Dossier::class,
                 'id'    => $dossier->id,
@@ -1130,8 +1129,164 @@ class DossierController extends Controller
             $lock->release();
         }
     }
+*/
+    public function terminerDossierTr(UpdateDossierRequest $request, $dossier_id, OpenBeeService $openBee)
+    {
+        Log::debug('terminerDossierTr: Requête reçue :', $request->all());
 
+        $dossier = Dossier::findOrFail($dossier_id);
+        // --- VERROU + GARDE ---
+        $lockKey = "terminer_dossier_tr_lock_{$dossier_id}";
+        $lock = Cache::lock($lockKey, 30);
+        if (!$lock->get()) {
+            return response()->json(['message' => 'Traitement déjà en cours.'], 409);
+        }
+        if ($dossier->etat === 'OK') {
+            $lock->release();
+            return response()->json(['message' => 'Dossier déjà traité.', 'data' => $dossier], 200);
+        }
+        try {
+            $detenu = $dossier->detenu;
 
+            if (!$detenu) {
+                return response()->json(['message' => 'Detenu not found'], 404);
+            }
+
+            // 1. Mise à jour et sauvegarde IMMÉDIATE du Détenu
+            $detenu->nom = $request->nom;
+            $detenu->prenom = $request->prenom;
+            $detenu->datenaissance = $request->datenaissance;
+            $detenu->lieunaissance = $request->lieunaissance ?? null;
+            $detenu->nompere = $request->nompere;
+            $detenu->nommere = $request->nommere;
+            $detenu->cin = $request->cin;
+            $detenu->genre = $request->genre;
+            $detenu->nationalite_id = $request->nationalite;
+            $detenu->adresse = $request->adresse ?? null;
+            $detenu->telephone = $request->telephone ?? null;
+            $detenu->save();
+
+            // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
+            $dossier->typedossier_id = $request->typedossier;
+            $dossier->naturedossiers_id = $request->naturedossier;
+            $dossier->sourcedemande_id = $request->sourcedemande;
+            $dossier->objetdemande_id = isset($request->objetdemande) && is_numeric($request->objetdemande) ? (int) $request->objetdemande : null;
+            $dossier->user_id = $request->user_id;
+            $dossier->user_tribunal_id = $request->tribunal_user_id;
+            $dossier->user_tribunal_libelle = $request->tribunal_user_libelle;
+            $dossier->numeromp = $request->numeromp;
+            $dossier->prison_id = isset($request->prison) && is_numeric($request->prison) ? (int) $request->prison : null;
+            $dossier->numero_detention = $request->numerolocal;
+            $dossier->date_sortie = $request->date_sortie ?? $dossier->date_sortie;
+            $dossier->save();
+
+            // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+            if ($request->has('has_non_recours')) {
+                foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+                    $affaire = $dossier->affaires()
+                        ->where('affaires.id', $affaireId)
+                        ->first();
+
+                    if (!$affaire) {
+                        continue;
+                    }
+
+                    $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+                    $affaire->has_non_recours = $hasNonRecoursBool;
+
+                    if (!$hasNonRecoursBool) {
+                        $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                        $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                        $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                    } else {
+                        $affaire->numero_cassation = null;
+                        $affaire->numero_envoi_cassation = null;
+                        $affaire->date_envoi_cassation = null;
+                    }
+
+                    $affaire->save();
+                }
+            }
+
+            // 3. Préparation et Stockage TEMPORAIRE des fichiers
+            $filesToProcess = [];
+            $fileMappings = [
+                'copie_dgapr' => 8,
+                'copie_demande' => 7,
+                'copie_decision' => 5,
+                'copie_cin' => 4,
+                'copie_mp' => 3,
+                'copie_non_recours' => 2,
+                'copie_social' => 1,
+            ];
+
+            foreach ($fileMappings as $fieldName => $typepjId) {
+                if ($request->hasFile($fieldName)) {
+                    $files = $request->file($fieldName);
+                    $filesArray = is_array($files) ? $files : [null => $files];
+
+                    foreach ($filesArray as $affaireIdKey => $file) {
+                        if ($file) {
+                            $path = $file->store('temp/openbee_uploads');
+                            $filesToProcess[] = [
+                                'path' => $path,
+                                'typepjId' => $typepjId,
+                                'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                                'fieldName' => $fieldName,
+                                'originalName' => $file->getClientOriginalName(),
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // Le dossier avait été retourné par la DAPG ? → il redevient OK une fois منجز
+            $etaitRetourne = $dossier->etat_retour_dapg_tr === 'KO'; // ← AJOUT
+
+            /*************GENERIQUE JOB 30/03/2026******************* */
+            $dataDossier = [
+                'etat' => 'OK',
+                'date_etat_ok' => now()->format('Y-m-d H:i:s.v'),
+                'tr_tribunal' => 'OK',
+                'date_tr_tribunal' => now()->format('Y-m-d H:i:s.v'),
+            ];
+            if ($etaitRetourne) {                          // ← AJOUT
+                $dataDossier['etat_retour_dapg_tr'] = 'OK'; // ← AJOUT
+            }                                              // ← AJOUT
+
+            $postActions = [[
+                'model' => Dossier::class,
+                'id'    => $dossier->id,
+                'data'  => $dataDossier, // ← MODIFIÉ (avant : tableau écrit en dur)
+            ]];
+
+            // 4. Dispatch du Job pour le traitement en arrière-plan
+            if (!empty($filesToProcess)) {
+                Log::info("## DEBUG: Envoi au Job pour Dossier ID: {$dossier->id}", [
+                    'files_count' => count($filesToProcess),
+                    'post_actions' => $postActions
+                ]);
+                UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+            } else {
+                $dossier->etat = 'OK';
+                $dossier->date_etat_ok = now()->format('Y-m-d H:i:s.v');
+                $dossier->tr_tribunal = 'OK';
+                $dossier->date_tr_tribunal = now()->format('Y-m-d H:i:s.v');
+                if ($etaitRetourne) {                          // ← AJOUT
+                    $dossier->etat_retour_dapg_tr = 'OK';      // ← AJOUT
+                }                                              // ← AJOUT
+                $dossier->save();
+            }
+
+            // 5. Réponse Immédiate
+            return response()->json([
+                'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
+                'data' => $dossier,
+            ], 201);
+        } finally {
+            $lock->release();
+        }
+    }
     public function terminerGreffeDossierTr(UpdateDossierGreffeRequest $request, $dossier_id, OpenBeeService $openBee)
     {
         Log::debug('terminerGreffeDossierTr-Requête reçue :', $request->all());
@@ -1145,6 +1300,8 @@ class DossierController extends Controller
         if ($dossier->etat_greffe === 'TR') {
             // Dossier déjà traité : on applique seulement la modification الاختيار / ملاحظات
             $this->saveChoixNonRecours($request, $dossier, $request->user_id ?: $request->user_tribunal, true);
+            // + réponse « هل تتوفرون على شهادة ضبطية » / cassation / fichier copie_non_recours
+            $this->saveNonRecoursModification($request, $dossier);
             $lock->release();
             return response()->json(['message' => 'Dossier déjà traité.', 'data' => $dossier], 200);
         }
@@ -3271,7 +3428,7 @@ class DossierController extends Controller
         $dossierIds  = $this->buildDossierTribunalCat1IdsQuery($trId, $f)->pluck('dossiers.id')->all();
         $requetteIds = $this->buildRequetteTribunalCat1IdsQuery($trId, $f)->pluck('requettes.id')->all();
 
-        $dossiers = Dossier::with([
+        /* $dossiers = Dossier::with([
             'detenu',
             'affaires',
             'affaires.tribunal',
@@ -3292,13 +3449,45 @@ class DossierController extends Controller
             'dossier.typedossier',
             'dossier.naturedossier',
             'typerequette',
+            'statutrequettes' => function ($q) {
+                $q->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
         ])->whereIn('id', $requetteIds)->orderBy('date', 'desc')->get()
             ->map(function ($r) {
                 $arr = $r->toArray();
                 $arr['rowType'] = 'requette';
                 return $arr;
             });
+*/
+        $dossiers = Dossier::with([
+            'detenu',
+            'affaires',
+            'affaires.tribunal',
+            'typedossier',
+            'naturedossier',
+        ])->withCount('pjs')
+            ->whereIn('id', $dossierIds)->orderBy('created_at', 'desc')->get()
+            ->map(function ($d) {
+                $arr = $d->toArray();
+                $arr['rowType'] = 'dossier';
+                return $arr;
+            });
 
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.affaires',
+            'dossier.affaires.tribunal',
+            'dossier.typedossier',
+            'dossier.naturedossier',
+            'typerequette',
+        ])->withCount('pjs')
+            ->whereIn('id', $requetteIds)->orderBy('date', 'desc')->get()
+            ->map(function ($r) {
+                $arr = $r->toArray();
+                $arr['rowType'] = 'requette';
+                return $arr;
+            });
         return response()->json([
             'rows' => $dossiers->concat($requettes)->values(),
         ]);
@@ -3842,6 +4031,143 @@ class DossierController extends Controller
             }
 
             $affaire->save();
+        }
+    }
+
+    public function retournerDossierTribunal(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'observation_retour_dapg_tr' => 'required|string',
+        ], [
+            'observation_retour_dapg_tr.required' => 'المرجو إدخال سبب الإرجاع',
+        ]);
+
+        $dossier = Dossier::findOrFail($id);
+
+        if ($dossier->tr_dapg === 'OK') {
+            return response()->json(['message' => 'لا يمكن إرجاع ملف تم تسلمه مسبقاً'], 422);
+        }
+
+        return DB::transaction(function () use ($dossier, $validated) {
+            $obs = $validated['observation_retour_dapg_tr'];
+            $isR = $dossier->originedossier === 'R';
+
+            // --- DOSSIER : retour à l'état initial ---
+            $dossier->observation_retour_dapg_tr = $obs;
+            $dossier->nbr_redirections_dapg_tr = ($dossier->nbr_redirections_dapg_tr ?? 0) + 1;
+            $dossier->etat_retour_dapg_tr = 'KO';
+            $dossier->date_retour_dapg_tr = now()->format('Y-m-d H:i:s.v');
+            $dossier->etat = 'NT';
+            $dossier->tr_tribunal = $isR ? 'NT' : null; // R : comme confirmRequette() / D : comme store()
+            $dossier->date_tr_tribunal = null;
+            $dossier->date_etat_ok = null;
+
+            if (!$isR) {
+                // D : état initial de store()
+                $dossier->etat_greffe = 'KO';
+                $dossier->etat_parquet = 'KO';
+                $dossier->user_parquet = null;
+            }
+            $dossier->save();
+
+            // --- REQUÊTE CAT-1 (uniquement pour R) ---
+            if ($isR) {
+                $requette = $dossier->requettes()
+                    ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
+                    ->latest('id')
+                    ->first();
+
+                if ($requette) {
+                    $requette->observation_retour_dapg_tr = $obs;
+                    $requette->nbr_redirections_dapg_tr = ($requette->nbr_redirections_dapg_tr ?? 0) + 1;
+                    $requette->etat_retour_dapg_tr = 'KO';
+                    $requette->date_retour_dapg_tr = now()->format('Y-m-d H:i:s.v');
+                    // État initial de confirmRequette()
+                    $requette->etat = 'TR';
+                    $requette->etat_tribunal = 'NT';
+                    $requette->date_etat_tribunal = null;
+                    $requette->etat_greffe = 'KO';
+                    $requette->etat_parquet = 'KO';
+                    $requette->user_parquet = null;
+                    $requette->save();
+
+                    $id_statut = StatutRequette::where('code', 'KO')->value('id');
+                    if ($id_statut) {
+                        $requette->statutrequettes()->attach($id_statut);
+                    }
+                } else {
+                    Log::warning("retournerDossierTribunal: dossier {$dossier->id} sans requête CAT-1");
+                }
+            }
+
+            return response()->json([
+                'message' => 'تم إرجاع الملف للمحكمة بنجاح',
+                'data' => $dossier->fresh(),
+            ]);
+        });
+    }
+
+    /**
+     * Modification d'une affaire déjà traitée (TR) — bloc « هل تتوفرون على شهادة ضبطية » :
+     * réponse نعم/لا, champs cassation et fichier copie_non_recours.
+     * N'envoie aucune post-action au Job : l'état TR et sa date ne changent pas.
+     */
+    private function saveNonRecoursModification(Request $request, $dossier, $requetteId = null): void
+    {
+        if (!$dossier) {
+            return;
+        }
+
+        // Réponse نعم/لا + cassation (même logique que le bloc 2-bis)
+        if ($request->has('has_non_recours')) {
+            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+                $affaire = $dossier->affaires()->where('affaires.id', $affaireId)->first();
+                if (!$affaire) {
+                    continue;
+                }
+
+                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+                $affaire->has_non_recours = $hasNonRecoursBool;
+
+                if (!$hasNonRecoursBool) {
+                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                } else {
+                    $affaire->numero_cassation = null;
+                    $affaire->numero_envoi_cassation = null;
+                    $affaire->date_envoi_cassation = null;
+                }
+
+                $affaire->save();
+            }
+        }
+
+        // Fichier copie_non_recours (par affaire) → Job OpenBee, sans post-action
+        if ($request->hasFile('copie_non_recours')) {
+            $files = $request->file('copie_non_recours');
+            $filesArray = is_array($files) ? $files : [null => $files];
+            $filesToProcess = [];
+
+            foreach ($filesArray as $affaireIdKey => $file) {
+                if ($file) {
+                    $fileData = [
+                        'path' => $file->store('temp/openbee_uploads'),
+                        'typepjId' => 2,
+                        'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                        'fieldName' => 'copie_non_recours',
+                        'originalName' => $file->getClientOriginalName(),
+                    ];
+                    if ($requetteId) {
+                        $fileData['context_requette_id'] = $requetteId;
+                    }
+                    $filesToProcess[] = $fileData;
+                }
+            }
+
+            if (!empty($filesToProcess)) {
+                UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, [])->onQueue('openbee_uploads');
+            }
         }
     }
 }

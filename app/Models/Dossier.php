@@ -100,6 +100,7 @@ class Dossier extends Model
         'observation_redirection',
         'has_file_mp',
         'date_etat_ok',
+        'etat_retour_dapg_tr'
     ];
 
     public function affaires()

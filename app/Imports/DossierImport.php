@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Carbon\Carbon;
 use App\Models\ImportLog;
 use App\Models\ImportLogItem;
-
+use App\Models\TypeRequette;
 
 class DossierImport implements ToCollection, WithHeadingRow
 {
@@ -167,8 +167,35 @@ class DossierImport implements ToCollection, WithHeadingRow
                     ->where('typedossier_id', $row['typedossier_id'])
                     ->first();
 
-                if ($existingDossier) {
+                /*if ($existingDossier) {
                     // Si le dossier existe, on ajoute seulement la requête
+                    $requette = $this->createRequette($existingDossier->id, $row);
+                    $this->track('Requette', $requette->id);
+
+                    $this->operationService->logOperation(
+                        $existingDossier->id,
+                        'DAPG-GET-DEMANDE', // Mettez l'ID correspondant à "Ajout requête"
+                        $requette->id ?? null,
+                        $this->userId
+                    );
+
+                    $this->nbImportees++;
+                } else {*/
+                if ($existingDossier) {
+                    $catRequette = TypeRequette::where('id', $row['type_requette'])->value('cat');
+
+                    // CAT-1 : une seule par dossier
+                    if ($catRequette === 'CAT-1') {
+                        $dejaCat1 = Requette::where('dossier_id', $existingDossier->id)
+                            ->whereIn('typerequette_id', TypeRequette::select('id')->where('cat', 'CAT-1'))
+                            ->exists();
+
+                        if ($dejaCat1) {
+                            return; // ignorée
+                        }
+                    }
+                    // CAT-2 : toujours ajoutée
+
                     $requette = $this->createRequette($existingDossier->id, $row);
                     $this->track('Requette', $requette->id);
 

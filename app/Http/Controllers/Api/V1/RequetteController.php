@@ -164,12 +164,12 @@ class RequetteController extends Controller
         return $query;
     }
 
-    public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
+    /*public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
     {
         // L'injection de OpenBeeService n'est plus nécessaire ici.
 
         // 1. Logique métier immédiate (Base de données)
-        /**/
+        
         $requette = Requette::findOrFail($requette_id);
         $dossier = $requette->dossier;
         $detenu = $dossier->detenu;
@@ -184,42 +184,7 @@ class RequetteController extends Controller
         $detenu->save();
         $dossier->save();
 
-        /******************************************** */
-        // 1. Logique métier immédiate (Base de données)
-       /* $requette = Requette::findOrFail($requette_id);
-        $dossier = $requette->dossier;
-
-        if (!$dossier) {
-            return response()->json(['message' => 'Dossier not found'], 404);
-        }
-
-        $detenu = $dossier->detenu;
-
-        // --- MODIFICATIONS ICI : Mise à jour des informations du DÉTENU ---
-        $detenu->nom = $request->nom;
-        $detenu->prenom = $request->prenom;
-        $detenu->datenaissance = $request->datenaissance;
-        $detenu->nompere = $request->nompere;
-        $detenu->nommere = $request->nommere;
-        $detenu->cin = $request->cin;
-        $detenu->adresse = $request->adresse;
-        $detenu->genre = $request->genre;
-
-        // Si nationalite est un objet envoyé par ng-select (contenant un id)
-        if ($request->has('nationalite')) {
-            $detenu->nationalite_id = is_array($request->nationalite) ? $request->nationalite['id'] : $request->nationalite;
-        }
-        $detenu->save();
-
-        // --- MODIFICATIONS ICI : Mise à jour des informations du DOSSIER ---
-        $dossier->numeromp = $request->numeromp;
-
-        // Si prison est un objet envoyé par ng-select
-        if ($request->has('prison')) {
-            $dossier->prison_id = is_array($request->prison) ? $request->prison['id'] : $request->prison;
-        }
-        $dossier->save();*/
-        /******************************************** */
+        
         // 2. Préparation et Stockage TEMPORAIRE des fichiers (Logique similaire à terminerDossierTr)
         $filesToProcess = [];
         $fileMappings = [
@@ -288,22 +253,10 @@ class RequetteController extends Controller
         // 4. Finalisation des statuts (Logique métier immédiate)
         $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
         $postActions = [];
-        /* if ($request->statutRequette == 'OK') {
-            $requette->etat_tribunal = 'TR';
-            $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
-            $requette->user_tribunal = $request->user_tribunal;
-            $requette->dossier()->update([
-                'etat' => 'OK',
-                'tr_tribunal' => 'OK',
 
-            ]);
-            $requette->save();
-        }
-        $requette->statutrequettes()->attach([$id_staut]);*/
 
 
         if ($request->statutRequette == 'OK') {
-            /*************GENERIQUE JOB 30/03/2026******************* */
 
             $postActions[] = [
                 'model' => Requette::class,
@@ -352,8 +305,161 @@ class RequetteController extends Controller
             'message' => 'Statut mis à jour. L\'upload des documents a démarré en arrière-plan.',
             'requette' => $requette->load('statutrequettes')
         ], 200);
-    }
+    }*/
+    public function addReponseRequette(UpdateRequetteRequest $request, $requette_id)
+    {
+        // 1. Logique métier immédiate (Base de données)
+        $requette = Requette::findOrFail($requette_id);
+        $dossier = $requette->dossier;
 
+        if (!$dossier) {
+            return response()->json(['message' => 'Dossier not found'], 404);
+        }
+
+        $detenu = $dossier->detenu;
+
+        $dossier->numeromp = $request->numeromp;
+        $detenu->adresse = $request->adresse;
+
+        $detenu->save();
+        $dossier->save();
+
+        // 2. Préparation et Stockage TEMPORAIRE des fichiers
+        $filesToProcess = [];
+        $fileMappings = [
+            'copie_cat2' => 6,
+            'copie_decision' => 5,
+            'copie_cin' => 4,
+            'copie_mp' => 3,
+            'copie_non_recours' => 2,
+            'copie_social' => 1,
+        ];
+
+        foreach ($fileMappings as $fieldName => $typepjId) {
+            if ($request->hasFile($fieldName)) {
+                $files = $request->file($fieldName);
+                $filesArray = is_array($files) ? $files : [null => $files];
+
+                foreach ($filesArray as $affaireIdKey => $file) {
+                    if ($file) {
+                        $path = $file->store('temp/openbee_uploads');
+                        $filesToProcess[] = [
+                            'path' => $path,
+                            'typepjId' => $typepjId,
+                            'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                            'fieldName' => $fieldName,
+                            'originalName' => $file->getClientOriginalName(),
+                            'context_requette_id' => $requette->id,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
+        if ($request->has('has_non_recours')) {
+            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+                $affaire = $dossier->affaires()
+                    ->where('affaires.id', $affaireId)
+                    ->first();
+
+                if (!$affaire) {
+                    continue;
+                }
+
+                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+                $affaire->has_non_recours = $hasNonRecoursBool;
+
+                if (!$hasNonRecoursBool) {
+                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                } else {
+                    $affaire->numero_cassation = null;
+                    $affaire->numero_envoi_cassation = null;
+                    $affaire->date_envoi_cassation = null;
+                }
+
+                $affaire->save();
+            }
+        }
+
+        // 4. Finalisation des statuts
+        $id_staut = StatutRequette::where('code', $request->statutRequette)->value('id');
+        $postActions = [];
+
+        // La requête / le dossier avaient été retournés par la DAPG ?
+        $requetteEtaitRetournee = $requette->etat_retour_dapg_tr === 'KO'; // ← AJOUT
+        $dossierEtaitRetourne   = $dossier->etat_retour_dapg_tr === 'KO';  // ← AJOUT
+
+        if ($request->statutRequette == 'OK') {
+            /*************GENERIQUE JOB 30/03/2026******************* */
+            $dataRequette = [
+                'etat_tribunal'      => 'TR',
+                'date_etat_tribunal' => now()->format('Y-m-d H:i:s.v'),
+                'user_tribunal'      => $request->user_tribunal,
+            ];
+            if ($requetteEtaitRetournee) {                     // ← AJOUT
+                $dataRequette['etat_retour_dapg_tr'] = 'OK';   // ← AJOUT
+            }                                                  // ← AJOUT
+
+            $dataDossier = [
+                'etat' => 'OK',
+                'tr_tribunal' => 'OK',
+                'date_tr_tribunal' => now()->format('Y-m-d H:i:s.v'),
+            ];
+            if ($dossierEtaitRetourne) {                       // ← AJOUT
+                $dataDossier['etat_retour_dapg_tr'] = 'OK';    // ← AJOUT
+            }                                                  // ← AJOUT
+
+            $postActions[] = [
+                'model' => Requette::class,
+                'id'    => $requette->id,
+                'data'  => $dataRequette, // ← MODIFIÉ
+                'relation' => 'statutrequettes',
+                'attach'   => [$id_staut]
+            ];
+            $postActions[] = [
+                'model' => Dossier::class,
+                'id'    => $dossier->id,
+                'data'  => $dataDossier, // ← MODIFIÉ
+            ];
+        }
+
+        // 3. Dispatch du Job
+        if (!empty($filesToProcess)) {
+            UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
+        } else {
+            if ($request->statutRequette == 'OK') {
+                $requette->etat_tribunal = 'TR';
+                $requette->date_etat_tribunal = now()->format('Y-m-d H:i:s.v');
+                $requette->user_tribunal = $request->user_tribunal;
+                if ($requetteEtaitRetournee) {                 // ← AJOUT
+                    $requette->etat_retour_dapg_tr = 'OK';     // ← AJOUT
+                }                                              // ← AJOUT
+
+                $dataDossierDirect = [
+                    'etat' => 'OK',
+                    'date_etat_ok' => now()->format('Y-m-d H:i:s.v'),
+                    'tr_tribunal' => 'OK',
+                    'date_tr_tribunal' => now()->format('Y-m-d H:i:s.v'),
+                ];
+                if ($dossierEtaitRetourne) {                         // ← AJOUT
+                    $dataDossierDirect['etat_retour_dapg_tr'] = 'OK'; // ← AJOUT
+                }                                                    // ← AJOUT
+
+                $requette->dossier()->update($dataDossierDirect); // ← MODIFIÉ
+                $requette->save();
+            }
+            $requette->statutrequettes()->attach([$id_staut]);
+        }
+
+        // 5. Réponse Immédiate
+        return response()->json([
+            'message' => 'Statut mis à jour. L\'upload des documents a démarré en arrière-plan.',
+            'requette' => $requette->load('statutrequettes')
+        ], 200);
+    }
     public function addReponseGreffeRequette(UpdateGreffeRequetteRequest $request, $requette_id)
     {
         // L'injection de OpenBeeService n'est plus nécessaire ici.
@@ -369,6 +475,8 @@ class RequetteController extends Controller
         if ($requette->etat_greffe === 'TR') {
             // Requête déjà traitée : on applique seulement la modification الاختيار / ملاحظات
             $this->saveChoixNonRecours($request, $requette->dossier, $request->user_tribunal ?: $request->user_id, true);
+            // + réponse « هل تتوفرون على شهادة ضبطية » / cassation / fichier copie_non_recours
+            $this->saveNonRecoursModification($request, $requette->dossier, $requette->id);
             $lock->release();
             return response()->json([
                 'message' => 'Cette requête a déjà été traitée.',
@@ -1367,7 +1475,7 @@ class RequetteController extends Controller
         return new RequetteResource($requettes);
     }
 
-    public function requetteByTr($tr_id)
+    /* public function requetteByTr($tr_id)
     {
 
 
@@ -1392,8 +1500,35 @@ class RequetteController extends Controller
         ])->where('tribunal_id', $tr_id)->where('etat', 'TR')->orderBy('requettes.numero', 'desc')->get();
 
         return new RequetteResource($requettes);
-    }
+    }*/
+    public function requetteByTr($tr_id)
+    {
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.detenu',
+            'userParquetObjet:id,name',
 
+            'dossier.affaires',
+            'dossier.affaires.tribunal',
+            'statutrequettes' => function ($query) {
+                $query->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+            'dossier.naturedossier',
+            'dossier.typedossier',
+            'dossier.detenu.nationalite',
+            'dossier.prison',
+            'dossier.garants',
+            'tribunal',
+            'typerequette'
+        ])
+            ->withCount('pjs') // ← AJOUT : ajoute "pjs_count" à chaque requête
+            ->where('tribunal_id', $tr_id)
+            ->where('etat', 'TR')
+            ->orderBy('requettes.numero', 'desc')
+            ->get();
+
+        return new RequetteResource($requettes);
+    }
 
     public function getNTRequettes()
     {
@@ -2181,6 +2316,70 @@ class RequetteController extends Controller
             }
 
             $affaire->save();
+        }
+    }
+
+    /**
+     * Modification d'une affaire déjà traitée (TR) — bloc « هل تتوفرون على شهادة ضبطية » :
+     * réponse نعم/لا, champs cassation et fichier copie_non_recours.
+     * N'envoie aucune post-action au Job : l'état TR et sa date ne changent pas.
+     */
+    private function saveNonRecoursModification(Request $request, $dossier, $requetteId = null): void
+    {
+        if (!$dossier) {
+            return;
+        }
+
+        // Réponse نعم/لا + cassation (même logique que le bloc 2-bis)
+        if ($request->has('has_non_recours')) {
+            foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
+                $affaire = $dossier->affaires()->where('affaires.id', $affaireId)->first();
+                if (!$affaire) {
+                    continue;
+                }
+
+                $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
+                $affaire->has_non_recours = $hasNonRecoursBool;
+
+                if (!$hasNonRecoursBool) {
+                    $affaire->numero_cassation = $request->numero_cassation[$affaireId] ?? null;
+                    $affaire->numero_envoi_cassation = $request->numero_envoi_cassation[$affaireId] ?? null;
+                    $affaire->date_envoi_cassation = $request->date_envoi_cassation[$affaireId] ?? null;
+                } else {
+                    $affaire->numero_cassation = null;
+                    $affaire->numero_envoi_cassation = null;
+                    $affaire->date_envoi_cassation = null;
+                }
+
+                $affaire->save();
+            }
+        }
+
+        // Fichier copie_non_recours (par affaire) → Job OpenBee, sans post-action
+        if ($request->hasFile('copie_non_recours')) {
+            $files = $request->file('copie_non_recours');
+            $filesArray = is_array($files) ? $files : [null => $files];
+            $filesToProcess = [];
+
+            foreach ($filesArray as $affaireIdKey => $file) {
+                if ($file) {
+                    $fileData = [
+                        'path' => $file->store('temp/openbee_uploads'),
+                        'typepjId' => 2,
+                        'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
+                        'fieldName' => 'copie_non_recours',
+                        'originalName' => $file->getClientOriginalName(),
+                    ];
+                    if ($requetteId) {
+                        $fileData['context_requette_id'] = $requetteId;
+                    }
+                    $filesToProcess[] = $fileData;
+                }
+            }
+
+            if (!empty($filesToProcess)) {
+                UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, [])->onQueue('openbee_uploads');
+            }
         }
     }
 }

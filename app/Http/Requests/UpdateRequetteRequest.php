@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class UpdateRequetteRequest extends FormRequest
 {
@@ -38,7 +39,15 @@ class UpdateRequetteRequest extends FormRequest
     {
         return [
             'statutRequette' => 'required|exists:statut_requettes,code',
-            'numeromp' => 'required',
+            //'numeromp' => 'required',
+            'numeromp' => [
+                Rule::requiredIf(function () {
+                    $id = collect($this->route()->parameters())->first();
+                    return \App\Models\Requette::with('typerequette')->find($id)?->typerequette?->cat === 'CAT-1';
+                }),
+                'nullable',
+                'string',
+            ],
             'user_tribunal' => 'required',
             // Validate single file fields
             'copie_cin' => 'nullable|file|mimes:pdf|max:153600',

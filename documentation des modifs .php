@@ -305,3 +305,17 @@ foreach ([
 \App\Models\ChoixNonRecours::orderBy('id')->get(['id', 'libelle', 'active']);
 
 /********************************************************************** */
+
+DB::transaction(function () {
+    DB::unprepared('SET IDENTITY_INSERT occasions ON');
+
+    DB::table('occasions')->insert([
+        'id'         => 9,
+        'libelle'    => 'عفو ملكي سام',
+        'id_dapg'    => 10,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    DB::unprepared('SET IDENTITY_INSERT occasions OFF');
+});

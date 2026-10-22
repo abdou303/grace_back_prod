@@ -179,5 +179,6 @@ Route::prefix('v1')->group(function () {
         Route::get('choix-non-recours', [ChoixNonRecoursController::class, 'index']);
         // PDF الشهادة الضبطية par affaire (traitement séparé du ملتمس)
         Route::get('/dossiers/{dossier_id}/affaires/{affaire_id}/pdf-non-recours', [NonRecoursPdfController::class, 'generate']);
+        Route::post('dossiers/{id}/retour-tribunal', [DossierController::class, 'retournerDossierTribunal']);
     });
 });

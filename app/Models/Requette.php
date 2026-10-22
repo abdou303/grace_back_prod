@@ -71,7 +71,8 @@ class Requette extends Model
         'observation_redirection',
         'has_file_mp',
         'tr_dapg',
-        'date_tr_dapg'
+        'date_tr_dapg',
+        'etat_retour_dapg_tr'
     ];
 
     public function pjs()

@@ -55,6 +55,7 @@ class StoreDossierRequest extends FormRequest
             'copie_social' => 'nullable|file|mimes:pdf|max:153600',
             'prison' => 'nullable',
             'numerolocal' => 'nullable|numeric',
+            'date_sortie' => 'nullable|date|after:today',
             /* 'copie_decision' => 'nullable',
             'copie_cin' => 'nullable',
             'copie_mp' => 'nullable',
@@ -134,6 +135,8 @@ class StoreDossierRequest extends FormRequest
             'copie_social.file' => 'البحث الاجتماعي يجب أن تكون ملفًا صالحًا.',
             'copie_social.mimes' => 'البحث الاجتماعي يجب أن تكون بصيغة PDF.',
             'copie_social.max' => 'البحث الاجتماعي لا يجب أن تتجاوز 25 ميغابايت.',
+            'date_sortie.after' => 'تاريخ الخروج يجب أن يكون لاحقا لتاريخ اليوم',
+
         ];
     }
 }
