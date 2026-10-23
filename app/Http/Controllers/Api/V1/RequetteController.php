@@ -160,7 +160,15 @@ class RequetteController extends Controller
                 });
             }
         }
+        // Filtre : catégorie de la requête
+        // CAT-1 = طلبات تهيء الملف / CAT-2 = طلبات استكمال الملف / '' = الكل (CAT-1 + CAT-2)
+        $cats = !empty($f['cat_requette'])
+            ? [$f['cat_requette']]
+            : ['CAT-1', 'CAT-2'];
 
+        $query->whereHas('typerequette', function ($q) use ($cats) {
+            $q->whereIn('cat', $cats);
+        });
         return $query;
     }
 

@@ -888,6 +888,10 @@ class DossierController extends Controller
             })
             ->where('dossiers.originedossier', '!=', 'DAPG-ENCOURS')
             ->where(function ($q) {
+                $q->whereNull('dossiers.originedossier')->orWhere('dossiers.originedossier', '!=', 'R');
+            })
+            ->whereIn('dossiers.etat_greffe', ['NT', 'TR'])
+            ->where(function ($q) {
                 $q->whereNull('dossiers.has_antecedent')->orWhere('dossiers.has_antecedent', '!=', 'OUI');
             });
         // ⚠️ PAS de ->where('dossiers.etat_greffe', ...) ici : on veut NT + TR.
@@ -939,6 +943,7 @@ class DossierController extends Controller
             ])
             ->where('requettes.tribunal_id', $trId)
             ->where('requettes.etat', 'TR');
+        $query->whereIn('requettes.etat_greffe', ['NT', 'TR']);
         // ⚠️ PAS de ->where('requettes.etat_greffe', ...) ici : on veut NT + TR.
         // ⚠️ IGNORÉ (sur demande) : condition etat_tribunal != 'TR' / IS NULL.
 
@@ -2979,7 +2984,8 @@ class DossierController extends Controller
                 $q->whereNull('dossiers.tr_tribunal')->orWhere('dossiers.tr_tribunal', '!=', 'OK');
             })
             ->where('dossiers.etat_greffe', $etatGreffe);
-
+        $cats = !empty($f['cat_requette']) ? [$f['cat_requette']] : ['CAT-1', 'CAT-2'];
+        $query->whereIn('dossiers.categorie', $cats);
         if (!empty($f['numero'])) {
             $query->where('dossiers.numero', 'like', '%' . $f['numero'] . '%');
         }
@@ -3016,8 +3022,12 @@ class DossierController extends Controller
 
     private function buildRequetteGreffeIdsQuery($trId, string $etatGreffe, array $f)
     {
+        $typeRequetteTable = (new TypeRequette())->getTable();
+        $cats = !empty($f['cat_requette']) ? [$f['cat_requette']] : ['CAT-1', 'CAT-2'];
+
         $query = DB::table('requettes')
             ->join('dossiers', 'requettes.dossier_id', '=', 'dossiers.id')
+            ->join($typeRequetteTable, 'requettes.typerequette_id', '=', $typeRequetteTable . '.id')
             ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
             ->select([
                 'requettes.id as id',
@@ -3029,7 +3039,8 @@ class DossierController extends Controller
             ->where(function ($q) {
                 $q->where('requettes.etat_tribunal', '!=', 'TR')->orWhereNull('requettes.etat_tribunal');
             })
-            ->where('requettes.etat_greffe', $etatGreffe);
+            ->where('requettes.etat_greffe', $etatGreffe)
+            ->whereIn($typeRequetteTable . '.cat', $cats);
 
         if (!empty($f['numero'])) {
             $query->where('requettes.numero', 'like', '%' . $f['numero'] . '%');
