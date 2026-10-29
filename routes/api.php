@@ -180,5 +180,9 @@ Route::prefix('v1')->group(function () {
         // PDF الشهادة الضبطية par affaire (traitement séparé du ملتمس)
         Route::get('/dossiers/{dossier_id}/affaires/{affaire_id}/pdf-non-recours', [NonRecoursPdfController::class, 'generate']);
         Route::post('dossiers/{id}/retour-tribunal', [DossierController::class, 'retournerDossierTribunal']);
+
+        Route::post('/dossiers-registre/server-side', [DossierController::class, 'registreTribunalServerSide']);
+        Route::post('/dossiers-registre/export', [DossierController::class, 'exportRegistreTribunal']);
+        Route::post('/dossiers-requettes-transferees-greffe/export', [DossierController::class, 'exportDossiersRequettesTransfereesGreffe']);
     });
 });

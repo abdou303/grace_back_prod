@@ -326,7 +326,13 @@ class RequetteController extends Controller
 
         $detenu = $dossier->detenu;
 
-        $dossier->numeromp = $request->numeromp;
+        // $dossier->numeromp = $request->numeromp;
+        $isCat1 = $requette->typerequette?->cat === 'CAT-1';
+
+        if ($isCat1) {
+            $dossier->numeromp = $request->numeromp;
+            $dossier->save();
+        }
         $detenu->adresse = $request->adresse;
 
         $detenu->save();
@@ -365,7 +371,8 @@ class RequetteController extends Controller
         }
 
         // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
-        if ($request->has('has_non_recours')) {
+        //if ($request->has('has_non_recours')) {
+        if ($isCat1 && $request->has('has_non_recours')) {
             foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
                 $affaire = $dossier->affaires()
                     ->where('affaires.id', $affaireId)
@@ -427,11 +434,19 @@ class RequetteController extends Controller
                 'relation' => 'statutrequettes',
                 'attach'   => [$id_staut]
             ];
-            $postActions[] = [
+            /*$postActions[] = [
                 'model' => Dossier::class,
                 'id'    => $dossier->id,
                 'data'  => $dataDossier, // ← MODIFIÉ
-            ];
+            ];*/
+
+            if ($isCat1) {
+                $postActions[] = [
+                    'model' => Dossier::class,
+                    'id'    => $dossier->id,
+                    'data'  => $dataDossier,
+                ];
+            }
         }
 
         // 3. Dispatch du Job
@@ -446,7 +461,7 @@ class RequetteController extends Controller
                     $requette->etat_retour_dapg_tr = 'OK';     // ← AJOUT
                 }                                              // ← AJOUT
 
-                $dataDossierDirect = [
+                /*$dataDossierDirect = [
                     'etat' => 'OK',
                     'date_etat_ok' => now()->format('Y-m-d H:i:s.v'),
                     'tr_tribunal' => 'OK',
@@ -457,6 +472,20 @@ class RequetteController extends Controller
                 }                                                    // ← AJOUT
 
                 $requette->dossier()->update($dataDossierDirect); // ← MODIFIÉ
+                $requette->save();*/
+
+                if ($isCat1) {
+                    $dataDossierDirect = [
+                        'etat' => 'OK',
+                        'date_etat_ok' => now()->format('Y-m-d H:i:s.v'),
+                        'tr_tribunal' => 'OK',
+                        'date_tr_tribunal' => now()->format('Y-m-d H:i:s.v'),
+                    ];
+                    if ($dossierEtaitRetourne) {
+                        $dataDossierDirect['etat_retour_dapg_tr'] = 'OK';
+                    }
+                    $requette->dossier()->update($dataDossierDirect);
+                }
                 $requette->save();
             }
             $requette->statutrequettes()->attach([$id_staut]);
@@ -1107,7 +1136,22 @@ class RequetteController extends Controller
                 'copie_demande' => 'المرجو رفع نسخة من الطلب أو الوضعية الجنائية أو نسخة عدم الطعن',
             ]);
         }
+        // CAT-1 : fichier requis selon le type de dossier
+        $requette->loadMissing('typerequette', 'dossier');
+        $typeDossier = (string) $requette->dossier?->typedossier_id;
 
+        if ($requette->typerequette?->cat === 'CAT-1') {
+            if ($typeDossier === '1' && !$hasCopieDemande) {
+                throw ValidationException::withMessages([
+                    'copie_demande' => 'المرجو رفع نسخة من الطلب',
+                ]);
+            }
+            if ($typeDossier === '2' && !$hasCopieDgapr) {
+                throw ValidationException::withMessages([
+                    'copie_dgapr' => 'المرجو رفع نسخة من الوضعية الجنائية',
+                ]);
+            }
+        }
         try {
             return DB::transaction(function () use ($request, $requette, $data, $operationService) {
 

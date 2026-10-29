@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\User;
+
 use App\Http\Traits\HasServerSideRowModel;
 use App\Exports\DossiersTribunalExport;
 use App\Exports\AllReceivedDossiersTrExport;
@@ -789,13 +791,21 @@ class DossierController extends Controller
 
         $unionQuery = $dossierIdsQuery->unionAll($requetteIdsQuery);
 
-        $page = DB::query()
+        /*$page = DB::query()
             ->fromSub($unionQuery, 'combined')
             ->orderBy('sort_date', 'desc')
             ->offset($offset)
             ->limit($limit)
             ->get();
-
+*/
+        $page = DB::query()
+            ->fromSub($unionQuery, 'combined')
+            ->orderBy('sort_date', 'desc')
+            ->orderBy('row_type')
+            ->orderBy('id', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
         $dossierIds  = $page->where('row_type', 'dossier')->pluck('id')->all();
         $requetteIds = $page->where('row_type', 'requette')->pluck('id')->all();
 
@@ -864,8 +874,13 @@ class DossierController extends Controller
             return $arr;
         })->filter()->values();
 
-        return response()->json([
+        /*return response()->json([
             'rows'    => $rows,
+            'lastRow' => $total,
+        ]);*/
+
+        return response()->json([
+            'rows'    => $this->attachUserGreffeNames($rows),
             'lastRow' => $total,
         ]);
     }
@@ -979,6 +994,65 @@ class DossierController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * Export : mêmes filtres que dossiersRequettesTransfereesGreffeServerSide,
+     * sans pagination. Le front génère le .xlsx (ExcelJS) avec les colonnes de la grille.
+     */
+    public function exportDossiersRequettesTransfereesGreffe(Request $request)
+    {
+        $f    = $request->input('filters', []);
+        $trId = $f['tribunal_id'] ?? null;
+
+        $ids = DB::query()
+            ->fromSub(
+                $this->buildDossierTransfereesGreffeIdsQuery($trId, $f)
+                    ->unionAll($this->buildRequetteTransfereesGreffeIdsQuery($trId, $f)),
+                'combined'
+            )
+            ->orderBy('sort_date', 'desc')
+            ->orderBy('row_type')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        // whereIn découpé par 1000 : SQL Server limite à 2100 paramètres
+        $load = function ($query, array $wanted) {
+            return collect($wanted)->chunk(1000)
+                ->flatMap(fn($chunk) => (clone $query)->whereIn('id', $chunk->all())->get())
+                ->keyBy('id');
+        };
+
+        $dossiers = $load(
+            Dossier::with(['detenu', 'affaires', 'typedossier']),
+            $ids->where('row_type', 'dossier')->pluck('id')->all()
+        );
+        $requettes = $load(
+            Requette::with(['dossier', 'dossier.detenu', 'dossier.affaires', 'dossier.typedossier', 'typerequette']),
+            $ids->where('row_type', 'requette')->pluck('id')->all()
+        );
+
+        $rows = $ids->map(function ($row) use ($dossiers, $requettes) {
+            $model = $row->row_type === 'dossier' ? $dossiers->get($row->id) : $requettes->get($row->id);
+            if (!$model) return null;
+            $arr = $model->toArray();
+            $arr['rowType'] = $row->row_type;
+            return $arr;
+        })->filter()->values();
+
+        return response()->json(['rows' => $this->attachUserGreffeNames($rows)]);
+    }
+
+    /** Ajoute user_greffe_name (nom du موظف كتابة الضبط) à chaque ligne */
+    private function attachUserGreffeNames($rows)
+    {
+        $userIds = $rows->pluck('user_greffe')->filter()->unique()->values()->all();
+        $names   = empty($userIds) ? collect() : User::whereIn('id', $userIds)->pluck('name', 'id');
+
+        return $rows->map(function ($row) use ($names) {
+            $row['user_greffe_name'] = $names->get($row['user_greffe'] ?? null, '');
+            return $row;
+        })->values();
     }
     /******************************************************** */
 
@@ -1317,15 +1391,6 @@ class DossierController extends Controller
                 return response()->json(['message' => 'Detenu not found'], 404);
             }
 
-
-            // 2. Mise à jour et sauvegarde IMMÉDIATE du Dossier
-
-            /*$dossier->etat_greffe = 'TR'; // Mise à jour immédiate de l'état
-        $dossier->user_id = $request->user_id;
-        $dossier->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
-
-        $dossier->save();*/
-
             // 3. Préparation et Stockage TEMPORAIRE des fichiers
             $filesToProcess = [];
             $fileMappings = [
@@ -1339,16 +1404,13 @@ class DossierController extends Controller
             foreach ($fileMappings as $fieldName => $typepjId) {
                 if ($request->hasFile($fieldName)) {
                     $files = $request->file($fieldName);
-
-                    // Gérer les fichiers multiples (si affaireId est la clé) ou unique
                     $filesArray = is_array($files) ? $files : [null => $files];
 
                     foreach ($filesArray as $affaireIdKey => $file) {
                         if ($file) {
-                            // Stocker le fichier dans un emplacement temporaire de Laravel
                             $path = $file->store('temp/openbee_uploads');
                             $filesToProcess[] = [
-                                'path' => $path, // Chemin d'accès temporaire
+                                'path' => $path,
                                 'typepjId' => $typepjId,
                                 'affaireId' => is_numeric($affaireIdKey) ? (int) $affaireIdKey : null,
                                 'fieldName' => $fieldName,
@@ -1358,10 +1420,10 @@ class DossierController extends Controller
                     }
                 }
             }
+
             // 2-bis. Mise à jour des AFFAIRES (non recours / cassation)
             if ($request->has('has_non_recours')) {
                 foreach ($request->has_non_recours as $affaireId => $hasNonRecours) {
-
                     $affaire = $dossier->affaires()
                         ->where('affaires.id', $affaireId)
                         ->first();
@@ -1371,7 +1433,6 @@ class DossierController extends Controller
                     }
 
                     $hasNonRecoursBool = filter_var($hasNonRecours, FILTER_VALIDATE_BOOLEAN);
-
                     $affaire->has_non_recours = $hasNonRecoursBool;
 
                     if (!$hasNonRecoursBool) {
@@ -1387,10 +1448,10 @@ class DossierController extends Controller
                     $affaire->save();
                 }
             }
-            /******************************************************** */
+
             // 2-ter. Choix شهادة ضبطية (par affaire)
             $this->saveChoixNonRecours($request, $dossier, $request->user_id ?: $request->user_tribunal);
-            /******************************************************** */
+
             /*************GENERIQUE JOB 30/03/2026******************* */
             $postActions = [[
                 'model' => Dossier::class,
@@ -1398,22 +1459,23 @@ class DossierController extends Controller
                 'data'  => [
                     'etat_greffe'      => 'TR',
                     'user_id'          => $request->user_id,
+                    'user_greffe'      => $request->user_id, // ← AJOUT
                     'date_etat_greffe' => now()->format('Y-m-d H:i:s.v')
                 ]
             ]];
+
             // 4. Dispatch du Job pour le traitement en arrière-plan
             if (!empty($filesToProcess)) {
-                // Le Job prendra le relai pour l'upload OpenBee et l'enregistrement Pj
                 UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, $postActions)->onQueue('openbee_uploads');
             } else {
-                $dossier->etat_greffe = 'TR'; // Mise à jour immédiate de l'état
+                $dossier->etat_greffe = 'TR';
                 $dossier->user_id = $request->user_id;
+                $dossier->user_greffe = $request->user_id; // ← AJOUT
                 $dossier->date_etat_greffe = now()->format('Y-m-d H:i:s.v');
-
                 $dossier->save();
             }
 
-            // 5. Réponse Immédiate (C'est la clé pour éviter le timeout)
+            // 5. Réponse Immédiate
             return response()->json([
                 'message' => 'تم تسجيل الطلب بنجاح. يتم الآن معالجة المرفقات في الخلفية.',
                 'data' => $dossier,
@@ -4180,5 +4242,221 @@ class DossierController extends Controller
                 UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, [])->onQueue('openbee_uploads');
             }
         }
+    }
+
+
+    // ========================================================================
+    // سجل التداول (registre-teddaoul.component) : server-side + export
+    // Ligne D = infos du dossier (dossier CAT-1 sans requête CAT-1 valide)
+    // Ligne R = infos de la requête (dernière CAT-1 valide du dossier, ou CAT-2)
+    // "valide" = etat_greffe NOT NULL ET (etat_greffe != KO OU etat_parquet != KO)
+    // ========================================================================
+    public function registreTribunalServerSide(Request $request)
+    {
+        $f        = $request->input('filters', []);
+        $startRow = (int) $request->input('startRow', 0);
+        $endRow   = (int) $request->input('endRow', 20);
+        $limit    = max(1, $endRow - $startRow);
+
+        $dossierIdsQuery  = $this->buildRegistreDossierIdsQuery($f);
+        $requetteIdsQuery = $this->buildRegistreRequetteIdsQuery($f);
+
+        $total = (clone $dossierIdsQuery)->count() + (clone $requetteIdsQuery)->count();
+
+        $page = DB::query()
+            ->fromSub($dossierIdsQuery->unionAll($requetteIdsQuery), 'combined')
+            ->orderBy('sort_date', 'desc')
+            ->orderBy('row_type')
+            ->orderBy('id', 'desc')
+            ->offset($startRow)
+            ->limit($limit)
+            ->get();
+
+        return response()->json([
+            'rows'    => $this->hydrateRegistreRows($page),
+            'lastRow' => $total,
+        ]);
+    }
+
+    public function exportRegistreTribunal(Request $request)
+    {
+        $f = $request->input('filters', []);
+
+        $ids = DB::query()
+            ->fromSub(
+                $this->buildRegistreDossierIdsQuery($f)->unionAll($this->buildRegistreRequetteIdsQuery($f)),
+                'combined'
+            )
+            ->orderBy('sort_date', 'desc')
+            ->orderBy('row_type')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return response()->json(['rows' => $this->hydrateRegistreRows($ids)]);
+    }
+
+    private function buildRegistreDossierIdsQuery(array $f)
+    {
+        $typeTable = (new TypeRequette())->getTable();
+
+        $query = DB::table('dossiers')
+            ->select([
+                'dossiers.id as id',
+                DB::raw("'dossier' as row_type"),
+                'dossiers.created_at as sort_date',
+            ])
+            ->where('dossiers.user_tribunal_id', $f['tribunal_id'] ?? null)
+            ->where('dossiers.categorie', 'CAT-1')
+            // Aucune requête CAT-1 valide -> sinon la ligne est une ligne R
+            ->whereNotExists(function ($sub) use ($typeTable) {
+                $sub->select(DB::raw(1))
+                    ->from('requettes as rq')
+                    ->join("$typeTable as tq", 'tq.id', '=', 'rq.typerequette_id')
+                    ->whereColumn('rq.dossier_id', 'dossiers.id')
+                    ->where('tq.cat', 'CAT-1');
+                $this->whereRegistreEtatValide($sub, 'rq');
+            });
+
+        $this->whereRegistreEtatValide($query, 'dossiers');
+        $this->applyRegistreFilters($query, 'dossiers', $f);
+
+        return $query;
+    }
+
+    private function buildRegistreRequetteIdsQuery(array $f)
+    {
+        $typeTable = (new TypeRequette())->getTable();
+        $trId      = $f['tribunal_id'] ?? null;
+
+        $query = DB::table('requettes')
+            ->join('dossiers', 'requettes.dossier_id', '=', 'dossiers.id')
+            ->join($typeTable, 'requettes.typerequette_id', '=', "$typeTable.id")
+            ->select([
+                'requettes.id as id',
+                DB::raw("'requette' as row_type"),
+                DB::raw('COALESCE(requettes.date, requettes.created_at) as sort_date'),
+            ])
+            ->where(function ($q) use ($trId, $typeTable) {
+                // CAT-1 : dernière requête valide du dossier (pas de requête CAT-1 valide plus récente)
+                $q->where(function ($c1) use ($trId, $typeTable) {
+                    $c1->where("$typeTable.cat", 'CAT-1')
+                        ->where('dossiers.user_tribunal_id', $trId)
+                        ->where('dossiers.categorie', 'CAT-1')
+                        ->whereNotExists(function ($sub) use ($typeTable) {
+                            $sub->select(DB::raw(1))
+                                ->from('requettes as rq')
+                                ->join("$typeTable as tq", 'tq.id', '=', 'rq.typerequette_id')
+                                ->whereColumn('rq.dossier_id', 'requettes.dossier_id')
+                                ->whereColumn('rq.id', '>', 'requettes.id')
+                                ->where('tq.cat', 'CAT-1');
+                            $this->whereRegistreEtatValide($sub, 'rq');
+                        });
+                })
+                    // CAT-2 : toutes les requêtes du tribunal
+                    ->orWhere(function ($c2) use ($trId, $typeTable) {
+                        $c2->where("$typeTable.cat", 'CAT-2')
+                            ->where('requettes.tribunal_id', $trId);
+                    });
+            });
+
+        $this->whereRegistreEtatValide($query, 'requettes');
+        $this->applyRegistreFilters($query, 'requettes', $f);
+
+        return $query;
+    }
+
+    private function whereRegistreEtatValide($query, string $t): void
+    {
+        $query->whereNotNull("$t.etat_greffe")
+            ->where(function ($q) use ($t) {
+                $q->where("$t.etat_greffe", '!=', 'KO')
+                    ->orWhere("$t.etat_parquet", '!=', 'KO');
+            });
+    }
+
+    /** Même calcul que le front : jours entiers (24h) entre envoi et traitement (TR) ou maintenant */
+    private function registreDelaiSql(string $t, string $cote): string
+    {
+        return "DATEDIFF(SECOND, $t.date_envoi_$cote, CASE WHEN $t.etat_$cote = 'TR' AND $t.date_etat_$cote IS NOT NULL "
+            . "THEN $t.date_etat_$cote ELSE GETDATE() END) / 86400";
+    }
+
+    /** $t = table qui porte numero + dates/états greffe/parquet ('dossiers' pour D, 'requettes' pour R) */
+    private function applyRegistreFilters($query, string $t, array $f): void
+    {
+        if (!empty($f['numero'])) {
+            $query->where("$t.numero", 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['numeromp'])) {
+            $query->where('dossiers.numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+        if (!empty($f['typerequette_id'])) {
+            // Une ligne D n'a pas de نوع الاجراء
+            $t === 'requettes'
+                ? $query->where('requettes.typerequette_id', $f['typerequette_id'])
+                : $query->whereRaw('1 = 0');
+        }
+
+        foreach (['greffe', 'parquet'] as $cote) {
+            if (!empty($f["etat_$cote"])) {
+                $query->where("$t.etat_$cote", $f["etat_$cote"]);
+            }
+            foreach (['envoi', 'etat'] as $type) {
+                $col = "$t.date_{$type}_$cote";
+                if (!empty($f["date_{$type}_{$cote}_debut"])) {
+                    $query->whereDate($col, '>=', $f["date_{$type}_{$cote}_debut"]);
+                }
+                if (!empty($f["date_{$type}_{$cote}_fin"])) {
+                    $query->whereDate($col, '<=', $f["date_{$type}_{$cote}_fin"]);
+                }
+            }
+            if (is_numeric($f["delai_{$cote}_min"] ?? null)) {
+                $query->whereNotNull("$t.date_envoi_$cote")
+                    ->whereRaw($this->registreDelaiSql($t, $cote) . ' >= ?', [(int) $f["delai_{$cote}_min"]]);
+            }
+        }
+
+        // الوضعية (toujours celle du dossier)
+        if (!empty($f['etat'])) {
+            if ($f['etat'] === 'NT') {
+                $query->where('dossiers.etat', 'NT');
+            } elseif ($f['etat'] === 'OK_not_ready') {
+                $query->where('dossiers.etat', 'OK')->where(function ($q) {
+                    $q->whereNull('dossiers.tr_tribunal')->orWhere('dossiers.tr_tribunal', '!=', 'OK');
+                });
+            } elseif ($f['etat'] === 'OK_ready') {
+                $query->where('dossiers.etat', 'OK')->where('dossiers.tr_tribunal', 'OK');
+            }
+        }
+    }
+
+    private function hydrateRegistreRows($ids)
+    {
+        // whereIn découpé par 1000 : SQL Server limite à 2100 paramètres (export complet)
+        $load = function ($query, array $wanted) {
+            return collect($wanted)->chunk(1000)
+                ->flatMap(fn($chunk) => (clone $query)->whereIn('id', $chunk->all())->get())
+                ->keyBy('id');
+        };
+
+        $dossiers = $load(
+            Dossier::with(['affaires', 'affaires.tribunal']),
+            $ids->where('row_type', 'dossier')->pluck('id')->all()
+        );
+        $requettes = $load(
+            Requette::with(['typerequette', 'dossier', 'dossier.affaires', 'dossier.affaires.tribunal']),
+            $ids->where('row_type', 'requette')->pluck('id')->all()
+        );
+
+        return $ids->map(function ($row) use ($dossiers, $requettes) {
+            $model = $row->row_type === 'dossier' ? $dossiers->get($row->id) : $requettes->get($row->id);
+            if (!$model) return null;
+            $arr = $model->toArray();
+            $arr['rowType'] = $row->row_type;
+            return $arr;
+        })->filter()->values();
     }
 }
