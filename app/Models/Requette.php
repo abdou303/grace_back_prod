@@ -72,7 +72,12 @@ class Requette extends Model
         'has_file_mp',
         'tr_dapg',
         'date_tr_dapg',
-        'etat_retour_dapg_tr'
+        'etat_retour_dapg_tr',
+        'redirecton_greffe_sglb_tr',
+        'date_redirecton_greffe_sglb_tr',
+        'nbr_redirecton_greffe_sglb_tr',
+        'observation_redirecton_greffe_sglb_tr',
+
     ];
 
     public function pjs()
@@ -113,5 +118,9 @@ class Requette extends Model
     public function userParquetObjet() // Nommez-la ainsi pour correspondre à votre souhait Angular
     {
         return $this->belongsTo(User::class, 'user_parquet');
+    }
+    public function motifGreffe()
+    {
+        return $this->belongsTo(\App\Models\MotifGreffe::class, 'motif_greffe_id');
     }
 }

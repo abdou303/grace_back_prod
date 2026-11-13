@@ -7,6 +7,8 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -16,7 +18,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
  * Reproduit l'export ExcelJS de all-received-dossiers-from-tr.component.ts
  * (colonnes cin / numeromp en plus par rapport à DossiersTrExport).
  */
-class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithMapping, WithEvents
+class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithMapping, WithEvents, WithColumnFormatting
 {
     protected Collection $dossiers;
 
@@ -52,6 +54,7 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
             'نوع الملف',
             'تاريخ الخروج',
             'تاريخ الانجاز',
+            'تاريخ التسلم',
         ];
     }
 
@@ -103,7 +106,7 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
         $tuhmaPremiere = $premiereAffaire->conenujugement ?? '';
 
         // تاريخ الحكم(ق 1) / تاريخ الحكم : datejujement (première affaire / toutes les affaires)
-        $dateJugementPremiere = $this->formatDate($premiereAffaire->datejujement ?? null, 'Y-m-d');
+        $dateJugementPremiere = $this->toExcelDate($premiereAffaire->datejujement ?? null);
         $datesJugement = $item->affaires
             ->map(fn($a) => $this->formatDate($a->datejujement, 'Y-m-d'))
             ->filter()
@@ -134,7 +137,7 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
                 ?? optional($item->libelleTribunalUtilisateur)->libelle
                 ?? '',
             $numerosAffaire,
-            $item->created_at ? $item->created_at->format('Y-m-d H:i') : '',
+            $this->toExcelDate($item->created_at),
             trim(($item->detenu->nom ?? '') . ' ' . ($item->detenu->prenom ?? '')),
             $tuhma,
             $affairePremiere,
@@ -144,8 +147,41 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
             $mantoukPremiere,
             $mantouk,
             optional($item->typedossier)->libelle ?? '',
-            $this->formatDate($item->date_sortie, 'Y-m-d'),
-            $this->formatDate($dateInjaz, 'Y-m-d - H:i'),
+            $this->toExcelDate($item->date_sortie),
+            $this->toExcelDate($dateInjaz),
+            // تاريخ التسلم : date de réception par la DAPG (recevoirDossierDapg)
+            $item->tr_dapg === 'OK' ? $this->toExcelDate($item->date_tr_dapg) : null,
+        ];
+    }
+
+    /**
+     * Convertit une date en valeur numérique Excel (vraie cellule de type date).
+     */
+    private function toExcelDate($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+        try {
+            return ExcelDate::PHPToExcel(\Carbon\Carbon::parse($value));
+        } catch (\Throwable $e) {
+            return (string) $value;
+        }
+    }
+
+    /**
+     * Formats des colonnes date :
+     * H تاريخ التسجيل, M تاريخ الحكم(ق 1), R تاريخ الخروج, S تاريخ الانجاز, T تاريخ التسلم
+     * (N تاريخ الحكم reste du texte : plusieurs dates séparées par " : ")
+     */
+    public function columnFormats(): array
+    {
+        return [
+            'H' => 'yyyy-mm-dd hh:mm',
+            'M' => 'yyyy-mm-dd',
+            'R' => 'yyyy-mm-dd',
+            'S' => 'yyyy-mm-dd hh:mm',
+            'T' => 'yyyy-mm-dd hh:mm',
         ];
     }
 
@@ -204,7 +240,7 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
                 $sheet = $event->sheet->getDelegate();
                 $sheet->setRightToLeft(true);
 
-                $lastColumn = 'S';
+                $lastColumn = 'T';
 
                 $sheet->getStyle("A1:{$lastColumn}1")->applyFromArray([
                     'fill' => [
@@ -215,6 +251,10 @@ class AllReceivedDossiersTrExport implements FromCollection, WithHeadings, WithM
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
                 ]);
+
+                // Filtres Excel sur la ligne d'en-tête
+                $sheet->setAutoFilter("A1:{$lastColumn}" . $sheet->getHighestRow());
+                $sheet->freezePane('A2');
 
                 foreach (range('A', $lastColumn) as $col) {
                     $sheet->getColumnDimension($col)->setWidth(22);

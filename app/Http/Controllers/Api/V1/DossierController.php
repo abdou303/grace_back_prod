@@ -36,6 +36,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\DossiersTrExport;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Validation\ValidationException;
+use App\Models\MotifGreffe;
 
 class DossierController extends Controller
 {
@@ -2438,7 +2440,7 @@ class DossierController extends Controller
         }
     }
 
-    public function updateInfosOnly(Request $request, $id)
+    /*public function updateInfosOnly(Request $request, $id)
 
     {
 
@@ -2472,8 +2474,77 @@ class DossierController extends Controller
         ]));
 
         return response()->json(['message' => 'Mise à jour réussie']);
-    }
+    }*/
+    public function updateInfosOnly(Request $request, $id)
+    {
+        Log::info('updateInfosOnly - reçu', $request->all());
 
+        $dossier = Dossier::findOrFail($id);
+        $detenu = $dossier->detenu;
+
+        // Mise à jour Détenu
+        $detenu->update($request->only([
+            'nom',
+            'prenom',
+            'datenaissance',
+            'lieunaissance',
+            'nompere',
+            'nommere',
+            'cin',
+            'adresse',
+            'telephone',
+            'genre',
+            'nationalite_id'
+        ]));
+        /*
+        // Mise à jour Dossier (assignation directe, comme terminerDossierTr)
+        $dossier->numeromp = $request->numeromp ?? $dossier->numeromp;
+        $dossier->date_sortie = $request->date_sortie ?? $dossier->date_sortie;
+        $dossier->prison_id = is_numeric($request->prison_id) ? (int) $request->prison_id : null;
+
+        // معتقل/سراح modifiable uniquement si typedossier = 1
+        $nature = (int) $request->naturedossiers_id;
+        if ((int) $dossier->typedossier_id === 1 && in_array($nature, [1, 2], true)) {
+            $dossier->naturedossiers_id = $nature;
+            $dossier->objetdemande_id = ($nature === 2 && is_numeric($request->objetdemande_id))
+                ? (int) $request->objetdemande_id
+                : null;
+        }
+
+        $dossier->save();*/
+        // Mise à jour Dossier
+        $dossier->numeromp = $request->numeromp ?? $dossier->numeromp;
+
+        $type = (int) $request->typedossier_id;
+        if (in_array($type, [1, 2], true)) {
+            $dossier->typedossier_id = $type;
+        }
+
+        $dossier->prison_id = is_numeric($request->prison_id) ? (int) $request->prison_id : null;
+        $dossier->numero_detention = $request->numerolocal ?: null;
+        $dossier->date_sortie = $request->date_sortie ?: null;
+
+        // معتقل/سراح uniquement si typedossier = 1, sinon معتقل par défaut
+        $nature = (int) $request->naturedossiers_id;
+        if ((int) $dossier->typedossier_id === 1 && in_array($nature, [1, 2], true)) {
+            $dossier->naturedossiers_id = $nature;
+            $dossier->objetdemande_id = ($nature === 2 && is_numeric($request->objetdemande_id))
+                ? (int) $request->objetdemande_id
+                : null;
+        } else {
+            $dossier->naturedossiers_id = 1;
+            $dossier->objetdemande_id = null;
+        }
+
+        $dossier->save();
+        Log::info('updateInfosOnly - après save', [
+            'typedossier_id'    => $dossier->typedossier_id,
+            'naturedossiers_id' => $dossier->naturedossiers_id,
+            'objetdemande_id'   => $dossier->objetdemande_id,
+        ]);
+
+        return response()->json(['message' => 'Mise à jour réussie']);
+    }
 
     // AJOUTEZ ou MODIFIEZ la méthode de traitement des PJ dans votre DossierController.php :
     public function addPjsFromDetails(Request $request, $id)
@@ -2922,7 +2993,7 @@ class DossierController extends Controller
      * L'ancien code ne triait déjà pas explicitement (juste une concaténation
      * de tableaux), donc ce n'est pas une régression.
      */
-
+    /*
     public function dossiersRequettesGreffeServerSide(Request $request)
     {
         $f          = $request->input('filters', []);
@@ -3026,8 +3097,125 @@ class DossierController extends Controller
             'lastRow' => $total,
         ]);
     }
+*/
+    public function dossiersRequettesGreffeServerSide(Request $request)
+    {
+        $f          = $request->input('filters', []);
+        $trId       = $f['tribunal_id'] ?? null;
+        $etatGreffe = $f['etat_greffe'] ?? 'NT'; // 'NT' | 'IMPOSSIBLE' | 'TR'
 
-    private function buildDossierGreffeIdsQuery($trId, string $etatGreffe, array $f)
+        $startRow = (int) $request->input('startRow', 0);
+        $endRow   = (int) $request->input('endRow', 20);
+        $limit    = max(1, $endRow - $startRow);
+        $offset   = $startRow;
+
+        $dossierIdsQuery  = $this->buildDossierGreffeIdsQuery($trId, $etatGreffe, $f);
+        $requetteIdsQuery = $this->buildRequetteGreffeIdsQuery($trId, $etatGreffe, $f);
+
+        $total = (clone $dossierIdsQuery)->count() + (clone $requetteIdsQuery)->count();
+
+        $unionQuery = $dossierIdsQuery->unionAll($requetteIdsQuery);
+
+        $page = DB::query()
+            ->fromSub($unionQuery, 'combined')
+            ->orderBy('sort_date', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+
+        $dossierIds  = $page->where('row_type', 'dossier')->pluck('id')->all();
+        $requetteIds = $page->where('row_type', 'requette')->pluck('id')->all();
+
+        $dossiers = Dossier::with([
+            'detenu',
+            'detenu.profession',
+            'detenu.nationalite',
+            'garants',
+            'userParquetObjet:id,name',
+            'garants.province',
+            'garants.tribunal',
+            'comportement',
+            'affaires',
+            'requettes',
+            'affaires.tribunal',
+            'affaires.peine',
+            'affaires.peine.prisons',
+            'categoriedossier',
+            'naturedossier',
+            'typemotifdossier',
+            'typedossier',
+            'pjs',
+            'pjs.requette',
+            'pjs.affaire',
+            'avis',
+            'prison',
+            'objetdemande',
+            'sourcedemande',
+            'motifGreffe:id,libelle', // ← AJOUT
+        ])->whereIn('id', $dossierIds)->get()->keyBy('id');
+
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.pjs',
+            'dossier.avis',
+            'dossier.pjs.affaire',
+            'dossier.detenu',
+            'dossier.affaires',
+            'userParquetObjet:id,name',
+            'dossier.affaires.tribunal',
+            'statutrequettes' => function ($q) {
+                $q->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
+            },
+            'dossier.naturedossier',
+            'dossier.typedossier',
+            'dossier.objetdemande',
+            'dossier.detenu.nationalite',
+            'dossier.prison',
+            'dossier.garants',
+            'tribunal',
+            'typerequette',
+            'motifGreffe:id,libelle', // ← AJOUT
+        ])->whereIn('id', $requetteIds)->get()->keyBy('id');
+
+        $rows = $page->map(function ($row) use ($dossiers, $requettes) {
+            if ($row->row_type === 'dossier') {
+                $model = $dossiers->get($row->id);
+                if (!$model) return null;
+                $arr = $model->toArray();
+                $arr['rowType'] = 'dossier';
+                return $arr;
+            }
+
+            $model = $requettes->get($row->id);
+            if (!$model) return null;
+            $arr = $model->toArray();
+            $arr['rowType'] = 'requette';
+            return $arr;
+        })->filter()->values();
+
+        return response()->json([
+            'rows'    => $rows,
+            'lastRow' => $total,
+        ]);
+    }
+    /**
+     * Onglets greffe :
+     * - 'NT'         → غير منجز          : etat_greffe = 'NT' ET motif_greffe_id IS NULL
+     * - 'IMPOSSIBLE' → تعذر إنجازها الآن : etat_greffe = 'NT' ET motif_greffe_id IS NOT NULL
+     * - 'TR'         → منجز              : etat_greffe = 'TR' (inchangé)
+     */
+    private function applyEtatGreffeTab($query, string $t, string $etatGreffe): void
+    {
+        if ($etatGreffe === 'IMPOSSIBLE') {
+            $query->where("$t.etat_greffe", 'NT')->whereNotNull("$t.motif_greffe_id");
+        } elseif ($etatGreffe === 'NT') {
+            $query->where("$t.etat_greffe", 'NT')->whereNull("$t.motif_greffe_id");
+        } else {
+            $query->where("$t.etat_greffe", $etatGreffe);
+        }
+    }
+
+    /* private function buildDossierGreffeIdsQuery($trId, string $etatGreffe, array $f)
     {
         $query = DB::table('dossiers')
             ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
@@ -3080,9 +3268,64 @@ class DossierController extends Controller
         }
 
         return $query;
-    }
+    }*/
+    private function buildDossierGreffeIdsQuery($trId, string $etatGreffe, array $f)
+    {
+        $query = DB::table('dossiers')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'dossiers.id as id',
+                DB::raw("'dossier' as row_type"),
+                'dossiers.created_at as sort_date',
+            ])
+            ->where('dossiers.user_tribunal_id', $trId)
+            ->where('dossiers.categorie', 'CAT-1')
+            ->where('dossiers.originedossier', '!=', 'DAPG-ENCOURS')
+            ->where(function ($q) {
+                $q->whereNull('dossiers.has_antecedent')->orWhere('dossiers.has_antecedent', '!=', 'OUI');
+            })
+            ->where(function ($q) {
+                $q->whereNull('dossiers.tr_tribunal')->orWhere('dossiers.tr_tribunal', '!=', 'OK');
+            });
+        // ← MODIFIÉ : remplace ->where('dossiers.etat_greffe', $etatGreffe)
+        $this->applyEtatGreffeTab($query, 'dossiers', $etatGreffe);
 
-    private function buildRequetteGreffeIdsQuery($trId, string $etatGreffe, array $f)
+        $cats = !empty($f['cat_requette']) ? [$f['cat_requette']] : ['CAT-1', 'CAT-2'];
+        $query->whereIn('dossiers.categorie', $cats);
+        if (!empty($f['numero'])) {
+            $query->where('dossiers.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numeromp'])) {
+            $query->where('dossiers.numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('dossiers.created_at', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('dossiers.created_at', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
+    /*  private function buildRequetteGreffeIdsQuery($trId, string $etatGreffe, array $f)
     {
         $typeRequetteTable = (new TypeRequette())->getTable();
         $cats = !empty($f['cat_requette']) ? [$f['cat_requette']] : ['CAT-1', 'CAT-2'];
@@ -3137,7 +3380,63 @@ class DossierController extends Controller
 
         return $query;
     }
+*/
+    private function buildRequetteGreffeIdsQuery($trId, string $etatGreffe, array $f)
+    {
+        $typeRequetteTable = (new TypeRequette())->getTable();
+        $cats = !empty($f['cat_requette']) ? [$f['cat_requette']] : ['CAT-1', 'CAT-2'];
 
+        $query = DB::table('requettes')
+            ->join('dossiers', 'requettes.dossier_id', '=', 'dossiers.id')
+            ->join($typeRequetteTable, 'requettes.typerequette_id', '=', $typeRequetteTable . '.id')
+            ->leftJoin('detenus', 'dossiers.detenu_id', '=', 'detenus.id')
+            ->select([
+                'requettes.id as id',
+                DB::raw("'requette' as row_type"),
+                'requettes.date as sort_date',
+            ])
+            ->where('requettes.tribunal_id', $trId)
+            ->where('requettes.etat', 'TR')
+            ->where(function ($q) {
+                $q->where('requettes.etat_tribunal', '!=', 'TR')->orWhereNull('requettes.etat_tribunal');
+            })
+            ->whereIn($typeRequetteTable . '.cat', $cats);
+        // ← MODIFIÉ : remplace ->where('requettes.etat_greffe', $etatGreffe)
+        $this->applyEtatGreffeTab($query, 'requettes', $etatGreffe);
+
+        if (!empty($f['numero'])) {
+            $query->where('requettes.numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numeromp'])) {
+            $query->where('dossiers.numeromp', 'like', '%' . $f['numeromp'] . '%');
+        }
+        if (!empty($f['numero_dapg'])) {
+            $query->where('dossiers.numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+        }
+        if (!empty($f['typedossier_id'])) {
+            $query->where('dossiers.typedossier_id', $f['typedossier_id']);
+        }
+        if (!empty($f['naturedossier_id'])) {
+            $query->where('dossiers.naturedossiers_id', $f['naturedossier_id']); // ⚠️ avec le "s"
+        }
+        if (!empty($f['cin'])) {
+            $query->where('detenus.cin', 'like', '%' . $f['cin'] . '%');
+        }
+        if (!empty($f['nom'])) {
+            $query->where(function ($q) use ($f) {
+                $q->where('detenus.nom', 'like', '%' . $f['nom'] . '%')
+                    ->orWhere('detenus.prenom', 'like', '%' . $f['nom'] . '%');
+            });
+        }
+        if (!empty($f['dateDebut'])) {
+            $query->whereDate('requettes.date', '>=', $f['dateDebut']);
+        }
+        if (!empty($f['dateFin'])) {
+            $query->whereDate('requettes.date', '<=', $f['dateFin']);
+        }
+
+        return $query;
+    }
     /**
      * ============================================================================
      * À AJOUTER dans App\Http\Controllers\Api\V1\DossierController
@@ -3501,13 +3800,15 @@ class DossierController extends Controller
         $dossierIds  = $this->buildDossierTribunalCat1IdsQuery($trId, $f)->pluck('dossiers.id')->all();
         $requetteIds = $this->buildRequetteTribunalCat1IdsQuery($trId, $f)->pluck('requettes.id')->all();
 
-        /* $dossiers = Dossier::with([
+        $dossiers = Dossier::with([
             'detenu',
             'affaires',
             'affaires.tribunal',
             'typedossier',
             'naturedossier',
-        ])->whereIn('id', $dossierIds)->orderBy('created_at', 'desc')->get()
+            'userParquetObjet:id,name',
+        ])->withCount('pjs')
+            ->whereIn('id', $dossierIds)->orderBy('created_at', 'desc')->get()
             ->map(function ($d) {
                 $arr = $d->toArray();
                 $arr['rowType'] = 'dossier';
@@ -3522,17 +3823,15 @@ class DossierController extends Controller
             'dossier.typedossier',
             'dossier.naturedossier',
             'typerequette',
-            'statutrequettes' => function ($q) {
-                $q->orderBy('requette_statut_requette.created_at', 'desc')->limit(1);
-            },
-        ])->whereIn('id', $requetteIds)->orderBy('date', 'desc')->get()
+            'userParquetObjet:id,name',
+        ])->withCount('pjs')
+            ->whereIn('id', $requetteIds)->orderBy('date', 'desc')->get()
             ->map(function ($r) {
                 $arr = $r->toArray();
                 $arr['rowType'] = 'requette';
                 return $arr;
             });
-*/
-        $dossiers = Dossier::with([
+        /*$dossiers = Dossier::with([
             'detenu',
             'affaires',
             'affaires.tribunal',
@@ -3560,7 +3859,7 @@ class DossierController extends Controller
                 $arr = $r->toArray();
                 $arr['rowType'] = 'requette';
                 return $arr;
-            });
+            });*/
         return response()->json([
             'rows' => $dossiers->concat($requettes)->values(),
         ]);
@@ -3969,7 +4268,64 @@ class DossierController extends Controller
         ]);
     }
 
-    public function recevoirDossierDapg(Request $request, $id)
+
+    public function recevoirDossierDapg(Request $request, $id, OperationService $operationService)
+    {
+        $dossier = Dossier::findOrFail($id);
+
+        if ($dossier->tr_dapg === 'OK') {
+            return response()->json(['message' => 'تم تسلم هذا الملف مسبقاً', 'data' => $dossier], 200);
+        }
+
+        $numeroRequis = $dossier->originedossier === 'D' && empty($dossier->numero_dapg);
+
+        $validated = $request->validate([
+            'numero_dapg' => [$numeroRequis ? 'required' : 'nullable', 'string'],
+        ], [
+            'numero_dapg.required' => 'يجب إدخال رقم الملف بالوزارة',
+        ]);
+
+        return DB::transaction(function () use ($dossier, $validated, $operationService) {
+            $now = now()->format('Y-m-d H:i:s.v');
+            $requette = null; // ← AJOUT
+
+            if (!empty($validated['numero_dapg'])) {
+                $dossier->numero_dapg = $validated['numero_dapg'];
+            }
+            $dossier->tr_dapg = 'OK';
+            $dossier->date_tr_dapg = $now;
+            $dossier->user_id = Auth::id() ?? $dossier->user_id;
+            $dossier->save();
+
+            if ($dossier->originedossier === 'R') {
+                $requette = $dossier->requettes()
+                    ->whereHas('typerequette', fn($q) => $q->where('cat', 'CAT-1'))
+                    ->first();
+
+                if ($requette) {
+                    $requette->tr_dapg = 'OK';
+                    $requette->date_tr_dapg = $now;
+                    $requette->save();
+                } else {
+                    Log::warning("recevoirDossierDapg: dossier {$dossier->id} sans requête CAT-1");
+                }
+            }
+
+            // ← AJOUT : historique de l'opération
+            $operationService->logOperation(
+                $dossier->id,
+                'DAPG-RECEVOIR-DOSSIER',
+                $requette->id ?? null,
+                (int) Auth::id()
+            );
+
+            return response()->json([
+                'message' => 'تم تسلم الملف بنجاح',
+                'data' => $dossier->fresh(),
+            ]);
+        });
+    }
+   /* public function recevoirDossierDapg(Request $request, $id)
     {
         $dossier = Dossier::findOrFail($id);
 
@@ -4015,7 +4371,7 @@ class DossierController extends Controller
                 'data' => $dossier->fresh(),
             ]);
         });
-    }
+    }*/
     /**
      * Export Excel : mêmes filtres que la grille (onglet compris via
      * etat_greffe), mais SANS pagination — toutes les lignes qui matchent.
@@ -4023,7 +4379,7 @@ class DossierController extends Controller
      * Export dédiée pour cette liste fusionnée, on renvoie du JSON hydraté
      * et c'est le front qui génère le .xlsx avec ExcelJS.
      */
-    public function exportDossiersRequettesGreffe(Request $request)
+    /* public function exportDossiersRequettesGreffe(Request $request)
     {
         $f          = $request->input('filters', []);
         $trId       = $f['tribunal_id'] ?? null;
@@ -4051,6 +4407,47 @@ class DossierController extends Controller
             'dossier.typedossier',
             'dossier.naturedossier',
             'typerequette',
+        ])->whereIn('id', $requetteIds)->orderBy('date', 'desc')->get()
+            ->map(function ($r) {
+                $arr = $r->toArray();
+                $arr['rowType'] = 'requette';
+                return $arr;
+            });
+
+        return response()->json([
+            'rows' => $dossiers->concat($requettes)->values(),
+        ]);
+    }*/
+    public function exportDossiersRequettesGreffe(Request $request)
+    {
+        $f          = $request->input('filters', []);
+        $trId       = $f['tribunal_id'] ?? null;
+        $etatGreffe = $f['etat_greffe'] ?? 'NT'; // 'NT' | 'IMPOSSIBLE' | 'TR'
+
+        $dossierIds  = $this->buildDossierGreffeIdsQuery($trId, $etatGreffe, $f)->pluck('dossiers.id')->all();
+        $requetteIds = $this->buildRequetteGreffeIdsQuery($trId, $etatGreffe, $f)->pluck('requettes.id')->all();
+
+        $dossiers = Dossier::with([
+            'detenu',
+            'affaires',
+            'typedossier',
+            'naturedossier',
+            'motifGreffe:id,libelle', // ← AJOUT
+        ])->whereIn('id', $dossierIds)->orderBy('created_at', 'desc')->get()
+            ->map(function ($d) {
+                $arr = $d->toArray();
+                $arr['rowType'] = 'dossier';
+                return $arr;
+            });
+
+        $requettes = Requette::with([
+            'dossier',
+            'dossier.detenu',
+            'dossier.affaires',
+            'dossier.typedossier',
+            'dossier.naturedossier',
+            'typerequette',
+            'motifGreffe:id,libelle', // ← AJOUT
         ])->whereIn('id', $requetteIds)->orderBy('date', 'desc')->get()
             ->map(function ($r) {
                 $arr = $r->toArray();
@@ -4458,5 +4855,64 @@ class DossierController extends Controller
             $arr['rowType'] = $row->row_type;
             return $arr;
         })->filter()->values();
+    }
+
+    /** تعذر إنجاز المطلوب في الآن (D) : table dossiers uniquement, sans changer l'état */
+    public function observationGreffe(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'motif_greffe_id'    => 'required|integer|exists:motifs_greffe,id',
+            'observation_greffe' => 'nullable|string',
+        ], [
+            'motif_greffe_id.required' => 'المرجو اختيار السبب',
+        ]);
+
+        $motif = MotifGreffe::find($validated['motif_greffe_id']);
+        if ($motif->code === 'AUTRE' && blank($validated['observation_greffe'] ?? null)) {
+            throw ValidationException::withMessages(['observation_greffe' => 'المرجو إدخال الملاحظة']);
+        }
+
+        $dossier = Dossier::findOrFail($id);
+        if ($dossier->etat_greffe === 'TR') {
+            return response()->json(['message' => 'تم إنجاز هذا الملف مسبقاً'], 422);
+        }
+
+        $dossier->motif_greffe_id = $motif->id;
+        $dossier->observation_greffe = $validated['observation_greffe'] ?? null;
+        $dossier->date_observation_greffe = now()->format('Y-m-d H:i:s.v');
+        $dossier->save();
+
+        return response()->json([
+            'message' => 'تم تسجيل السبب بنجاح',
+            'data' => $dossier->only(['id', 'motif_greffe_id', 'observation_greffe', 'date_observation_greffe']),
+        ]);
+    }
+
+    /** الارجاع لشعبة العفو والافراج المقيد بشروط (D) */
+    public function redirectionGreffeToSglb(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'observation' => 'required|string',
+        ], [
+            'observation.required' => 'المرجو إدخال سبب الارجاع',
+        ]);
+
+        $dossier = Dossier::findOrFail($id);
+        if ($dossier->etat_greffe === 'TR') {
+            return response()->json(['message' => 'تم إنجاز هذا الملف مسبقاً'], 422);
+        }
+
+        $dossier->nbr_redirecton_greffe_sglb_tr = ($dossier->nbr_redirecton_greffe_sglb_tr ?? 1) + 1;
+        $dossier->date_envoi_greffe = null;
+        $dossier->etat_greffe = 'KO';
+        $dossier->redirecton_greffe_sglb_tr = true;
+        $dossier->date_redirecton_greffe_sglb_tr = now()->format('Y-m-d H:i:s.v');
+        $dossier->observation_redirecton_greffe_sglb_tr = $validated['observation'];
+        $dossier->save();
+
+        return response()->json([
+            'message' => 'تم الارجاع بنجاح',
+            'data' => $dossier->only(['id', 'etat_greffe', 'redirecton_greffe_sglb_tr', 'date_redirecton_greffe_sglb_tr', 'nbr_redirecton_greffe_sglb_tr', 'observation_redirecton_greffe_sglb_tr']),
+        ]);
     }
 }

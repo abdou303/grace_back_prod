@@ -100,7 +100,12 @@ class Dossier extends Model
         'observation_redirection',
         'has_file_mp',
         'date_etat_ok',
-        'etat_retour_dapg_tr'
+        'etat_retour_dapg_tr',
+        'redirecton_greffe_sglb_tr',
+        'date_redirecton_greffe_sglb_tr',
+        'nbr_redirecton_greffe_sglb_tr',
+        'observation_redirecton_greffe_sglb_tr',
+
     ];
 
     public function affaires()
@@ -203,5 +208,9 @@ class Dossier extends Model
     public function occasions()
     {
         return $this->belongsToMany(Occasion::class, 'dossier_occasion');
+    }
+    public function motifGreffe()
+    {
+        return $this->belongsTo(\App\Models\MotifGreffe::class, 'motif_greffe_id');
     }
 }

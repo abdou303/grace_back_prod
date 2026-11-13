@@ -27,6 +27,8 @@ use App\Exports\RequettesATraiterTrExport;
 use App\Models\TypeRequette;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
+use App\Models\MotifGreffe;
+
 
 class RequetteController extends Controller
 {
@@ -2041,15 +2043,36 @@ class RequetteController extends Controller
         ]));
 
         // Mise à jour Dossier
-        $dossier->update($request->only([
+        // Mise à jour Dossier
+        $dossier->numeromp = $request->numeromp ?? $dossier->numeromp;
+
+
+
+        $dossier->prison_id = is_numeric($request->prison_id) ? (int) $request->prison_id : null;
+        $dossier->numero_detention = $request->numerolocal ?: null;
+        $dossier->date_sortie = $request->date_sortie ?: null;
+
+        $nature = (int) $request->naturedossiers_id;
+        if ((int) $dossier->typedossier_id === 1 && in_array($nature, [1, 2], true)) {
+            $dossier->naturedossiers_id = $nature;
+            $dossier->objetdemande_id = ($nature === 2 && is_numeric($request->objetdemande_id))
+                ? (int) $request->objetdemande_id
+                : null;
+        } else {
+            $dossier->naturedossiers_id = 1;
+            $dossier->objetdemande_id = null;
+        }
+
+        $dossier->save();
+        /*  $dossier->update($request->only([
             'numeromp',
             'prison_id'
-        ]));
+        ]));*/
 
         return response()->json(['message' => 'Mise à jour réussie']);
     }
 
-    public function recevoirRequetteCAT2(Request $request, $id)
+    /* public function recevoirRequetteCAT2(Request $request, $id)
     {
         $requette = Requette::with('typerequette')->findOrFail($id);
 
@@ -2071,8 +2094,37 @@ class RequetteController extends Controller
             'data' => $requette->only(['id', 'numero', 'etat', 'tr_dapg', 'date_tr_dapg']),
         ], 200);
     }
+*/
+    public function recevoirRequetteCAT2(Request $request, $id, OperationService $operationService)
+    {
+        $requette = Requette::with('typerequette')->findOrFail($id);
 
+        if (!$requette->typerequette || $requette->typerequette->cat !== 'CAT-2') {
+            return response()->json([
+                'message' => 'Action non autorisée. Cette opération est réservée aux requêtes de catégorie CAT-2.'
+            ], 403);
+        }
 
+        if ($requette->tr_dapg !== 'OK') {
+            $requette->tr_dapg = 'OK';
+            $requette->date_tr_dapg = now()->format('Y-m-d H:i:s.v');
+            $requette->save();
+
+            // ← AJOUT : historique de l'opération
+            $operationService->logOperation(
+                $requette->dossier_id,
+                'DAPG-RECEVOIR-DOSSIER',
+                $requette->id,
+                (int) Auth::id()
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تسلم الإجراء بنجاح',
+            'data' => $requette->only(['id', 'numero', 'etat', 'tr_dapg', 'date_tr_dapg']),
+        ], 200);
+    }
     // ========================================================================
     // Écran 1 : requettes.component (vue globale, toutes requêtes)
     // ========================================================================
@@ -2433,5 +2485,80 @@ class RequetteController extends Controller
                 UploadDossierPJsJob::dispatch($dossier->id, $filesToProcess, [])->onQueue('openbee_uploads');
             }
         }
+    }
+
+    /** تعذر إنجاز المطلوب في الآن (R) : CAT-1 → requettes + dossiers / CAT-2 → requettes */
+    public function observationGreffe(Request $request, $requette_id)
+    {
+        $validated = $request->validate([
+            'motif_greffe_id'    => 'required|integer|exists:motifs_greffe,id',
+            'observation_greffe' => 'nullable|string',
+        ], [
+            'motif_greffe_id.required' => 'المرجو اختيار السبب',
+        ]);
+
+        $motif = MotifGreffe::find($validated['motif_greffe_id']);
+        if ($motif->code === 'AUTRE' && blank($validated['observation_greffe'] ?? null)) {
+            throw ValidationException::withMessages(['observation_greffe' => 'المرجو إدخال الملاحظة']);
+        }
+
+        $requette = Requette::with(['typerequette', 'dossier'])->findOrFail($requette_id);
+        if ($requette->etat_greffe === 'TR') {
+            return response()->json(['message' => 'تم إنجاز هذا الإجراء مسبقاً'], 422);
+        }
+
+        $data = [
+            'motif_greffe_id'         => $motif->id,
+            'observation_greffe'      => $validated['observation_greffe'] ?? null,
+            'date_observation_greffe' => now()->format('Y-m-d H:i:s.v'),
+        ];
+
+        DB::transaction(function () use ($requette, $data) {
+            foreach ($data as $k => $v) {
+                $requette->{$k} = $v;
+            }
+            $requette->save();
+
+            // R de CAT-1 : on met aussi à jour le dossier
+            if ($requette->typerequette?->cat === 'CAT-1' && $requette->dossier) {
+                foreach ($data as $k => $v) {
+                    $requette->dossier->{$k} = $v;
+                }
+                $requette->dossier->save();
+            }
+        });
+
+        return response()->json([
+            'message' => 'تم تسجيل السبب بنجاح',
+            'data' => $requette->only(['id', 'motif_greffe_id', 'observation_greffe', 'date_observation_greffe']),
+        ]);
+    }
+
+    /** الارجاع لشعبة العفو والافراج المقيد بشروط (R) */
+    public function redirectionGreffeToSglb(Request $request, $requette_id)
+    {
+        $validated = $request->validate([
+            'observation' => 'required|string',
+        ], [
+            'observation.required' => 'المرجو إدخال سبب الارجاع',
+        ]);
+
+        $requette = Requette::findOrFail($requette_id);
+        if ($requette->etat_greffe === 'TR') {
+            return response()->json(['message' => 'تم إنجاز هذا الإجراء مسبقاً'], 422);
+        }
+
+        $requette->nbr_redirecton_greffe_sglb_tr = ($requette->nbr_redirecton_greffe_sglb_tr ?? 1) + 1;
+        $requette->date_envoi_greffe = null;
+        $requette->etat_greffe = 'KO';
+        $requette->redirecton_greffe_sglb_tr = true;
+        $requette->date_redirecton_greffe_sglb_tr = now()->format('Y-m-d H:i:s.v');
+        $requette->observation_redirecton_greffe_sglb_tr = $validated['observation'];
+        $requette->save();
+
+        return response()->json([
+            'message' => 'تم الارجاع بنجاح',
+            'data' => $requette->only(['id', 'etat_greffe', 'redirecton_greffe_sglb_tr', 'date_redirecton_greffe_sglb_tr', 'nbr_redirecton_greffe_sglb_tr', 'observation_redirecton_greffe_sglb_tr']),
+        ]);
     }
 }

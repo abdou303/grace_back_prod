@@ -319,3 +319,16 @@ DB::transaction(function () {
 
     DB::unprepared('SET IDENTITY_INSERT occasions OFF');
 });
+
+/***************************************************** */
+use App\Models\MotifGreffe;
+
+foreach ([
+    ['code' => 'AUTRE',   'libelle' => 'سبب آخر'],
+    ['code' => 'MOTIF-1', 'libelle' => 'الملف رائج'],
+    ['code' => 'MOTIF-2', 'libelle' => 'الملف بالحفظ'],
+] as $m) {
+    MotifGreffe::updateOrCreate(['code' => $m['code']], ['libelle' => $m['libelle']]);
+}
+
+MotifGreffe::orderBy('id')->get(['id', 'code', 'libelle']);

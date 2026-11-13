@@ -35,6 +35,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\ImportRollbackController;
+use App\Http\Controllers\Api\V1\MotifGreffeController;
 use App\Http\Controllers\Api\V1\NonRecoursPdfController;
 
 Route::prefix('v1')->group(function () {
@@ -166,6 +167,10 @@ Route::prefix('v1')->group(function () {
         Route::post('import-historique/{id}/rollback', [ImportRollbackController::class, 'rollbackImport']);
         Route::post('import-encours-historique/{id}/rollback', [ImportRollbackController::class, 'rollbackImportEncours']);
 
+        Route::post('dossiers/{id}/observation-greffe', [DossierController::class, 'observationGreffe']);
+        Route::post('requettes/{id}/observation-greffe', [RequetteController::class, 'observationGreffe']);
+        Route::post('dossiers/{id}/redirection-greffe-sglb', [DossierController::class, 'redirectionGreffeToSglb']);
+        Route::post('requettes/{id}/redirection-greffe-sglb', [RequetteController::class, 'redirectionGreffeToSglb']);
 
         Route::get('/types-pjs', function () {
             return response()->json([
@@ -184,5 +189,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/dossiers-registre/server-side', [DossierController::class, 'registreTribunalServerSide']);
         Route::post('/dossiers-registre/export', [DossierController::class, 'exportRegistreTribunal']);
         Route::post('/dossiers-requettes-transferees-greffe/export', [DossierController::class, 'exportDossiersRequettesTransfereesGreffe']);
+        Route::get('motifs-greffe', [MotifGreffeController::class, 'index']);
     });
 });
