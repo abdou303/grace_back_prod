@@ -91,8 +91,16 @@ class OpenBeeService
             $metadata['path'] = $options['path'];
         }
 
+        /*$response = Http::withBasicAuth($this->username, $this->password)
+            ->timeout(180)->connectTimeout(5)
+            ->attach('file', fopen($file->getRealPath(), 'r'), $filename)
+            ->post("{$this->baseUrl}/ws/v2/document", $metadata);*/
         $response = Http::withBasicAuth($this->username, $this->password)
-            ->timeout(10)->connectTimeout(5)
+            ->timeout(180)->connectTimeout(5)
+            ->retry(5, 5000, function ($e) {
+                return $e instanceof \Illuminate\Http\Client\RequestException
+                    && str_contains($e->response->body(), 'Deadlock');
+            }, throw: false)
             ->attach('file', fopen($file->getRealPath(), 'r'), $filename)
             ->post("{$this->baseUrl}/ws/v2/document", $metadata);
 
@@ -118,7 +126,7 @@ class OpenBeeService
             ]);*/
         try {
             $response = Http::withBasicAuth($this->username, $this->password)
-                ->timeout(10)->connectTimeout(5)
+                ->timeout(30)->connectTimeout(5)
                 ->get("{$this->baseUrl}/ws/v2/search", ['name' => $filename]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::warning("deleteIfExists: timeout/connexion échouée pour {$filename} — {$e->getMessage()}");

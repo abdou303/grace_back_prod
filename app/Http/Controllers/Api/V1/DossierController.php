@@ -836,6 +836,7 @@ class DossierController extends Controller
             'prison',
             'objetdemande',
             'sourcedemande',
+            'motifGreffe:id,libelle',
         ])->whereIn('id', $dossierIds)->get()->keyBy('id');
 
         $requettes = Requette::with([
@@ -858,6 +859,7 @@ class DossierController extends Controller
             'dossier.garants',
             'tribunal',
             'typerequette',
+            'motifGreffe:id,libelle',
         ])->whereIn('id', $requetteIds)->get()->keyBy('id');
 
         $rows = $page->map(function ($row) use ($dossiers, $requettes) {
@@ -1026,11 +1028,11 @@ class DossierController extends Controller
         };
 
         $dossiers = $load(
-            Dossier::with(['detenu', 'affaires', 'typedossier']),
+            Dossier::with(['detenu', 'affaires', 'typedossier', 'motifGreffe:id,libelle']),
             $ids->where('row_type', 'dossier')->pluck('id')->all()
         );
         $requettes = $load(
-            Requette::with(['dossier', 'dossier.detenu', 'dossier.affaires', 'dossier.typedossier', 'typerequette']),
+            Requette::with(['dossier', 'dossier.detenu', 'dossier.affaires', 'dossier.typedossier', 'typerequette', 'motifGreffe:id,libelle']),
             $ids->where('row_type', 'requette')->pluck('id')->all()
         );
 
@@ -3739,6 +3741,8 @@ class DossierController extends Controller
             'prison',
             'objetdemande',
             'sourcedemande',
+            'motifGreffe:id,libelle',   // ← AJOUT
+
         ])->whereIn('id', $dossierIds)->get()->keyBy('id');
 
         $requettes = Requette::with([
@@ -3748,6 +3752,7 @@ class DossierController extends Controller
             'dossier.pjs.affaire',
             'dossier.detenu',
             'dossier.affaires',
+
             'userParquetObjet:id,name',
             'dossier.affaires.tribunal',
             'statutrequettes' => function ($q) {
@@ -3761,6 +3766,8 @@ class DossierController extends Controller
             'dossier.garants',
             'tribunal',
             'typerequette',
+            'motifGreffe:id,libelle',   // ← AJOUT
+
         ])->whereIn('id', $requetteIds)->get()->keyBy('id');
 
         $rows = $page->map(function ($row) use ($dossiers, $requettes) {
@@ -3806,6 +3813,7 @@ class DossierController extends Controller
             'affaires.tribunal',
             'typedossier',
             'naturedossier',
+            'motifGreffe:id,libelle',
             'userParquetObjet:id,name',
         ])->withCount('pjs')
             ->whereIn('id', $dossierIds)->orderBy('created_at', 'desc')->get()
@@ -3824,6 +3832,7 @@ class DossierController extends Controller
             'dossier.naturedossier',
             'typerequette',
             'userParquetObjet:id,name',
+            'motifGreffe:id,libelle',
         ])->withCount('pjs')
             ->whereIn('id', $requetteIds)->orderBy('date', 'desc')->get()
             ->map(function ($r) {

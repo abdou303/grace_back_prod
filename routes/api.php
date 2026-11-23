@@ -37,14 +37,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\ImportRollbackController;
 use App\Http\Controllers\Api\V1\MotifGreffeController;
 use App\Http\Controllers\Api\V1\NonRecoursPdfController;
+use App\Http\Controllers\Api\V1\LogViewerController;
 
 Route::prefix('v1')->group(function () {
-
 
     // Public route
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
     Route::get('/openbee/file/{id}', [OpenBeeController::class, 'download']);
+
+
 
 
     // Protected routes
@@ -79,6 +81,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/dossier-export/export', [RequetteController::class, 'exportDossierExport']);
         Route::post('/dossiers-requettes-transferees-greffe/server-side', [DossierController::class, 'dossiersRequettesTransfereesGreffeServerSide']);
         /*_________________________*/
+
+        // Visualiseur de logs
+        Route::get('/logs/files',    [LogViewerController::class, 'files']);
+        Route::get('/logs/entries',  [LogViewerController::class, 'entries']);
+        Route::get('/logs/download', [LogViewerController::class, 'download']);
+        Route::delete('/logs/clear', [LogViewerController::class, 'clear']);
 
         Route::apiResource('villes', VilleController::class);
         Route::apiResource('utilisateurs', UtilisateurController::class);
