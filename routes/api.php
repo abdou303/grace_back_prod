@@ -198,5 +198,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/dossiers-registre/export', [DossierController::class, 'exportRegistreTribunal']);
         Route::post('/dossiers-requettes-transferees-greffe/export', [DossierController::class, 'exportDossiersRequettesTransfereesGreffe']);
         Route::get('motifs-greffe', [MotifGreffeController::class, 'index']);
+        Route::post('dossiers/received-tr/stats-export', [DossierController::class, 'exportStatsReceivedDossiersTr']);
     });
 });

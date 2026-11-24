@@ -38,6 +38,12 @@ use App\Exports\DossiersTrExport;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use App\Models\MotifGreffe;
+use App\Models\Tribunal;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class DossierController extends Controller
 {
@@ -2727,6 +2733,135 @@ class DossierController extends Controller
             new AllReceivedDossiersTrExport($dossiers),
             'liste-dossiers-recus-tribunaux.xlsx',
         );
+    }
+
+    public function exportStatsReceivedDossiersTr(Request $request)
+    {
+        $filters = $request->input('filters', []);
+        unset($filters['dossiers_recus']);
+
+        $countBy = function (Builder $q, string $col) {
+            return $q->select($col)
+                ->selectRaw('COUNT(*) as total')
+                ->groupBy($col)
+                ->pluck('total', $col);
+        };
+
+        // ---- Tableau 1 : dossiers ----
+        $dossiersPrets = $countBy(
+            $this->buildAllReceivedDossiersTrQuery($filters)
+                ->where('etat', 'OK')->where('tr_tribunal', 'OK'),
+            'user_tribunal_id'
+        );
+        $dossiersRecus = $countBy(
+            $this->buildAllReceivedDossiersTrQuery($filters)->where('tr_dapg', 'OK'),
+            'user_tribunal_id'
+        );
+
+        // ---- Tableau 2 : requêtes CAT-2 ----
+        $requettesPretes = $countBy(
+            $this->buildStatsRequettesCat2Query($filters)->where('etat_tribunal', 'TR'),
+            'tribunal_id'
+        );
+        $requettesRecues = $countBy(
+            $this->buildStatsRequettesCat2Query($filters)->where('tr_dapg', 'OK'),
+            'tribunal_id'
+        );
+
+        $tribunals = Tribunal::where('type_tribunal', 'C')
+            ->orderBy('id')
+            ->get(['id', 'libelle']);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Feuil1');
+        $sheet->setRightToLeft(true);
+
+        $next = $this->writeStatsTable($sheet, 1, 'الملفات', $tribunals, $dossiersPrets, $dossiersRecus);
+        $this->writeStatsTable($sheet, $next + 1, 'الاجوبة', $tribunals, $requettesPretes, $requettesRecues);
+
+        $sheet->getColumnDimension('A')->setWidth(28.3);
+        $sheet->getColumnDimension('B')->setWidth(10);
+        $sheet->getColumnDimension('C')->setWidth(14);
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            (new Xlsx($spreadsheet))->save('php://output');
+        }, 'statistiques-tribunaux.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /** Requêtes CAT-2 transmises au tribunal + filtres du formulaire applicables */
+    private function buildStatsRequettesCat2Query(array $f): Builder
+    {
+        $query = Requette::query()
+            ->where('etat', 'TR')
+            ->whereHas('typerequette', fn($t) => $t->where('cat', 'CAT-2'));
+
+        if (!empty($f['user_tribunal_libelle'])) {
+            $query->where('tribunal_id', $f['user_tribunal_libelle']);
+        }
+        if (!empty($f['date_debut'])) {
+            $query->whereDate('date', '>=', $f['date_debut']);
+        }
+        if (!empty($f['date_fin'])) {
+            $query->whereDate('date', '<=', $f['date_fin']);
+        }
+        if (!empty($f['numero'])) {
+            $query->where('numero', 'like', '%' . $f['numero'] . '%');
+        }
+        if (!empty($f['numero_dapg']) || !empty($f['typedossier']) || !empty($f['naturedossier']) || !empty($f['nom_detenu'])) {
+            $query->whereHas('dossier', function ($d) use ($f) {
+                if (!empty($f['numero_dapg'])) {
+                    $d->where('numero_dapg', 'like', '%' . $f['numero_dapg'] . '%');
+                }
+                if (!empty($f['typedossier'])) {
+                    $d->where('typedossier_id', $f['typedossier']);
+                }
+                if (!empty($f['naturedossier'])) {
+                    $d->where('naturedossiers_id', $f['naturedossier']);
+                }
+                if (!empty($f['nom_detenu'])) {
+                    $d->whereHas('detenu', function ($q) use ($f) {
+                        $q->where('nom', 'like', '%' . $f['nom_detenu'] . '%')
+                            ->orWhere('prenom', 'like', '%' . $f['nom_detenu'] . '%');
+                    });
+                }
+            });
+        }
+
+        return $query;
+    }
+
+    /** Écrit un tableau (titre + en-tête + lignes) à partir de $start, retourne la ligne suivante libre */
+    private function writeStatsTable($sheet, int $start, string $titre, $tribunals, $prets, $recus): int
+    {
+        $sheet->mergeCells("A$start:C$start");
+        $sheet->setCellValue("A$start", $titre);
+
+        $head = $start + 1;
+        $sheet->fromArray(['المحكمة', 'المنجزة', 'التي تم تسلمها'], null, "A$head");
+
+        $row = $head + 1;
+        foreach ($tribunals as $t) {
+            $sheet->setCellValue("A$row", $t->libelle);
+            $sheet->setCellValue("B$row", (int) ($prets[$t->id] ?? 0));
+            $sheet->setCellValue("C$row", (int) ($recus[$t->id] ?? 0));
+            $row++;
+        }
+        $last = $row - 1;
+
+        $sheet->getStyle("A$start:C$last")->applyFromArray([
+            'font'      => ['name' => 'Calibri', 'size' => 11],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        ]);
+        $sheet->getStyle("A$start:C$head")->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFFF00']],
+        ]);
+
+        return $row + 1; // + 1 ligne vide entre les tableaux
     }
 
     private function buildAllReceivedDossiersTrQuery(array $f): Builder
