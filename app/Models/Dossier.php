@@ -140,7 +140,7 @@ class Dossier extends Model
             $libelle = TypeDossier::where('id', $dossier->typedossier_id)->value('libelle_mp')
                 ?? $dossier->typedossier_id;
 
-            $dossier->numeromp = $numero . ' ' . $libelle . ' ' . $annee;
+            $dossier->numeromp = $numero . '/' . $libelle . '/' . $annee;
             $dossier->annee_numeromp = $annee;
         });
     }
