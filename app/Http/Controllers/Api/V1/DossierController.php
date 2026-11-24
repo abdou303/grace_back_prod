@@ -2747,42 +2747,55 @@ class DossierController extends Controller
                 ->pluck('total', $col);
         };
 
-        // ---- Tableau 1 : dossiers ----
-        $dossiersPrets = $countBy(
-            $this->buildAllReceivedDossiersTrQuery($filters)
-                ->where('etat', 'OK')->where('tr_tribunal', 'OK'),
-            'user_tribunal_id'
-        );
-        $dossiersRecus = $countBy(
-            $this->buildAllReceivedDossiersTrQuery($filters)->where('tr_dapg', 'OK'),
-            'user_tribunal_id'
-        );
-
-        // ---- Tableau 2 : requêtes CAT-2 ----
-        $requettesPretes = $countBy(
-            $this->buildStatsRequettesCat2Query($filters)->where('etat_tribunal', 'TR'),
-            'tribunal_id'
-        );
-        $requettesRecues = $countBy(
-            $this->buildStatsRequettesCat2Query($filters)->where('tr_dapg', 'OK'),
-            'tribunal_id'
-        );
-
         $tribunals = Tribunal::where('type_tribunal', 'C')
             ->orderBy('id')
             ->get(['id', 'libelle']);
 
+        $feuilles = [
+            1 => 'العفو',
+            2 => 'الافراج المقيد بشروط',
+        ];
+
         $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Feuil1');
-        $sheet->setRightToLeft(true);
+        $spreadsheet->removeSheetByIndex(0);
 
-        $next = $this->writeStatsTable($sheet, 1, 'الملفات', $tribunals, $dossiersPrets, $dossiersRecus);
-        $this->writeStatsTable($sheet, $next + 1, 'الاجوبة', $tribunals, $requettesPretes, $requettesRecues);
+        foreach ($feuilles as $typeId => $nomFeuille) {
+            $f = array_merge($filters, ['typedossier' => $typeId]);
 
-        $sheet->getColumnDimension('A')->setWidth(28.3);
-        $sheet->getColumnDimension('B')->setWidth(10);
-        $sheet->getColumnDimension('C')->setWidth(14);
+            // ---- Tableau 1 : dossiers ----
+            $dossiersPrets = $countBy(
+                $this->buildAllReceivedDossiersTrQuery($f)
+                    ->where('etat', 'OK')->where('tr_tribunal', 'OK'),
+                'user_tribunal_id'
+            );
+            $dossiersRecus = $countBy(
+                $this->buildAllReceivedDossiersTrQuery($f)->where('tr_dapg', 'OK'),
+                'user_tribunal_id'
+            );
+
+            // ---- Tableau 2 : requêtes CAT-2 ----
+            $requettesPretes = $countBy(
+                $this->buildStatsRequettesCat2Query($f)->where('etat_tribunal', 'TR'),
+                'tribunal_id'
+            );
+            $requettesRecues = $countBy(
+                $this->buildStatsRequettesCat2Query($f)->where('tr_dapg', 'OK'),
+                'tribunal_id'
+            );
+
+            $sheet = $spreadsheet->createSheet();
+            $sheet->setTitle($nomFeuille);
+            $sheet->setRightToLeft(true);
+
+            $next = $this->writeStatsTable($sheet, 1, 'الملفات', $tribunals, $dossiersPrets, $dossiersRecus);
+            $this->writeStatsTable($sheet, $next + 1, 'الأجوبة', $tribunals, $requettesPretes, $requettesRecues);
+
+            $sheet->getColumnDimension('A')->setWidth(28.3);
+            $sheet->getColumnDimension('B')->setWidth(10);
+            $sheet->getColumnDimension('C')->setWidth(14);
+        }
+
+        $spreadsheet->setActiveSheetIndex(0);
 
         return response()->streamDownload(function () use ($spreadsheet) {
             (new Xlsx($spreadsheet))->save('php://output');
