@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Dossier extends Model
 {
@@ -107,7 +108,77 @@ class Dossier extends Model
         'observation_redirecton_greffe_sglb_tr',
 
     ];
+    const ANNEE_DEBUT_NUMEROMP = 2027;
 
+    protected static function booted()
+    {
+        static::saving(function (Dossier $dossier) {
+            if (!empty($dossier->numeromp)) {
+                return;
+            }
+
+            if (empty($dossier->user_tribunal_id) || !in_array((int) $dossier->typedossier_id, [1, 2])) {
+                return;
+            }
+
+            $annee = (int) now()->year;
+            if ($annee < self::ANNEE_DEBUT_NUMEROMP) {
+                return;
+            }
+
+            $tribunal = Tribunal::find($dossier->user_tribunal_id);
+            if (!$tribunal || $tribunal->type_tribunal !== 'C') {
+                return;
+            }
+
+            $numero = self::genererNumeroMp(
+                $tribunal->id,
+                (int) $dossier->typedossier_id,
+                $annee
+            );
+
+            $libelle = TypeDossier::where('id', $dossier->typedossier_id)->value('libelle_mp')
+                ?? $dossier->typedossier_id;
+
+            $dossier->numeromp = $numero . ' ' . $libelle . ' ' . $annee;
+            $dossier->annee_numeromp = $annee;
+        });
+    }
+
+    public static function genererNumeroMp(int $tribunalId, int $typeDossierId, int $annee): int
+    {
+        return DB::transaction(function () use ($tribunalId, $typeDossierId, $annee) {
+            $compteur = DB::table('compteurs_numeromp')
+                ->where('tribunal_id', $tribunalId)
+                ->where('typedossier_id', $typeDossierId)
+                ->where('annee', $annee)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$compteur) {
+                DB::table('compteurs_numeromp')->insert([
+                    'tribunal_id'    => $tribunalId,
+                    'typedossier_id' => $typeDossierId,
+                    'annee'          => $annee,
+                    'dernier_numero' => 1,
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+                return 1;
+            }
+
+            $nouveau = $compteur->dernier_numero + 1;
+
+            DB::table('compteurs_numeromp')
+                ->where('id', $compteur->id)
+                ->update([
+                    'dernier_numero' => $nouveau,
+                    'updated_at'     => now(),
+                ]);
+
+            return $nouveau;
+        });
+    }
     public function affaires()
     {
 
