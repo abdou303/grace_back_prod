@@ -1116,6 +1116,14 @@ class RequetteController extends Controller
             'copie_non_recours.*' => 'nullable|file|mimes:pdf|max:153600',
         ], $messages);
 
+        $requette->loadMissing('typerequette', 'dossier');
+        $typeDossier = (string) $requette->dossier?->typedossier_id;
+
+        // PJ déjà présente (OpenBee) pour cette requête → le champ n'est plus obligatoire
+        $pjExiste = fn(array $typepjIds) => Pj::where('requette_id', $requette->id)
+            ->whereIn('typepj_id', $typepjIds)
+            ->exists();
+
         // AJOUT : un seul fichier requis parmi copie_demande / copie_demande_requette / copie_dgapr / copie_non_recours[]
         $hasCopieDemande = $request->hasFile('copie_demande');
         $hasCopieDemandeRequette = $request->hasFile('copie_demande_requette');
@@ -1133,22 +1141,22 @@ class RequetteController extends Controller
             }
         }
 
-        if (!$hasCopieDemande && !$hasCopieDemandeRequette && !$hasCopieDgapr && !$hasNonRecours) {
+        if (
+            !$hasCopieDemande && !$hasCopieDemandeRequette && !$hasCopieDgapr && !$hasNonRecours
+            && !$pjExiste([7, 14, 8, 2])
+        ) {
             throw ValidationException::withMessages([
                 'copie_demande' => 'المرجو رفع نسخة من الطلب أو الوضعية الجنائية أو نسخة عدم الطعن',
             ]);
         }
-        // CAT-1 : fichier requis selon le type de dossier
-        $requette->loadMissing('typerequette', 'dossier');
-        $typeDossier = (string) $requette->dossier?->typedossier_id;
-
+        // CAT-1 : fichier requis selon le type de dossier (sauf s'il existe déjà)
         if ($requette->typerequette?->cat === 'CAT-1') {
-            if ($typeDossier === '1' && !$hasCopieDemande) {
+            if ($typeDossier === '1' && !$hasCopieDemande && !$pjExiste([7])) {
                 throw ValidationException::withMessages([
                     'copie_demande' => 'المرجو رفع نسخة من الطلب',
                 ]);
             }
-            if ($typeDossier === '2' && !$hasCopieDgapr) {
+            if ($typeDossier === '2' && !$hasCopieDgapr && !$pjExiste([8])) {
                 throw ValidationException::withMessages([
                     'copie_dgapr' => 'المرجو رفع نسخة من الوضعية الجنائية',
                 ]);

@@ -3005,12 +3005,15 @@ class DossierController extends Controller
                 $query->where('etat', 'OK')->where('tr_tribunal', 'OK');
             }
         }
-        if (!empty($f['date_debut'])) {
-            $query->whereDate('created_at', '>=', $f['date_debut']);
+        $dateDebut = $this->extractDate($f['date_debut'] ?? null);
+        $dateFin   = $this->extractDate($f['date_fin'] ?? null);
+
+        if ($dateDebut) {
+            $query->whereDate('created_at', '>=', $dateDebut);
         }
 
-        if (!empty($f['date_fin'])) {
-            $query->whereDate('created_at', '<=', $f['date_fin']);
+        if ($dateFin) {
+            $query->whereDate('created_at', '<=', $dateFin);
         }
 
         if (!empty($f['date_sortie'])) {
@@ -3085,6 +3088,14 @@ class DossierController extends Controller
                 });
         });
     }
+
+    /** Garde uniquement une date valide au format Y-m-d (ex : "272026-08-01" → "2026-08-01") */
+    private function extractDate($value): ?string
+    {
+        if (empty($value)) return null;
+        return preg_match('/\d{4}-\d{2}-\d{2}/', (string) $value, $m) ? $m[0] : null;
+    }
+
     private function applyDossiersTrSorting($query, array $sortModel): void
     {
         $allowedColumns = ['numero', 'numero_dapg', 'etat', 'created_at', 'id'];
