@@ -222,7 +222,7 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'nationalite_id'         => $row['nationality'] ?? 99,
                     ]);
                     $this->track('Detenu', $detenu->id);
-
+                    /*
                     // 2. Préparation des données du Dossier
                     $dossierData = [
                         'numero_dapg'         => $row['numero_dossier'],
@@ -236,6 +236,39 @@ class DossierImport implements ToCollection, WithHeadingRow
                         'user_id'             =>  $this->userId,
                         'originedossier'      => 'R',
 
+                    ];
+
+                    // Logique spécifique type dossier
+                    if ($row['typedossier_id'] == 1) {
+                        if ($row['naturedossiers_id'] == 1) {
+                            $dossierData['prison_id'] = $row['prison_id'];
+                            $dossierData['numero_detention'] = $row['numero_detention_local'];
+                        } else {
+                            $dossierData['objetdemande_id'] = $row['objetdemande_id'];
+                        }
+                    } elseif ($row['typedossier_id'] == 2) {
+                        $dossierData['prison_id'] = $row['prison_id'];
+                        $dossierData['numero_detention'] = $row['numero_detention_local'];
+                    }
+
+                    $dossier = Dossier::create($dossierData);*/
+                    // 2. Préparation des données du Dossier
+                    $catRequette = TypeRequette::where('id', $row['type_requette'])->value('cat');
+
+                    $dossierData = [
+                        'numero_dapg'         => $row['numero_dossier'],
+                        'date_sortie'         => $this->transformDate($row['datefin_peine']),
+                        'date_enregistrement' => now()->format('Y-m-d H:i:s.v'),
+                        'typedossier_id'      => $row['typedossier_id'],
+                        'numeromp'            => ($catRequette === 'CAT-1' && now()->year >= Dossier::ANNEE_DEBUT_NUMEROMP)
+                            ? null
+                            : ($row['numeromp'] ?? null),
+                        'naturedossiers_id'   => $row['naturedossiers_id'],
+                        'detenu_id'           => $detenu->id,
+                        'user_id'             => $this->userId,
+                        'user_tribunal_id'    => $row['tribunal_requette'],
+                        'categorie'           => $catRequette ?? 'CAT-1',
+                        'originedossier'      => 'R',
                     ];
 
                     // Logique spécifique type dossier

@@ -108,12 +108,17 @@ class Dossier extends Model
         'observation_redirecton_greffe_sglb_tr',
 
     ];
-    const ANNEE_DEBUT_NUMEROMP = 2027;
+    // const ANNEE_DEBUT_NUMEROMP = 2027;
+    const ANNEE_DEBUT_NUMEROMP = 2026;
 
     protected static function booted()
     {
         static::saving(function (Dossier $dossier) {
             if (!empty($dossier->numeromp)) {
+                return;
+            }
+
+            if ($dossier->categorie === 'CAT-2') {
                 return;
             }
 
